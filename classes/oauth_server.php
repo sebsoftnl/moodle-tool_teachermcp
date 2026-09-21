@@ -49,20 +49,34 @@ class oauth_server {
         }
 
         $requested = array_values(array_unique($requested));
+        $externaltools = server::get_grantable_external_tool_names();
+        $legacyscopes = [];
+        $externalgrants = [];
         foreach ($requested as $item) {
-            if (!in_array($item, self::SUPPORTED_SCOPES, true)) {
+            if (in_array($item, $externaltools, true)) {
+                $externalgrants[$item] = true;
+            } else if (in_array($item, self::SUPPORTED_SCOPES, true)) {
+                $legacyscopes[] = $item;
+            } else {
                 throw new moodle_exception('error_invalid_scope', 'tool_teachermcp');
             }
         }
 
-        if (in_array('teachermcp', $requested, true) || in_array('all', $requested, true)) {
-            if (count($requested) !== 1) {
+        if (in_array('teachermcp', $legacyscopes, true) || in_array('all', $legacyscopes, true)) {
+            if (count($legacyscopes) !== 1) {
                 throw new moodle_exception('error_invalid_scope', 'tool_teachermcp');
             }
-            return ['scope' => $requested[0], 'permissions' => ['all_teacher_tools' => true]];
+            return [
+                'scope' => implode(' ', $requested),
+                'permissions' => array_merge(['all_teacher_tools' => true], $externalgrants),
+            ];
         }
 
-        return ['scope' => implode(' ', $requested), 'permissions' => ['scopes' => $requested]];
+        $permissions = $externalgrants;
+        if (!empty($legacyscopes)) {
+            $permissions['scopes'] = $legacyscopes;
+        }
+        return ['scope' => implode(' ', $requested), 'permissions' => $permissions];
     }
 
     /**

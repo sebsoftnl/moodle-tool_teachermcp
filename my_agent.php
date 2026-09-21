@@ -64,7 +64,19 @@ if ($action === 'create' && confirm_sesskey()) {
         throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
     }
 
-    $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity);
+    $requestedexternaltools = optional_param_array('externaltools', [], PARAM_RAW_TRIMMED);
+    $grantableexternaltools = \tool_teachermcp\server::get_grantable_external_tool_names();
+    $selectedexternaltools = [];
+    foreach ($requestedexternaltools as $toolname) {
+        if (is_string($toolname) && in_array($toolname, $grantableexternaltools, true)) {
+            $selectedexternaltools[$toolname] = true;
+        }
+    }
+    $permissions = $selectedexternaltools
+        ? array_merge(['all_teacher_tools' => true], $selectedexternaltools)
+        : null;
+
+    $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity, null, $permissions);
     \core\notification::success(get_string('token_created', 'tool_teachermcp'));
 } else if ($action === 'revoke' && confirm_sesskey() && $tokenid) {
     \tool_teachermcp\auth::revoke_token($tokenid, $USER->id);
@@ -163,6 +175,17 @@ $prompta = (object)[
 
 $server = new \tool_teachermcp\server();
 $activetoolscount = count($server->get_tools());
+$externaltooloptions = [];
+foreach (\tool_teachermcp\server::get_grantable_external_tool_names() as $externaltoolname) {
+    $tool = $server->get_tools()[$externaltoolname] ?? null;
+    if ($tool === null) {
+        continue;
+    }
+    $externaltooloptions[] = [
+        'name' => $externaltoolname,
+        'description' => $tool->get_description(),
+    ];
+}
 
 $promptlibrary = [
     [
@@ -306,6 +329,8 @@ $templatedata = [
     'prompt_categories' => $promptlibrary,
     'has_courses' => !empty($courseoptions),
     'courses' => $courseoptions,
+    'has_external_tools' => !empty($externaltooloptions),
+    'external_tools' => $externaltooloptions,
     'tools_count_badge' => get_string('active_tools_count', 'tool_teachermcp', $activetoolscount),
     'selected_course_id' => $courseid,
     'chatgpt_step3_text' => get_string('chatgpt_step3', 'tool_teachermcp', $endpointurl),

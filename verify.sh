@@ -53,17 +53,38 @@ assert 'tool_teachermcp_assets' in privacy
 assert 'get_file_by_id' in privacy
 
 testfiles = sorted((root / 'tests').glob('*_test.php'))
+expected_testfiles = {
+    'access_test.php', 'assessment_tools_test.php', 'auth_test.php',
+    'content_tools_test.php', 'oauth_server_test.php', 'privacy_test.php',
+    'provider_discovery_test.php', 'server_test.php', 'tool_registry_test.php',
+}
+assert {testfile.name for testfile in testfiles} == expected_testfiles, testfiles
 testmethods = []
 for testfile in testfiles:
     content = testfile.read_text(encoding='utf-8')
     testmethods.extend(re.findall(r'^    public function (test_[A-Za-z0-9_]+)\(', content, re.MULTILINE))
-assert len(testfiles) == 7, testfiles
-assert len(testmethods) == 34 and len(set(testmethods)) == 34, testmethods
+assert testmethods and len(testmethods) == len(set(testmethods)), testmethods
 assert not (root / 'tests' / 'mcp_test.php').exists()
 assert not any("array_column($tools, 'name')" in testfile.read_text(encoding='utf-8') for testfile in testfiles)
 assert 'generate_token_record' in (root / 'tests' / 'auth_test.php').read_text(encoding='utf-8')
 assert 'error_remote_image_fetch_disabled' in (root / 'tests' / 'content_tools_test.php').read_text(encoding='utf-8')
 assert 'tool_teachermcp_assets' in (root / 'tests' / 'privacy_test.php').read_text(encoding='utf-8')
+provider_test = (root / 'tests' / 'provider_discovery_test.php').read_text(encoding='utf-8')
+assert 'provider_registry::discover' in provider_test
+assert 'get_plugins_with_function' in (root / 'classes' / 'local' / 'provider_registry.php').read_text(encoding='utf-8')
+registry_test = (root / 'tests' / 'tool_registry_test.php').read_text(encoding='utf-8')
+assert 'requires_an_exact_qualified_token_grant' in registry_test
+registry_source = (root / 'classes' / 'local' / 'tool_registry.php').read_text(encoding='utf-8')
+assert 'external_tool_adapter' in registry_source
+assert 'is_valid_external_schema' in registry_source
+server_source = (root / 'classes' / 'server.php').read_text(encoding='utf-8')
+assert 'get_grantable_external_tool_names' in server_source
+assert "additionalProperties'] ?? true" in server_source
+oauth_source = (root / 'classes' / 'oauth_server.php').read_text(encoding='utf-8')
+assert 'get_grantable_external_tool_names' in oauth_source
+assert '$externalgrants[$item] = true' in oauth_source
+manual_token_page = (root / 'my_agent.php').read_text(encoding='utf-8')
+assert "optional_param_array('externaltools'" in manual_token_page
 print(f'Split test layout: {len(testfiles)} files, {len(testmethods)} unique test methods')
 print('Remediation static policy checks: passed')
 PY

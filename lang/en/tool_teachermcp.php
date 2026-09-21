@@ -310,6 +310,8 @@ $string['error_library_not_found'] = 'Requested H5P library was not found or is 
 $string['error_create_zip'] = 'Failed to create temporary H5P zip archive.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
+$string['setting_enable_external_tools'] = 'Enable externally contributed MCP tools';
+$string['setting_enable_external_tools_desc'] = 'Allows independently installed Moodle plugins to publish validated Teacher MCP tools. Each provider tool remains hidden until both this setting and its provider-owned enable setting are enabled.';
 $string['setting_enable_write_tools'] = 'Enable authoring and write tools';
 $string['setting_enable_write_tools_desc'] = 'Allows AI agents to create and modify course content, activities, question bank items, and completion criteria.';
 $string['setting_enable_grade_tools'] = 'Enable grading tools';
@@ -335,6 +337,9 @@ $string['error_tool_disabled'] = 'Tool "{$a}" is disabled by the site administra
 $string['error_tool_not_permitted'] = 'Tool "{$a}" is not permitted for this agent token.';
 $string['error_tool_not_found'] = 'Tool "{$a}" not found.';
 $string['error_group_access_denied'] = 'You do not have access to this group or separate groups mode restricts viewing this group.';
+
+$string['external_tool_grants'] = 'External MCP tool grants';
+$string['external_tool_grants_desc'] = 'Select each independently provided tool this token may use. These grants are in addition to the built-in Teacher MCP tools.';
 
 // Privacy metadata strings (M5).
 $string['privacy:metadata:tool_teachermcp_tokens'] = 'Authentication tokens issued for teacher AI agent connections.';

@@ -104,6 +104,20 @@
 
                                 </select>
                             </div>
+                            {{#has_external_tools}}
+                            <fieldset class="form-group mb-3">
+                                <legend class="small font-weight-bold text-muted mb-1">{{#str}}external_tool_grants, tool_teachermcp{{/str}}</legend>
+                                <p class="small text-muted mb-2">{{#str}}external_tool_grants_desc, tool_teachermcp{{/str}}</p>
+                                {{#external_tools}}
+                                <div class="custom-control custom-checkbox mb-1">
+                                    <input class="custom-control-input" type="checkbox" name="externaltools[]" value="{{name}}" id="externaltool-{{name}}">
+                                    <label class="custom-control-label" for="externaltool-{{name}}">
+                                        <code>{{name}}</code><br><span class="small text-muted">{{description}}</span>
+                                    </label>
+                                </div>
+                                {{/external_tools}}
+                            </fieldset>
+                            {{/has_external_tools}}
                             <button type="submit" class="btn btn-primary btn-sm">
                                 <i class="fa fa-plus-circle mr-1 me-1"></i>{{#str}}create_token, tool_teachermcp{{/str}}
                             </button>

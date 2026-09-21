@@ -97,6 +97,11 @@ Moodle endpoints require the `Authorization` header to be passed to PHP:
 - `tool/teachermcp:connectagent`: Allows teachers to create agent connections and use MCP endpoints (granted to editingteacher and manager by default).
 - `tool/teachermcp:manageall`: Allows site administrators to view all site connections and configure settings.
 
+### 5. External MCP tool providers
+Teacher MCP can safely discover tools supplied by independently installed Moodle plugins. These tools are disabled by default, require the global Teacher MCP enablement plus a provider-owned setting, and need an exact qualified token grant. They remain subject to the same token checks, schema validation, request and response limits, rate limiting, and audit logging as built-in tools.
+
+Provider contract, security obligations, and enablement requirements are documented in [docs/developer/extending-teachermcp.md](docs/developer/extending-teachermcp.md).
+
 ---
 
 ## 🛠️ Connecting AI Clients

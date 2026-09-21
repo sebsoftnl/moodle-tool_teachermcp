@@ -71,6 +71,15 @@ final class server_test extends \advanced_testcase {
         // Invalid enum.
         $invalid2 = server::validate_tool_arguments(['course_id' => 10, 'format' => 'xml'], $schema);
         $this->assertFalse($invalid2['valid']);
+
+        // An external provider can opt into strict argument schemas.
+        $schema['additionalProperties'] = false;
+        $invalid3 = server::validate_tool_arguments(
+            ['course_id' => 10, 'unexpected' => 'must not reach the provider'],
+            $schema
+        );
+        $this->assertFalse($invalid3['valid']);
+        $this->assertStringContainsString('unexpected', $invalid3['error']);
     }
 
     public function test_blok5_admin_scope_toggles_and_filtering(): void {

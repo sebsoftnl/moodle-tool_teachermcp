@@ -310,6 +310,8 @@ $string['error_library_not_found'] = 'Gevraagde H5P-bibliotheek is niet gevonden
 $string['error_create_zip'] = 'Aanmaken van tijdelijk H5P zip-archief is mislukt.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
+$string['setting_enable_external_tools'] = 'Extern bijgedragen MCP-tools inschakelen';
+$string['setting_enable_external_tools_desc'] = 'Staat onafhankelijk geïnstalleerde Moodle-plugins toe om gevalideerde Teacher MCP-tools te publiceren. Elke providertool blijft verborgen totdat zowel deze instelling als de provider-eigen instelling is ingeschakeld.';
 $string['setting_enable_write_tools'] = 'Auteurs- en schrijftools inschakelen';
 $string['setting_enable_write_tools_desc'] = 'Biedt AI-agents de mogelijkheid om cursusinhoud, activiteiten, vragenbankitems en voltooiingscriteria aan te maken of te bewerken.';
 $string['setting_enable_grade_tools'] = 'Beoordelingstools inschakelen';
@@ -335,6 +337,9 @@ $string['error_tool_disabled'] = 'Tool "{$a}" is uitgeschakeld door de sitebehee
 $string['error_tool_not_permitted'] = 'Tool "{$a}" is niet toegestaan voor dit agent-token.';
 $string['error_tool_not_found'] = 'Tool "{$a}" niet gevonden.';
 $string['error_group_access_denied'] = 'U heeft geen toegang tot deze groep of gescheiden groepen beperkt de weergave van deze groep.';
+
+$string['external_tool_grants'] = 'Externe MCP-toolrechten';
+$string['external_tool_grants_desc'] = 'Selecteer elke onafhankelijk aangeboden tool die dit token mag gebruiken. Deze rechten komen boven op de ingebouwde Teacher MCP-tools.';
 
 // Privacy metadata strings (M5).
 $string['privacy:metadata:tool_teachermcp_tokens'] = 'Authenticatietokens uitgegeven voor teacher MCP-agentverbindingen.';

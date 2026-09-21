@@ -29,6 +29,14 @@ defined('MOODLE_INTERNAL') || die();
  * @covers     \tool_teachermcp\oauth_server
  */
 final class oauth_server_test extends \advanced_testcase {
+    public function test_oauth_rejects_unknown_qualified_external_tool_scope(): void {
+        $this->resetAfterTest(true);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('error_invalid_scope', 'tool_teachermcp'));
+        \tool_teachermcp\oauth_server::normalise_scope('local_unknown.example');
+    }
+
     public function test_oauth_registration_disabled(): void {
         $this->resetAfterTest(true);
         set_config('oauth_registration_enabled', 0, 'tool_teachermcp');
