@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="admin/tool/teachermcp/db" VERSION="20260918" COMMENT="XMLDB file for Moodle admin/tool/teachermcp"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="tool_teachermcp_tokens" COMMENT="Bearer authentication tokens for teacher AI agents">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User owning this agent token"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Label or agent name"/>
+        <FIELD NAME="tokenhash" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="SHA-256 hash of the raw bearer token"/>
+        <FIELD NAME="tokenlastchars" TYPE="char" LENGTH="8" NOTNULL="true" SEQUENCE="false" COMMENT="Last 8 characters for identification"/>
+        <FIELD NAME="clientid" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="OAuth client ID if issued via OAuth flow"/>
+        <FIELD NAME="permissions" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded allowed tools or scopes"/>
+        <FIELD NAME="lastaccess" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of last API call"/>
+        <FIELD NAME="lastip" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false" COMMENT="Client IP address of last call"/>
+        <FIELD NAME="timeexpires" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Expiration timestamp (0 = never)"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Time record was created"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Time record was modified"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="1 = active, 0 = revoked"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="tokenhash_idx" UNIQUE="true" FIELDS="tokenhash"/>
+        <INDEX NAME="userid_status_idx" UNIQUE="false" FIELDS="userid, status"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="tool_teachermcp_oauth_clients" COMMENT="Registered OAuth 2.0 clients for Teacher MCP">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="clientid" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="OAuth client ID"/>
+        <FIELD NAME="clientsecret" TYPE="char" LENGTH="128" NOTNULL="false" SEQUENCE="false" COMMENT="Optional client secret"/>
+        <FIELD NAME="clientname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Human readable client name"/>
+        <FIELD NAME="redirecturis" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON encoded or newline separated allowed redirect URIs"/>
+        <FIELD NAME="isloopback" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if client uses loopback redirect URI (RFC 8252)"/>
+        <FIELD NAME="isverified" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if client is verified (B6)"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time created"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="clientid_idx" UNIQUE="true" FIELDS="clientid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="tool_teachermcp_oauth_codes" COMMENT="Temporary authorization codes for OAuth 2.0 PKCE flow">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="codehash" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="SHA-256 hash of the authorization code"/>
+        <FIELD NAME="clientid" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="OAuth client ID"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User authorizing the client"/>
+        <FIELD NAME="redirecturi" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Target redirect URI"/>
+        <FIELD NAME="scope" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="Requested scopes"/>
+        <FIELD NAME="codechallenge" TYPE="char" LENGTH="128" NOTNULL="false" SEQUENCE="false" COMMENT="PKCE code challenge"/>
+        <FIELD NAME="codechallengemethod" TYPE="char" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="PKCE method S256 or plain"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time code was created"/>
+        <FIELD NAME="timeexpires" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Expiration time"/>
+        <FIELD NAME="issuedtokenid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="ID of token issued from this code for revocation on reuse"/>
+        <FIELD NAME="claimtoken" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="Unique claim token for atomic code exchange (B5)"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0 = active/unused, 1 = used, 2 = revoked"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_issuedtoken" TYPE="foreign" FIELDS="issuedtokenid" REFTABLE="tool_teachermcp_tokens" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="codehash_idx" UNIQUE="true" FIELDS="codehash"/>
+        <INDEX NAME="clientid_idx" UNIQUE="false" FIELDS="clientid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="tool_teachermcp_assets" COMMENT="Files created by Teacher MCP for privacy tracking">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="User who uploaded the asset"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle context containing the asset"/>
+        <FIELD NAME="fileid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Stored file ID"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Creation time"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="fk_file" TYPE="foreign" FIELDS="fileid" REFTABLE="files" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="user_context_idx" UNIQUE="false" FIELDS="userid, contextid"/>
+        <INDEX NAME="fileid_idx" UNIQUE="true" FIELDS="fileid"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

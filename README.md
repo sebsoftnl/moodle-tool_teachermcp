@@ -1,93 +1,126 @@
-# moodle-tool_teachermcp
+# Teacher AI Assistant (Model Context Protocol - MCP) for Moodle
 
+Moodle Admin Tool exposing an authenticated **Model Context Protocol (MCP)** JSON-RPC 2.0 endpoint and self-service dashboard for teachers.
+Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, **Cursor**, **ChatGPT**) to execute complete didactic workflows, ingest entire course materials into LLM context, assemble assessments, identify struggling students, analyze quiz psychometrics, build interactive H5P modules, and streamline grading.
 
+---
 
-## Getting started
+## 🚀 Key Highlights & Capabilities
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### 1. High-Level Didactic Workflows
+- **`export_course_learning_material`**: Extracts the full substantive body of a course (Page texts, Book chapters, Lesson modules in linked-list order, **H5P interactive modules**, Glossary terms, Assignment briefs, and attached documents) into clean, structured Markdown.
+- **`scaffold_assessment_unit`**: End-to-end quiz builder using core `create_module()`. Creates question bank entries, instantiates the quiz in a course section, links questions to slots, and verifies fractional weights in a delegated transaction.
+- **`detect_at_risk_students`**: Predictive early-warning analytics. Scans student enrollments, days since last course access, missed assignment deadlines (accounting for extensions and overrides), failing gradebook averages, incomplete activities, and Moodle Analytics to produce an actionable risk index.
+- **`analyze_class_understanding`**: Post-assessment diagnostic psychometrics. Analyzes finished quiz attempts (`\mod_quiz\quiz_attempt::FINISHED`), question versions, question difficulty (facility index), error distributions, and tracks unassessed responses (`needs_grading`).
+- **`prepare_grading_session`**: Batch grading assistant. Bundles ungraded submissions, submitted student texts, file attachment metadata, rubric criteria, and student context into a single payload for rapid AI-assisted grading.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### 2. Complete Suite of 22 MCP Tools
+1. `get_my_profile`: Teacher identity, system permissions, and environment info.
+2. `get_teacher_courses`: Courses where teacher is actively enrolled with teaching/grading rights.
+3. `get_course_contents`: Section tree, activity names, descriptions, and completion rules.
+4. `export_course_learning_material`: Extract complete substantive course content as Markdown for LLM ingestion.
+5. `read_activity_file`: Inspect attached source documents, download files, or extract complete text (PDF, Word DOCX, PPTX, ODT, TXT, CSV).
+6. `upload_course_asset`: Upload images and educational media assets directly to course file areas.
+7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
+8. `manage_activity`: Inspect or update module settings, names, descriptions, or visibility.
+9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
+10. `delete_activity`: Safely delete activities with mandatory two-step dry-run confirmation (`confirm=true`).
+11. `get_h5p_libraries`: Inspect installed H5P content types and parameter schemas.
+12. `create_h5p_activity`: Deploy standalone H5P interactive activities (Flashcards, Multiple Choice, Interactive Video) directly to courses.
+13. `scaffold_assessment_unit`: Scaffold complete quizzes, question items, options, and section placement.
+14. `manage_question_bank`: Browse categories, questions, types, and manage question bank items within course contexts.
+15. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
+16. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
+17. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
+18. `manage_grades`: Inspect gradebook items and update individual student grade entries.
+19. `get_group_students`: List students belonging to course groups where teacher has access.
+20. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
+21. `detect_at_risk_students`: Compute early-warning dropout risk index based on activity and grades.
+22. `send_student_message`: Dispatch direct Moodle messages to enrolled students with contact checks and rate limiting.
 
-## Add your files
+---
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 🔒 Security Architecture & Multi-Tenant Isolation
 
+1. **Authentication & Token Storage**:
+   - Every API request is authenticated via a cryptographically random Bearer token (`mcp_...`) or standard OAuth 2.0 PKCE flow (RFC 7636).
+   - Plaintext tokens are never stored; only SHA-256 hashes are persisted in `{tool_teachermcp_tokens}`.
+   - Tokens can be set with maximum validity windows and revoked instantly.
+2. **Strict Contextual Capability Enforcement**:
+   - All tools verify capabilities via Moodle's native access control (`require_capability()`).
+   - If a teacher lacks grading rights in Course B, calls for that course fail with a permission exception.
+3. **Course & Group Isolation**:
+   - Enforces `is_enrolled()` for student data access.
+   - Enforces `SEPARATEGROUPS` mode and `groups_get_activity_allowed_groups()` so teachers cannot access students or submissions from groups they do not manage.
+4. **Audit Trail & Logging**:
+   - Every tool call triggers a `\tool_teachermcp\event\tool_executed` event in Moodle's standard logstore (`mdl_logstore_standard_log`), recording tool name, execution status, course ID, and token ID without logging sensitive payloads.
+5. **Rate Limiting & Safety Guardrails**:
+   - Direct messaging (`send_student_message`) includes configurable per-hour rate limits and checks recipient contact preferences.
+   - Destructive operations (`delete_activity`) require explicit two-step confirmation (`confirm=true`).
+
+---
+
+## 📦 Installation & Configuration
+
+### 1. Requirements
+- Moodle 4.5+ LTS
+- PHP 8.1 or later (with `curl`, `json`, `zip`, `zlib` extensions)
+- Node.js >= 22.11.0 (for Grunt toolchain and stdio bridge)
+
+### 2. Installation
+1. Place the plugin code into `admin/tool/teachermcp`:
+   ```bash
+   git clone <repository_url> admin/tool/teachermcp
+   ```
+2. Run database upgrade via Moodle CLI:
+   ```bash
+   sudo -u www-data php admin/cli/upgrade.php --non-interactive
+   ```
+3. Purge caches:
+   ```bash
+   sudo -u www-data php admin/cli/purge_caches.php
+   ```
+
+### 3. Web Server Configuration (Authorization Header)
+Moodle endpoints require the `Authorization` header to be passed to PHP:
+
+- **Apache** (`.htaccess` or virtual host config):
+  ```apache
+  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+  ```
+- **Nginx** (`fastcgi_params`):
+  ```nginx
+  fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+  ```
+
+### 4. Capabilities
+- `tool/teachermcp:connectagent`: Allows teachers to create agent connections and use MCP endpoints (granted to editingteacher and manager by default).
+- `tool/teachermcp:manageall`: Allows site administrators to view all site connections and configure settings.
+
+---
+
+## 🛠️ Connecting AI Clients
+
+### Option 1: Claude Desktop (1-Click OAuth 2.0 PKCE)
+Add the following to `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "moodle": {
+      "command": "node",
+      "args": [
+        "/path/to/moodle/admin/tool/teachermcp/bridge/mcp-bridge.mjs",
+        "https://your-moodle.example.com/admin/tool/teachermcp/endpoint.php",
+        "--oauth"
+      ]
+    }
+  }
+}
 ```
-cd existing_repo
-git remote add origin https://git.sebsoft.nl/sebsoft/open-source/moodle-tool_teachermcp.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
-
-* [Set up project integrations](https://git.sebsoft.nl/sebsoft/open-source/moodle-tool_teachermcp/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Option 2: Cursor / Codex / Custom GPT (Bearer Token)
+1. Go to **User Profile > AI Agent (MCP)** (`/admin/tool/teachermcp/my_agent.php`).
+2. Generate a new agent connection and copy the secret token.
+3. Configure your client to send:
+   - Endpoint: `https://your-moodle.example.com/admin/tool/teachermcp/endpoint.php`
+   - Header: `Authorization: Bearer <your_token>`
