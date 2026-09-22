@@ -56,7 +56,7 @@ class get_teacher_courses extends base_tool {
         $onlyactive = !empty($params['only_active']);
         $now = time();
 
-        $courses = enrol_get_all_users_courses($USER->id, true);
+        $courses = enrol_get_all_users_courses($USER->id, true, ['enddate']);
         $result = [];
 
         foreach ($courses as $c) {

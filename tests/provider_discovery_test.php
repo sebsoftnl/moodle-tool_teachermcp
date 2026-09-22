@@ -119,7 +119,7 @@ final class provider_discovery_test extends \advanced_testcase {
         $this->assertSame('tool_teachermcp', $tool->get_component());
         $this->assertSame('example', $tool->get_id());
         $this->assertSame('read', $tool->get_scope());
-        $this->assertSame('moodle/course:view', $tool->get_capability());
+        $this->assertSame('tool/teachermcp:manageall', $tool->get_capability());
         $this->assertSame('tool_teachermcp/enable_example', $tool->get_enabled_setting());
         $this->assertSame(provider_discovery_fake_tool::class, $tool->get_classname());
     }

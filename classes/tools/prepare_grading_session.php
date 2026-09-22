@@ -118,7 +118,8 @@ class prepare_grading_session extends base_tool {
             }
         }
 
-        $students = get_enrolled_users($context, 'mod/assign:submit', $currentgroup, 'u.id, u.firstname, u.lastname, u.email');
+        $userfields = \core_user\fields::for_name()->including('id', 'email')->get_sql('u', false, '', '', false)->selects;
+        $students = get_enrolled_users($context, 'mod/assign:submit', $currentgroup, $userfields);
 
         $submissionsdata = [];
 

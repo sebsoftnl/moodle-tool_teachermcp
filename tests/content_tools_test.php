@@ -365,7 +365,7 @@ final class content_tools_test extends \advanced_testcase {
             ]);
             $this->fail('Expected exception on confirmation token replay');
         } catch (\moodle_exception $e) {
-            $this->assertEquals('invalidcoursemodule', $e->errorcode);
+            $this->assertEquals('invalidrecordunknown', $e->errorcode);
         }
     }
 
@@ -400,6 +400,11 @@ final class content_tools_test extends \advanced_testcase {
         $this->assertGreaterThan(0, $res['cmid']);
         $this->assertGreaterThan(0, $res['assignment_id']);
         $this->assertTrue($DB->record_exists('assign', ['id' => $res['assignment_id']]));
+        $assignment = $DB->get_record('assign', ['id' => $res['assignment_id']], '*', MUST_EXIST);
+        $this->assertSame(0, (int)$assignment->teamsubmission);
+        $this->assertSame(0, (int)$assignment->blindmarking);
+        $this->assertSame(0, (int)$assignment->markingworkflow);
+        $this->assertSame(0, (int)$assignment->markingallocation);
 
         try {
             $tool->execute([

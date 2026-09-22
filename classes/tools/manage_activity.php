@@ -35,7 +35,7 @@ class manage_activity extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Get or update settings of a course activity (e.g. rename, change description, toggle visibility to students).';
+        return 'Get settings for a course activity, or update the name, description, and visibility of a Moodle Page activity.';
     }
 
     public function get_input_schema(): array {
@@ -48,7 +48,7 @@ class manage_activity extends base_tool {
                 ],
                 'action' => [
                     'type' => 'string',
-                    'description' => 'Action to perform: "get_settings" or "update_settings".',
+                    'description' => 'Action to perform: "get_settings" for any activity or "update_settings" for a Moodle Page activity.',
                     'enum' => ['get_settings', 'update_settings'],
                     'default' => 'get_settings',
                 ],
@@ -95,8 +95,13 @@ class manage_activity extends base_tool {
         }
 
         if ($action === 'update_settings') {
+            if ($cm->modname !== 'page') {
+                throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null,
+                    'Updating settings is currently supported only for Page activities.');
+            }
             // H7: Use core modlib API to update instance and grade item definitions.
-            $moduleinfo = get_moduleinfo_data($cm, $course);
+            $coursemodule = get_coursemodule_from_id('page', $cm->id, 0, false, MUST_EXIST);
+            [, , , $moduleinfo] = get_moduleinfo_data($coursemodule, $course);
             $hascontentupdates = false;
 
             if (isset($params['name'])) {
@@ -116,8 +121,18 @@ class manage_activity extends base_tool {
                 $hascontentupdates = true;
             }
 
+            $moduleinfo->page = [
+                'text' => $instancerecord->content,
+                'format' => $instancerecord->contentformat,
+                'itemid' => 0,
+            ];
+            $moduleinfo->display = $instancerecord->display;
+            $moduleinfo->printintro = 0;
+            $moduleinfo->printlastmodified = 0;
+            $moduleinfo->revision = $instancerecord->revision;
+
             if ($hascontentupdates) {
-                update_moduleinfo($cm, $moduleinfo, $course);
+                update_moduleinfo($coursemodule, $moduleinfo, $course);
             }
 
             // H7: Changing visibility requires moodle/course:activityvisibility.

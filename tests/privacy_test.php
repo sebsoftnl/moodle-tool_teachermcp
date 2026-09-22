@@ -89,8 +89,9 @@ final class privacy_test extends \advanced_testcase {
 
         // 2. Verify context list contains both user context and course context.
         $contextlist = \tool_teachermcp\privacy\provider::get_contexts_for_userid($user->id);
-        $this->assertContains((int)$usercontext->id, $contextlist->get_contextids());
-        $this->assertContains((int)$coursecontext->id, $contextlist->get_contextids());
+        $contextids = array_map('intval', $contextlist->get_contextids());
+        $this->assertContains((int)$usercontext->id, $contextids);
+        $this->assertContains((int)$coursecontext->id, $contextids);
 
         // 3. Export user data.
         $approvedlist = new \core_privacy\local\request\approved_contextlist(

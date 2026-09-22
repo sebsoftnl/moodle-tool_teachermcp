@@ -21,7 +21,7 @@ defined('MOODLE_INTERNAL') || die();
 use moodle_exception;
 use stdClass;
 use context_course;
-use question_version_status;
+use core_question\local\bank\question_version_status;
 
 /**
  * MCP tool for interacting with the Moodle Question Bank (Moodle 4.0+ schema).
@@ -377,7 +377,8 @@ class manage_question_bank extends base_tool {
                     'Category does not belong to this course.');
             }
         } else {
-            $category = question_get_default_category($context->id);
+            $contexts = new \core_question\local\bank\question_edit_contexts($context);
+            $category = question_make_default_categories($contexts->all());
         }
 
         $this->validate_question_options($qtype, $params);
@@ -552,6 +553,15 @@ class manage_question_bank extends base_tool {
         $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : (float)$existing->penalty;
         $form->status = question_version_status::QUESTION_STATUS_READY;
 
+        if ($existing->qtype === 'truefalse') {
+            $existingoptions = $DB->get_record('question_truefalse', ['question' => $existing->id], '*', MUST_EXIST);
+            $trueanswer = $DB->get_record('question_answers', ['id' => $existingoptions->trueanswer], '*', MUST_EXIST);
+            $form->correctanswer = (int)$trueanswer->fraction;
+            $form->feedbacktrue = ['text' => $trueanswer->feedback, 'format' => $trueanswer->feedbackformat];
+            $falseanswer = $DB->get_record('question_answers', ['id' => $existingoptions->falseanswer], '*', MUST_EXIST);
+            $form->feedbackfalse = ['text' => $falseanswer->feedback, 'format' => $falseanswer->feedbackformat];
+        }
+
         if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
             $this->validate_question_options($existing->qtype, $params);
             $options = $params['options'];
@@ -560,9 +570,15 @@ class manage_question_bank extends base_tool {
             $form->fraction = [];
             $form->feedback = [];
 
-            // B4: shortanswer requires plain strings, multichoice requires editor arrays.
             if ($existing->qtype === 'shortanswer') {
-                $form->usecase = 0;
+                $existingoptions = $DB->get_record('qtype_shortanswer_options', ['questionid' => $existing->id], '*', MUST_EXIST);
+                $form->usecase = (int)$existingoptions->usecase;
+                $existinganswers = $DB->get_records('question_answers', ['question' => $existing->id], 'id ASC');
+                foreach ($existinganswers as $idx => $answer) {
+                    $form->answer[$idx] = $answer->answer;
+                    $form->fraction[$idx] = (string)(float)$answer->fraction;
+                    $form->feedback[$idx] = ['text' => $answer->feedback, 'format' => $answer->feedbackformat];
+                }
                 foreach ($options as $idx => $opt) {
                     $form->answer[$idx] = clean_param($opt['answer'], PARAM_TEXT);
                     $form->fraction[$idx] = (string)(float)$opt['fraction'];
@@ -581,6 +597,10 @@ class manage_question_bank extends base_tool {
                 $form->answernumbering = 'abc';
                 $form->showstandardinstruction = 0;
             }
+        }
+
+        if ($existing->qtype === 'truefalse' && array_key_exists('correct_truefalse', $params)) {
+            $form->correctanswer = !empty($params['correct_truefalse']) ? 1 : 0;
         }
 
         $existing->modifiedby = $USER->id;
@@ -626,7 +646,7 @@ class manage_question_bank extends base_tool {
                 'Question does not belong to this course.');
         }
 
-        require_capability('moodle/question:manage', $qcontext);
+        question_require_capability_on($existing, 'edit');
 
         // N3: Server-side confirmation token pattern.
         $token = trim($params['confirm_token'] ?? $params['confirmation_token'] ?? '');

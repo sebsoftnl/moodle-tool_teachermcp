@@ -19,6 +19,7 @@ namespace tool_teachermcp;
 defined('MOODLE_INTERNAL') || die();
 
 use Exception;
+use moodle_exception;
 use Throwable;
 use stdClass;
 use context_system;
@@ -373,11 +374,14 @@ class server {
             $other['errorclass'] = (new \ReflectionClass($error))->getShortName();
         }
 
-        \tool_teachermcp\event\tool_executed::create([
+        $eventdata = [
             'context' => $eventcontext,
-            'courseid' => $courseid ?: SITEID,
             'other' => $other,
-        ])->trigger();
+        ];
+        if ($courseid && $eventcontext instanceof \context_course) {
+            $eventdata['courseid'] = $courseid;
+        }
+        \tool_teachermcp\event\tool_executed::create($eventdata)->trigger();
     }
 
     /**

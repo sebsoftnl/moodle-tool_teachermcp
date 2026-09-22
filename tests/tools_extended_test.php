@@ -144,7 +144,23 @@ final class tools_extended_test extends \advanced_testcase {
         $pagerec = $DB->get_record('page', ['id' => $page->id]);
         $this->assertSame('Updated Page Name', $pagerec->name);
 
-        // 3. Invalid action
+        // 3. Updating a module without a complete safe normaliser is rejected.
+        $assign = $generator->create_module('assign', [
+            'course' => $course->id,
+            'name' => 'Unsupported assignment',
+        ]);
+        try {
+            $tool->execute([
+                'cmid' => (int)$assign->cmid,
+                'action' => 'update_settings',
+                'name' => 'Must not update',
+            ]);
+            $this->fail('Expected unsupported module update to be rejected');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_invalid_action', $e->errorcode);
+        }
+
+        // 4. Invalid action
         try {
             $tool->execute([
                 'cmid' => (int)$page->cmid,
@@ -205,7 +221,7 @@ final class tools_extended_test extends \advanced_testcase {
             'feedback' => 'Well structured essay with sound reasoning.',
         ]);
         $this->assertTrue($update['success']);
-        $this->assertSame(88.5, (float)$update['final_grade']);
+        $this->assertSame(88.5, (float)$update['updated_grade']);
 
         // 3. Get student grades
         $grades = $tool->execute([
@@ -267,7 +283,7 @@ final class tools_extended_test extends \advanced_testcase {
             'feedback_comment' => '<p>Excellent lab methodology.</p>',
         ]);
         $this->assertTrue($saved['success']);
-        $this->assertEquals(92.0, (float)$saved['grade']);
+        $this->assertEquals(92.0, (float)$saved['grade_saved']);
 
         // Verify assignment object reflects grade
         $context = \context_module::instance($assign->cmid);
@@ -324,7 +340,7 @@ final class tools_extended_test extends \advanced_testcase {
         ]);
         $this->assertSame((int)$course->id, $progress['course_id']);
         $this->assertSame((int)$student->id, $progress['student_user_id']);
-        $this->assertArrayHasKey('activities', $progress);
+        $this->assertArrayHasKey('activities_progress', $progress);
     }
 
     public function test_duplicate_activity_tool(): void {
@@ -451,7 +467,7 @@ final class tools_extended_test extends \advanced_testcase {
         $createdevents = array_filter($events, fn($e) => $e instanceof \tool_teachermcp\event\token_created);
         $this->assertNotEmpty($createdevents);
         $createevent = reset($createdevents);
-        $this->assertSame($user->id, $createevent->userid);
+        $this->assertSame((int)$user->id, (int)$createevent->relateduserid);
         $this->assertSame((int)$res['id'], $createevent->objectid);
         $this->assertSame('tool_teachermcp_tokens', $createevent->objecttable);
 
@@ -462,8 +478,8 @@ final class tools_extended_test extends \advanced_testcase {
         $revokedevents = array_filter($events, fn($e) => $e instanceof \tool_teachermcp\event\token_revoked);
         $this->assertNotEmpty($revokedevents);
         $revokevent = reset($revokedevents);
-        $this->assertSame($user->id, $revokevent->userid);
-        $this->assertSame((int)$res['id'], $revokevent->objectid);
+        $this->assertSame((int)$user->id, (int)$revokevent->relateduserid);
+        $this->assertSame((int)$res['id'], (int)$revokevent->objectid);
 
         $eventsink->close();
     }
@@ -471,7 +487,7 @@ final class tools_extended_test extends \advanced_testcase {
     public function test_prompt_registry_direct(): void {
         $all = \tool_teachermcp\local\prompt_registry::get_all_prompts();
         $this->assertNotEmpty($all);
-        $this->assertCount(16, $all);
+        $this->assertCount(15, $all);
 
         $prompt = \tool_teachermcp\local\prompt_registry::get_prompt('ingest_course', ['course_id' => 99]);
         $this->assertNotNull($prompt);

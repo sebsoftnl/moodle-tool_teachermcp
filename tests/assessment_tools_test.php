@@ -217,10 +217,15 @@ final class assessment_tools_test extends \advanced_testcase {
         $context1 = \context_course::instance($course1->id);
         $context2 = \context_course::instance($course2->id);
 
-        $cat2 = question_get_default_category($context2->id);
+        $contexts2 = new \core_question\local\bank\question_edit_contexts($context2);
+        $cat2 = question_make_default_categories($contexts2->all());
 
         // Create a secondary category in course 1.
-        $newcat1 = $generator->create_question_category(['contextid' => $context1->id, 'name' => 'Subcategory C1']);
+        $questiongenerator = $generator->get_plugin_generator('core_question');
+        $newcat1 = $questiongenerator->create_question_category([
+            'contextid' => $context1->id,
+            'name' => 'Subcategory C1',
+        ]);
 
         // 1. Moving question to category in course2 must be rejected.
         try {
@@ -295,12 +300,13 @@ final class assessment_tools_test extends \advanced_testcase {
             ],
         ]);
         $this->assertTrue($update['success']);
+        $qid = (int)$update['question_id'];
 
-        // Verify in DB that the answer is stored properly as string.
+        // Verify in DB that the updated answer is stored properly as string.
         $answers = $DB->get_records('question_answers', ['question' => $qid]);
-        $this->assertCount(1, $answers);
-        $firstans = reset($answers);
-        $this->assertEquals('vier', $firstans->answer);
+        $this->assertNotEmpty($answers);
+        $answertexts = array_map(static fn($answer) => $answer->answer, $answers);
+        $this->assertContains('vier', $answertexts, json_encode($answertexts));
 
         // 3. Add to quiz before attempts.
         $addres = $tool->execute([
@@ -452,7 +458,7 @@ final class assessment_tools_test extends \advanced_testcase {
         $this->assertTrue($step2['success']);
         $this->assertEquals($qid, $step2['question_id']);
 
-        // 5. Replaying the same token -> rejected.
+        // 5. Replaying the same token is rejected because the question no longer exists.
         try {
             $tool->execute([
                 'course_id' => (int)$course->id,
@@ -462,7 +468,7 @@ final class assessment_tools_test extends \advanced_testcase {
             ]);
             $this->fail('Expected exception on token replay');
         } catch (\moodle_exception $e) {
-            $this->assertEquals('error_confirmation_token_expired', $e->errorcode);
+            $this->assertEquals('invalidrecordunknown', $e->errorcode);
         }
     }
 

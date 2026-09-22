@@ -141,7 +141,7 @@ class create_assignment extends base_tool {
                 throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
             }
             $totalweight = 0.0;
-            $intro .= '<div class="alert alert-secondary mt-3"><h5>' . get_string('rubric', 'grades') . '</h5><ul class="mb-0">';
+            $intro .= '<div class="alert alert-secondary mt-3"><h5>' . get_string('rubric', 'gradingform_rubric') . '</h5><ul class="mb-0">';
             foreach ($rubric as $criterion) {
                 if (!is_array($criterion)) {
                     throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
@@ -191,6 +191,7 @@ class create_assignment extends base_tool {
         $moduleinfo->modulename = 'assign';
         $moduleinfo->course = $course->id;
         $moduleinfo->section = $sectionnum;
+        $moduleinfo->cmidnumber = '';
         $moduleinfo->name = $title;
         $moduleinfo->introeditor = ['text' => $intro, 'format' => FORMAT_HTML, 'itemid' => 0];
         $moduleinfo->alwaysshowdescription = 1;
@@ -207,6 +208,13 @@ class create_assignment extends base_tool {
         $moduleinfo->assignsubmission_file_enabled = $allowfile ? 1 : 0;
         $moduleinfo->assignsubmission_file_maxfiles = $maxfiles;
         $moduleinfo->assignsubmission_file_maxsizebytes = 0;
+        $moduleinfo->teamsubmission = 0;
+        $moduleinfo->requireallteammemberssubmit = 0;
+        $moduleinfo->teamsubmissiongroupingid = 0;
+        $moduleinfo->preventsubmissionnotingroup = 0;
+        $moduleinfo->blindmarking = 0;
+        $moduleinfo->markingworkflow = 0;
+        $moduleinfo->markingallocation = 0;
         $moduleinfo->visible = $visible;
         $moduleinfo->visibleold = $visible;
         $moduleinfo->groupmode = 0;
