@@ -78,6 +78,10 @@ class duplicate_activity extends base_tool {
             $targetcourse = $sourcecourse;
         }
 
+        $targetcontext = \context_course::instance($targetcourse->id);
+        require_capability('moodle/backup:backupactivity', $sourcecontext);
+        require_capability('moodle/restore:restoreactivity', $targetcontext);
+
         // Check if plugin supports backup.
         if (!plugin_supports('mod', $cm->modname, FEATURE_BACKUP_MOODLE2)) {
             throw new moodle_exception('duplicatenosupport', 'error', '', null,

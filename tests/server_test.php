@@ -238,5 +238,126 @@ final class server_test extends \advanced_testcase {
         ];
         $this->assertTrue(server::is_tool_allowed_by_token('delete_activity', $tokenSpecific));
         $this->assertFalse(server::is_tool_allowed_by_token('get_my_profile', $tokenSpecific));
+
+        // 4. Token restricted to curriculum preset (read, write).
+        $tokenCurriculum = (object)[
+            'permissions' => json_encode(['scopes' => ['read', 'write']]),
+        ];
+        $this->assertTrue(server::is_tool_allowed_by_token('create_assignment', $tokenCurriculum));
+        $this->assertTrue(server::is_tool_allowed_by_token('manage_content_activity', $tokenCurriculum));
+        $this->assertFalse(server::is_tool_allowed_by_token('grade_submission', $tokenCurriculum));
+        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenCurriculum));
+    }
+
+    public function test_prompts_list_and_get(): void {
+        $this->resetAfterTest(true);
+
+        $server = new server();
+
+        // 1. Check initialize returns prompts capability.
+        $initresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'initialize',
+        ]));
+        $this->assertArrayHasKey('result', $initresponse);
+        $this->assertArrayHasKey('prompts', $initresponse['result']['capabilities']);
+
+        // 2. Test prompts/list.
+        $listresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'prompts/list',
+        ]));
+        $this->assertArrayHasKey('result', $listresponse);
+        $prompts = $listresponse['result']['prompts'];
+        $this->assertIsArray($prompts);
+        $this->assertGreaterThanOrEqual(10, count($prompts));
+
+        $names = array_column($prompts, 'name');
+        $this->assertContains('ingest_course', $names);
+        $this->assertContains('create_page', $names);
+        $this->assertContains('h5p_flashcards', $names);
+        $this->assertContains('scaffold_quiz', $names);
+
+        // 3. Test prompts/get for existing prompt with arguments.
+        $getresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 3,
+            'method' => 'prompts/get',
+            'params' => [
+                'name' => 'ingest_course',
+                'arguments' => ['course_id' => 42],
+            ],
+        ]));
+        $this->assertArrayHasKey('result', $getresponse);
+        $messages = $getresponse['result']['messages'];
+        $this->assertNotEmpty($messages);
+        $this->assertStringContainsString('42', $messages[0]['content']['text']);
+
+        // 4. Test prompts/get for nonexistent prompt.
+        $badresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 4,
+            'method' => 'prompts/get',
+            'params' => [
+                'name' => 'nonexistent_prompt',
+            ],
+        ]));
+        $this->assertArrayHasKey('error', $badresponse);
+        $this->assertSame(-32602, $badresponse['error']['code']);
+    }
+
+    public function test_resources_list_templates_and_read(): void {
+        $this->resetAfterTest(true);
+
+        $server = new server();
+
+        // 1. Check initialize returns resources capability.
+        $initresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'initialize',
+        ]));
+        $this->assertArrayHasKey('result', $initresponse);
+        $this->assertArrayHasKey('resources', $initresponse['result']['capabilities']);
+
+        // 2. Test resources/list.
+        $listresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 2,
+            'method' => 'resources/list',
+        ]));
+        $this->assertArrayHasKey('result', $listresponse);
+        $resources = $listresponse['result']['resources'];
+        $this->assertIsArray($resources);
+        $this->assertNotEmpty($resources);
+        $this->assertSame('moodle://courses', $resources[0]['uri']);
+
+        // 3. Test resources/templates/list.
+        $temresponse = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 3,
+            'method' => 'resources/templates/list',
+        ]));
+        $this->assertArrayHasKey('result', $temresponse);
+        $templates = $temresponse['result']['resourceTemplates'];
+        $this->assertIsArray($templates);
+        $this->assertCount(3, $templates);
+
+        $uris = array_column($templates, 'uriTemplate');
+        $this->assertContains('moodle://course/{course_id}/syllabus', $uris);
+        $this->assertContains('moodle://course/{course_id}/announcements', $uris);
+        $this->assertContains('moodle://activity/{cmid}/rubric', $uris);
+
+        // 4. Test resources/read for invalid URI.
+        $badread = $server->handle_payload(json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 4,
+            'method' => 'resources/read',
+            'params' => ['uri' => 'moodle://invalid/uri'],
+        ]));
+        $this->assertArrayHasKey('error', $badread);
+        $this->assertSame(-32602, $badread['error']['code']);
     }
 }

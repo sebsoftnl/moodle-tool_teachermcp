@@ -17,8 +17,10 @@ test('saveTokenStore creates a private Unix token cache', () => {
             endpoint: {access_token: 'test-token'},
         });
 
-        assert.equal(fs.statSync(path.dirname(tokenFilePath)).mode & 0o777, 0o700);
-        assert.equal(fs.statSync(tokenFilePath).mode & 0o777, 0o600);
+        if (process.platform !== 'win32') {
+            assert.equal(fs.statSync(path.dirname(tokenFilePath)).mode & 0o777, 0o700);
+            assert.equal(fs.statSync(tokenFilePath).mode & 0o777, 0o600);
+        }
         assert.deepEqual(JSON.parse(fs.readFileSync(tokenFilePath, 'utf8')), {
             endpoint: {access_token: 'test-token'},
         });

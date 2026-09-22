@@ -61,7 +61,7 @@ class manage_course_completion extends base_tool {
     }
 
     public function execute(array $params) {
-        global $CFG, $DB;
+        global $CFG, $DB, $USER;
         require_once($CFG->libdir . '/completionlib.php');
 
         $courseid = (int)($params['course_id'] ?? 0);

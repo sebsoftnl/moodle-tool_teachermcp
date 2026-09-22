@@ -17,7 +17,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 // Default English fallback strings (managed and localized via standard Moodle AMOS).
 let I18N = /* __MOODLE_I18N_INJECT_START__ */ {
@@ -111,11 +111,11 @@ async function loadStringsFromMoodle(baseUrl, lang) {
 function openBrowser(url) {
     const platform = process.platform;
     if (platform === 'win32') {
-        exec(`start "" "${url}"`);
+        spawn('cmd.exe', ['/c', 'start', '""', url], { windowsVerbatimArguments: true, stdio: 'ignore' });
     } else if (platform === 'darwin') {
-        exec(`open "${url}"`);
+        spawn('open', [url], { stdio: 'ignore' });
     } else {
-        exec(`xdg-open "${url}"`);
+        spawn('xdg-open', [url], { stdio: 'ignore' });
     }
 }
 

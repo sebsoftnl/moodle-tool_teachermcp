@@ -158,6 +158,18 @@ $string['prompt_scaffold_title'] = 'Scaffold Complete Assessment Unit';
 $string['prompt_scaffold_desc'] = 'Creates a ready-to-use quiz with 5 multiple-choice questions, feedback explanations, and timing constraints.';
 $string['prompt_scaffold_text'] = 'Use "scaffold_assessment_unit" to create a formative quiz of 5 multiple-choice questions in course ID {$a->courseid}, section 2. Base questions on the course material, include didactic feedback for distractors, and keep the quiz hidden for teacher review.';
 
+$string['prompt_assignment_title'] = 'Scaffold Assignment with Evaluation Rubric';
+$string['prompt_assignment_desc'] = 'Creates a rich assignment (mod_assign) with instructions, due date, submission rules, and rubric criteria.';
+$string['prompt_assignment_text'] = 'Use "create_assignment" to create an assignment in course ID {$a->courseid}, section 3 titled "Critical Essay on AI Ethics". Include comprehensive instructions, set the due date 14 days from now, allow online text and PDF submissions, and embed rubric evaluation criteria for Argumentation (50%) and Clarity (50%).';
+
+$string['prompt_announcement_title'] = 'Post Course Announcement';
+$string['prompt_announcement_desc'] = 'Posts an official teacher announcement directly to the course Announcements forum.';
+$string['prompt_announcement_text'] = 'Use "manage_course_forum" with action="post_announcement" in course ID {$a->courseid}. Post an announcement with subject "Welcome to Week 3: Getting Started with Assessments" summarizing this week\'s milestones and office hours.';
+
+$string['prompt_calendar_title'] = 'Schedule Course Review Session or Office Hours';
+$string['prompt_calendar_desc'] = 'Schedules a deadline or live review session onto the Moodle course calendar.';
+$string['prompt_calendar_text'] = 'Use "manage_course_calendar" with action="create_event" in course ID {$a->courseid}. Schedule a 60-minute "Midterm Exam Review Session" for tomorrow at 14:00 with meeting notes and preparation guidelines.';
+
 $string['prompt_atrisk_title'] = 'Identify Students at Academic Risk';
 $string['prompt_atrisk_desc'] = 'Calculates risk signals from inactivity, overdue tasks, and failing scores.';
 $string['prompt_atrisk_text'] = 'Run "detect_at_risk_students" for course ID {$a->courseid}. Which students are inactive or have missing work? Draft a motivating check-in message for the 3 students with highest risk that I can send via "send_student_message".';
@@ -281,9 +293,17 @@ $string['error_item_not_found'] = 'Item not found.';
 $string['error_invalid_params'] = 'Invalid parameters: {$a}';
 $string['error_grade_locked'] = 'Grade item is locked.';
 $string['error_grade_out_of_range'] = 'Grade is out of allowed range.';
+$string['error_invalid_token'] = 'Invalid or revoked agent authentication token.';
+$string['error_expired_token'] = 'Agent authentication token has expired.';
+$string['error_invalid_client'] = 'Invalid client authentication or unknown client.';
+$string['error_unsupported_response_type'] = 'The requested response type is not supported.';
+$string['error_unsupported_grant_type'] = 'The authorization grant type is not supported.';
+$string['error_invalid_grant'] = 'The provided authorization grant is invalid, expired, or already used.';
+$string['error_registration_disabled'] = 'Dynamic client registration is disabled by the site administrator.';
 $string['event_token_created'] = 'Teacher MCP token created';
 $string['event_token_revoked'] = 'Teacher MCP token revoked';
 $string['event_tool_executed'] = 'Teacher MCP tool executed';
+$string['task_cleanup'] = 'Clean up expired Teacher MCP authorization codes and tokens';
 
 // Admin dashboard strings (L7).
 $string['stat_active_tokens'] = 'Active Agent Connections';
@@ -374,3 +394,18 @@ $string['tokens'] = 'Access tokens';
 $string['oauth_codes'] = 'OAuth authorization codes';
 $string['course_assets'] = 'Course assets';
 $string['revoked'] = 'Revoked';
+
+// Token role presets and MCP resources.
+$string['scope_preset'] = 'Permission Role Preset';
+$string['scope_preset_help'] = 'Restrict what actions this AI agent connection is allowed to perform.';
+$string['scope_preset_full'] = 'Full Co-Pilot (Read, Author, Grade, Messages, Delete)';
+$string['scope_preset_grading'] = 'Grading Assistant (Read submissions, Post grades & feedback)';
+$string['scope_preset_curriculum'] = 'Curriculum Designer (Read materials, Create pages, quizzes & activities)';
+$string['scope_preset_readonly'] = 'Read-Only Observer / Tutor (Ingest syllabus & course contents only)';
+$string['mcp_resources_title'] = 'MCP Read-Only Dynamic Resources';
+$string['mcp_resources_desc'] = 'Standardized read-only URIs that AI agents can inspect to obtain real-time course structure, announcements, and evaluation rubrics.';
+$string['prompt_cat_communication'] = 'Course Communication';
+$string['prompt_badge_communication'] = 'Forums & Messages';
+$string['prompt_cat_calendar'] = 'Course Scheduling';
+$string['prompt_badge_calendar'] = 'Calendar & Deadlines';
+

@@ -158,6 +158,18 @@ $string['prompt_scaffold_title'] = 'Formatieve Toets Volledig Assembleren';
 $string['prompt_scaffold_desc'] = 'Maakt in één handeling een toets aan in een specifieke sectie met 5 meerkeuzevragen en 1 open vraag inclusief feedback.';
 $string['prompt_scaffold_text'] = 'Gebruik "scaffold_assessment_unit" om een formatieve toets van 5 meerkeuzevragen aan te maken in cursus ID {$a->courseid}, sectie 2. Baseer de vragen op de lesstof, geef bij elk fout antwoord een duidelijke didactische uitleg en houd de toets verborgen voor controle.';
 
+$string['prompt_assignment_title'] = 'Opdracht met Beoordelingsrubriek Assembleren';
+$string['prompt_assignment_desc'] = 'Maakt een rijke Moodle-opdracht (mod_assign) aan met inleverregels, deadlines en rubriekcriteria.';
+$string['prompt_assignment_text'] = 'Gebruik "create_assignment" om een opdracht aan te maken in cursus ID {$a->courseid}, sectie 3 getiteld "Essay over AI-ethiek". Voeg gedetailleerde instructies toe, stel de inleverdeadline in over 14 dagen en voeg rubriekcriteria toe voor Argumentatie (50%) en Helderheid (50%).';
+
+$string['prompt_announcement_title'] = 'Cursusaankondiging Plaatsen';
+$string['prompt_announcement_desc'] = 'Plaatst een officieel docentbericht direct in het Nieuwsforum van de cursus.';
+$string['prompt_announcement_text'] = 'Gebruik "manage_course_forum" met action="post_announcement" in cursus ID {$a->courseid}. Plaats een mededeling met als onderwerp "Welkom bij week 3" met daarin de mijlpalen van deze week en de spreekuren.';
+
+$string['prompt_calendar_title'] = 'Vragenuur of Herhalingsles Inplannen';
+$string['prompt_calendar_desc'] = 'Plant een deadline of live bijeenkomst direct in op de Moodle cursuskalender.';
+$string['prompt_calendar_text'] = 'Gebruik "manage_course_calendar" met action="create_event" in cursus ID {$a->courseid}. Plan een bijeenkomst van 60 minuten in voor morgen om 14:00 getiteld "Vragenuur ter voorbereiding op tentamen".';
+
 $string['prompt_atrisk_title'] = 'Studenten met Uitvalrisico Opsporen';
 $string['prompt_atrisk_desc'] = 'Berekent risicoscores op basis van inactiviteit, gemiste deadlines en cijfers.';
 $string['prompt_atrisk_text'] = 'Voer "detect_at_risk_students" uit voor cursus ID {$a->courseid}. Welke studenten zijn inactief of hebben opdrachten gemist? Formuleer voor de 3 studenten met het hoogste risico een motiverend concept-bericht voor "send_student_message".';
@@ -281,9 +293,17 @@ $string['error_item_not_found'] = 'Item niet gevonden.';
 $string['error_invalid_params'] = 'Ongeldige parameters: {$a}';
 $string['error_grade_locked'] = 'Beoordelingsitem is vergrendeld.';
 $string['error_grade_out_of_range'] = 'Cijfer valt buiten het toegestane bereik.';
+$string['error_invalid_token'] = 'Ongeldig of ingetrokken agent-authenticatietoken.';
+$string['error_expired_token'] = 'Agent-authenticatietoken is verlopen.';
+$string['error_invalid_client'] = 'Ongeldige clientauthenticatie of onbekende client.';
+$string['error_unsupported_response_type'] = 'Het opgevraagde responstype wordt niet ondersteund.';
+$string['error_unsupported_grant_type'] = 'Het autorisatietype wordt niet ondersteund.';
+$string['error_invalid_grant'] = 'Het verstrekte autorisatiebewijs is ongeldig, verlopen of reeds gebruikt.';
+$string['error_registration_disabled'] = 'Dynamische clientregistratie is uitgeschakeld door de beheerder.';
 $string['event_token_created'] = 'Teacher MCP-token aangemaakt';
 $string['event_token_revoked'] = 'Teacher MCP-token ingetrokken';
 $string['event_tool_executed'] = 'Teacher MCP-tool uitgevoerd';
+$string['task_cleanup'] = 'Verlopen Teacher MCP-autorisatiecodes en tokens opschonen';
 
 // Admin dashboard strings (L7).
 $string['stat_active_tokens'] = 'Actieve agent-koppelingen';
@@ -374,3 +394,18 @@ $string['tokens'] = 'Toegangstokens';
 $string['oauth_codes'] = 'OAuth-autorisatiecodes';
 $string['course_assets'] = 'Cursusbestanden';
 $string['revoked'] = 'Ingetrokken';
+
+// Token role presets and MCP resources.
+$string['scope_preset'] = 'Machtigingsprofiel / Rol';
+$string['scope_preset_help'] = 'Beperk welke acties deze AI-agentverbinding mag uitvoeren.';
+$string['scope_preset_full'] = 'Volledige Co-Pilot (Lezen, Schrijven, Nakijken, Berichten, Verwijderen)';
+$string['scope_preset_grading'] = 'Nakijkassistent (Inzendingen inzien, Cijfers & Feedback geven)';
+$string['scope_preset_curriculum'] = 'Onderwijsontwerper (Lesstof lezen, Pagina\'s, Toetsen & Opdrachten bouwen)';
+$string['scope_preset_readonly'] = 'Alleen Lezen / Tutor (Alleen syllabus en cursusinhoud doorgronden)';
+$string['mcp_resources_title'] = 'Dynamische MCP Resources (Alleen Lezen)';
+$string['mcp_resources_desc'] = 'Gestandaardiseerde URI\'s waarmee AI-agents actuele cursusstructuur, mededelingen en rubrieken direct kunnen inlezen.';
+$string['prompt_cat_communication'] = 'Cursuscommunicatie';
+$string['prompt_badge_communication'] = 'Forums & Berichten';
+$string['prompt_cat_calendar'] = 'Planning & Agenda';
+$string['prompt_badge_calendar'] = 'Kalender & Deadlines';
+

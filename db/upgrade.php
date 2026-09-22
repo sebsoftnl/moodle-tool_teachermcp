@@ -195,5 +195,22 @@ function xmldb_tool_teachermcp_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026091904, 'tool', 'teachermcp');
     }
 
+    if ($oldversion < 2026091907) {
+        // Add timeexpires index to tool_teachermcp_tokens and tool_teachermcp_oauth_codes for fast cleanup.
+        $tabletokens = new xmldb_table('tool_teachermcp_tokens');
+        $indextokensexp = new xmldb_index('timeexpires_idx', XMLDB_INDEX_NOTUNIQUE, ['timeexpires']);
+        if ($dbman->table_exists($tabletokens) && !$dbman->index_exists($tabletokens, $indextokensexp)) {
+            $dbman->add_index($tabletokens, $indextokensexp);
+        }
+
+        $tablecodes = new xmldb_table('tool_teachermcp_oauth_codes');
+        $indexcodesexp = new xmldb_index('timeexpires_idx', XMLDB_INDEX_NOTUNIQUE, ['timeexpires']);
+        if ($dbman->table_exists($tablecodes) && !$dbman->index_exists($tablecodes, $indexcodesexp)) {
+            $dbman->add_index($tablecodes, $indexcodesexp);
+        }
+
+        upgrade_plugin_savepoint(true, 2026091907, 'tool', 'teachermcp');
+    }
+
     return true;
 }

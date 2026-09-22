@@ -94,6 +94,15 @@
                                 <label for="agentname" class="small font-weight-bold text-muted mb-1">{{#str}}agent_name, tool_teachermcp{{/str}}</label>
                                 <input type="text" name="agentname" id="agentname" class="form-control form-control-sm bg-white" placeholder="{{#str}}agent_name_help, tool_teachermcp{{/str}}" required>
                             </div>
+                            <div class="form-group mb-2">
+                                <label for="scope_preset" class="small font-weight-bold text-muted mb-1">{{#str}}scope_preset, tool_teachermcp{{/str}}</label>
+                                <select name="scope_preset" id="scope_preset" class="form-control form-control-sm custom-select bg-white">
+                                    <option value="full" selected>{{#str}}scope_preset_full, tool_teachermcp{{/str}}</option>
+                                    <option value="grading">{{#str}}scope_preset_grading, tool_teachermcp{{/str}}</option>
+                                    <option value="curriculum">{{#str}}scope_preset_curriculum, tool_teachermcp{{/str}}</option>
+                                    <option value="readonly">{{#str}}scope_preset_readonly, tool_teachermcp{{/str}}</option>
+                                </select>
+                            </div>
                             <div class="form-group mb-3">
                                 <label for="validity" class="small font-weight-bold text-muted mb-1">{{#str}}validity_period, tool_teachermcp{{/str}}</label>
                                 <select name="validity" id="validity" class="form-control form-control-sm custom-select bg-white">
@@ -194,6 +203,11 @@
                             <a class="nav-link" id="chatgpt-tab" data-toggle="tab" data-bs-toggle="tab" href="#chatgpt" role="tab">{{#str}}tab_chatgpt, tool_teachermcp{{/str}}</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" id="resources-tab" data-toggle="tab" data-bs-toggle="tab" href="#resourcestab" role="tab">
+                                <i class="fa fa-database text-info mr-1 me-1"></i>Resources
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link font-weight-bold" id="skill-tab" data-toggle="tab" data-bs-toggle="tab" href="#skilltab" role="tab">
                                 <i class="fa fa-graduation-cap mr-1 me-1 text-primary"></i>{{#str}}tab_agent_instructions, tool_teachermcp{{/str}}
                             </a>
@@ -284,6 +298,39 @@
                                 <li class="mb-1">{{chatgpt_step3_text}}</li>
                                 <li class="mb-1">{{#str}}chatgpt_step4, tool_teachermcp{{/str}}</li>
                             </ol>
+                        </div>
+
+                        <!-- MCP Dynamic Resources Tab -->
+                        <div class="tab-pane fade" id="resourcestab" role="tabpanel">
+                            <h6 class="font-weight-bold text-dark">{{#str}}mcp_resources_title, tool_teachermcp{{/str}}</h6>
+                            <p class="small text-muted mb-3">{{#str}}mcp_resources_desc, tool_teachermcp{{/str}}</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover border small mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>URI / Template</th>
+                                            <th>Resource</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#mcp_resources}}
+                                        <tr>
+                                            <td><code class="user-select-all text-primary">{{uri}}</code></td>
+                                            <td class="font-weight-bold">{{name}}</td>
+                                            <td class="text-muted">{{description}}</td>
+                                        </tr>
+                                        {{/mcp_resources}}
+                                        {{#mcp_resource_templates}}
+                                        <tr>
+                                            <td><code class="user-select-all text-info">{{uriTemplate}}</code></td>
+                                            <td class="font-weight-bold">{{name}}</td>
+                                            <td class="text-muted">{{description}}</td>
+                                        </tr>
+                                        {{/mcp_resource_templates}}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- AI Agent Skill & Instructions Tab -->

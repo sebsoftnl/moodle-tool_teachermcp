@@ -62,6 +62,8 @@ class server {
         'manage_activity' => 'write',
         'manage_course_completion' => 'write',
         'duplicate_activity' => 'write',
+        'create_assignment' => 'write',
+        'manage_course_calendar' => 'write',
 
         // Grade tools.
         'prepare_grading_session' => 'grade',
@@ -72,6 +74,7 @@ class server {
 
         // Message tools.
         'send_student_message' => 'message',
+        'manage_course_forum' => 'message',
 
         // Delete tools.
         'delete_activity' => 'delete',
@@ -513,6 +516,13 @@ class server {
                             'tools' => [
                                 'listChanged' => false,
                             ],
+                            'prompts' => [
+                                'listChanged' => false,
+                            ],
+                            'resources' => [
+                                'subscribe' => false,
+                                'listChanged' => false,
+                            ],
                             'logging' => new \stdClass(),
                         ],
                     ]);
@@ -540,6 +550,65 @@ class server {
                         ];
                     }
                     return $this->build_jsonrpc_success($id, ['tools' => $toollist]);
+
+                case 'prompts/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'prompts' => \tool_teachermcp\local\prompt_registry::get_all_prompts(),
+                    ]);
+
+                case 'prompts/get':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $promptname = $params['name'] ?? '';
+                    $promptargs = $params['arguments'] ?? [];
+
+                    if (!is_string($promptname) || empty($promptname)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing prompt name.');
+                    }
+
+                    if (!is_array($promptargs)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Arguments must be an object.');
+                    }
+
+                    $prompt = \tool_teachermcp\local\prompt_registry::get_prompt($promptname, $promptargs);
+                    if ($prompt === null) {
+                        return $this->build_jsonrpc_error($id, -32602, "Prompt '{$promptname}' not found.");
+                    }
+                    return $this->build_jsonrpc_success($id, $prompt);
+
+                case 'resources/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'resources' => \tool_teachermcp\local\resource_registry::get_resources(),
+                    ]);
+
+                case 'resources/templates/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'resourceTemplates' => \tool_teachermcp\local\resource_registry::get_templates(),
+                    ]);
+
+                case 'resources/read':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $uri = $params['uri'] ?? '';
+                    if (!is_string($uri) || empty($uri)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing or invalid uri.');
+                    }
+                    $res = \tool_teachermcp\local\resource_registry::read_resource($uri);
+                    if ($res === null) {
+                        return $this->build_jsonrpc_error($id, -32602, "Resource not found or inaccessible: {$uri}");
+                    }
+                    return $this->build_jsonrpc_success($id, $res);
 
                 case 'tools/call':
                     if ($isnotification) {

@@ -368,4 +368,136 @@ final class content_tools_test extends \advanced_testcase {
             $this->assertEquals('invalidcoursemodule', $e->errorcode);
         }
     }
+
+    public function test_create_assignment_tool(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $tool = new \tool_teachermcp\tools\create_assignment();
+        $res = $tool->execute([
+            'course_id' => (int)$course->id,
+            'title' => 'AI Ethics Essay',
+            'intro' => '<p>Write an essay on AI ethics.</p>',
+            'due_date' => time() + (7 * 86400),
+            'allow_online_text' => true,
+            'allow_file_submissions' => true,
+            'max_files' => 3,
+            'max_grade' => 100,
+            'rubric_criteria' => [
+                ['description' => 'Critical Reasoning', 'weight_percentage' => 50],
+                ['description' => 'Grammar & Clarity', 'weight_percentage' => 50],
+            ],
+        ]);
+
+        $this->assertSame('success', $res['status']);
+        $this->assertSame('assign', $res['activity_type']);
+        $this->assertGreaterThan(0, $res['cmid']);
+        $this->assertGreaterThan(0, $res['assignment_id']);
+        $this->assertTrue($DB->record_exists('assign', ['id' => $res['assignment_id']]));
+    }
+
+    public function test_manage_course_forum_tool(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $forum = $generator->create_module('forum', ['course' => $course->id, 'name' => 'General Forum']);
+
+        $tool = new \tool_teachermcp\tools\manage_course_forum();
+
+        // 1. Post announcement / discussion
+        $postres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'forum_id' => (int)$forum->id,
+            'action' => 'post_announcement',
+            'subject' => 'Welcome to Class',
+            'message' => '<p>Welcome everyone to the course!</p>',
+        ]);
+        $this->assertSame('success', $postres['status']);
+        $discussionid = $postres['discussion_id'];
+        $this->assertGreaterThan(0, $discussionid);
+
+        // 2. List discussions
+        $listres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'forum_id' => (int)$forum->id,
+            'action' => 'list_discussions',
+        ]);
+        $this->assertNotEmpty($listres['discussions']);
+        $this->assertSame('Welcome to Class', $listres['discussions'][0]['subject']);
+
+        // 3. Reply to post
+        $replyres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'forum_id' => (int)$forum->id,
+            'action' => 'reply_to_post',
+            'discussion_id' => $discussionid,
+            'message' => '<p>Office hours are on Fridays.</p>',
+        ]);
+        $this->assertSame('success', $replyres['status']);
+        $this->assertGreaterThan(0, $replyres['post_id']);
+
+        // 4. Get discussion thread
+        $getres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'forum_id' => (int)$forum->id,
+            'action' => 'get_discussion',
+            'discussion_id' => $discussionid,
+        ]);
+        $this->assertCount(2, $getres['posts']);
+    }
+
+    public function test_manage_course_calendar_tool(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $tool = new \tool_teachermcp\tools\manage_course_calendar();
+
+        // 1. Create event
+        $createres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'action' => 'create_event',
+            'name' => 'Midterm Review Session',
+            'description' => '<p>Bring questions on chapter 1 to 4.</p>',
+            'timestart' => time() + 7200,
+            'duration_minutes' => 90,
+        ]);
+        $this->assertSame('success', $createres['status']);
+        $eventid = $createres['event_id'];
+        $this->assertGreaterThan(0, $eventid);
+
+        // 2. List events
+        $listres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'action' => 'list_events',
+        ]);
+        $this->assertNotEmpty($listres['events']);
+        $this->assertSame('Midterm Review Session', $listres['events'][0]['name']);
+
+        // 3. Delete event
+        $delres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'action' => 'delete_event',
+            'event_id' => $eventid,
+        ]);
+        $this->assertSame('success', $delres['status']);
+        $this->assertFalse($DB->record_exists('event', ['id' => $eventid]));
+    }
 }

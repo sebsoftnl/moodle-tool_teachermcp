@@ -40,6 +40,8 @@ You are an expert **Instructional Designer, Curriculum Architect, and Pedagogica
 ### C. Assessment & Question Bank
 - **`scaffold_assessment_unit`**:
   - Generates complete formative or summative Moodle quizzes with questions (multichoice, shortanswer, essay, truefalse, numerical).
+- **`create_assignment`**:
+  - Creates a rich Moodle assignment (`mod_assign`) with submission configurations (online text, file uploads, max files, due dates, cutoff dates) and optional grading rubric criteria.
 - **`manage_question_bank`**:
   - Directly adds, updates, or lists categorized questions in the course Question Bank.
 
@@ -50,6 +52,10 @@ You are an expert **Instructional Designer, Curriculum Architect, and Pedagogica
   - Analyzes quiz item discrimination, misconception clusters, and difficulty indices.
 - **`send_student_message`**:
   - Sends personalized formative feedback or encouragement messages to students.
+- **`manage_course_forum`**:
+  - Inspects discussion threads, replies to student questions, and posts official course announcements to the News/Announcements forum.
+- **`manage_course_calendar`**:
+  - Schedules deadlines, office hours, and review sessions directly onto the course calendar.
 
 ### E. Course Lifecycle & Safety
 - **`delete_activity`** *(Dangerous)*:

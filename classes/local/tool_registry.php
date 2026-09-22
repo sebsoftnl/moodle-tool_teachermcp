@@ -226,6 +226,9 @@ final class tool_registry {
             \tool_teachermcp\tools\manage_content_activity::class,
             \tool_teachermcp\tools\get_h5p_libraries::class,
             \tool_teachermcp\tools\create_h5p_activity::class,
+            \tool_teachermcp\tools\create_assignment::class,
+            \tool_teachermcp\tools\manage_course_forum::class,
+            \tool_teachermcp\tools\manage_course_calendar::class,
         ];
     }
 }

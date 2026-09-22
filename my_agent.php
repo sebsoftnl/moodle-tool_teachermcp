@@ -64,6 +64,24 @@ if ($action === 'create' && confirm_sesskey()) {
         throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
     }
 
+    $scopepreset = optional_param('scope_preset', 'full', PARAM_ALPHA);
+    $permissions = [];
+    switch ($scopepreset) {
+        case 'grading':
+            $permissions['scopes'] = ['read', 'grade'];
+            break;
+        case 'curriculum':
+            $permissions['scopes'] = ['read', 'write'];
+            break;
+        case 'readonly':
+            $permissions['scopes'] = ['read'];
+            break;
+        case 'full':
+        default:
+            $permissions['all_teacher_tools'] = true;
+            break;
+    }
+
     $requestedexternaltools = optional_param_array('externaltools', [], PARAM_RAW_TRIMMED);
     $grantableexternaltools = \tool_teachermcp\server::get_grantable_external_tool_names();
     $selectedexternaltools = [];
@@ -72,9 +90,9 @@ if ($action === 'create' && confirm_sesskey()) {
             $selectedexternaltools[$toolname] = true;
         }
     }
-    $permissions = $selectedexternaltools
-        ? array_merge(['all_teacher_tools' => true], $selectedexternaltools)
-        : null;
+    if (!empty($selectedexternaltools)) {
+        $permissions = array_merge($permissions, $selectedexternaltools);
+    }
 
     $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity, null, $permissions);
     \core\notification::success(get_string('token_created', 'tool_teachermcp'));
@@ -259,6 +277,35 @@ $promptlibrary = [
                 'description' => get_string('prompt_scaffold_desc', 'tool_teachermcp'),
                 'prompt' => get_string('prompt_scaffold_text', 'tool_teachermcp', $prompta),
             ],
+            [
+                'title' => get_string('prompt_assignment_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_assignment_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_assignment_text', 'tool_teachermcp', $prompta),
+            ],
+        ],
+    ],
+    [
+        'category' => get_string('prompt_cat_communication', 'tool_teachermcp'),
+        'icon' => 'fa-comments',
+        'badge' => get_string('prompt_badge_communication', 'tool_teachermcp'),
+        'items' => [
+            [
+                'title' => get_string('prompt_announcement_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_announcement_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_announcement_text', 'tool_teachermcp', $prompta),
+            ],
+        ],
+    ],
+    [
+        'category' => get_string('prompt_cat_calendar', 'tool_teachermcp'),
+        'icon' => 'fa-calendar-alt',
+        'badge' => get_string('prompt_badge_calendar', 'tool_teachermcp'),
+        'items' => [
+            [
+                'title' => get_string('prompt_calendar_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_calendar_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_calendar_text', 'tool_teachermcp', $prompta),
+            ],
         ],
     ],
     [
@@ -334,6 +381,8 @@ $templatedata = [
     'tools_count_badge' => get_string('active_tools_count', 'tool_teachermcp', $activetoolscount),
     'selected_course_id' => $courseid,
     'chatgpt_step3_text' => get_string('chatgpt_step3', 'tool_teachermcp', $endpointurl),
+    'mcp_resources' => \tool_teachermcp\local\resource_registry::get_resources(),
+    'mcp_resource_templates' => \tool_teachermcp\local\resource_registry::get_templates(),
 ];
 
 echo $OUTPUT->render_from_template('tool_teachermcp/my_agent', $templatedata);
