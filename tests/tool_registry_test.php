@@ -193,6 +193,9 @@ final class tool_registry_test extends \advanced_testcase {
         $this->assertSame('teachermcp tool_teachermcp.example', $scopeconfig['scope']);
         $this->assertTrue($scopeconfig['permissions']['all_teacher_tools']);
         $this->assertTrue($scopeconfig['permissions']['tool_teachermcp.example']);
+
+        $metadata = \tool_teachermcp\oauth_server::get_metadata();
+        $this->assertContains('tool_teachermcp.example', $metadata['scopes_supported']);
     }
 
     public function test_external_tool_requires_an_exact_qualified_token_grant(): void {

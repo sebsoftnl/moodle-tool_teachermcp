@@ -35,14 +35,14 @@ class cleanup_task extends \core\task\scheduled_task {
      *
      * @return string
      */
-    public function get_name(): string {
+    public function get_name() {
         return get_string('task_cleanup', 'tool_teachermcp');
     }
 
     /**
      * Execute cleanup of transient and expired MCP authentication data.
      */
-    public function execute(): void {
+    public function execute() {
         global $DB;
 
         $now = time();

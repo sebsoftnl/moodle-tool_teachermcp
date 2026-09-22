@@ -108,15 +108,28 @@ async function loadStringsFromMoodle(baseUrl, lang) {
     }
 }
 
-function openBrowser(url) {
-    const platform = process.platform;
-    if (platform === 'win32') {
-        spawn('cmd.exe', ['/c', 'start', '""', url], { windowsVerbatimArguments: true, stdio: 'ignore' });
-    } else if (platform === 'darwin') {
-        spawn('open', [url], { stdio: 'ignore' });
-    } else {
-        spawn('xdg-open', [url], { stdio: 'ignore' });
+export function getBrowserLauncher(url, platform = process.platform) {
+    const target = validateEndpoint(url);
+    if (target.username || target.password) {
+        throw new Error('Endpoint URL must not contain credentials.');
     }
+    const safeUrl = target.href;
+    if (platform === 'win32') {
+        return {
+            command: 'explorer.exe',
+            args: [safeUrl],
+        };
+    }
+    if (platform === 'darwin') {
+        return {command: 'open', args: [safeUrl]};
+    }
+    return {command: 'xdg-open', args: [safeUrl]};
+}
+
+function openBrowser(url) {
+    const launcher = getBrowserLauncher(url);
+    const child = spawn(launcher.command, launcher.args, {shell: false, stdio: 'ignore'});
+    child.unref();
 }
 
 function base64Url(buffer) {

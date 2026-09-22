@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - *Reason*: Guarantees high-performance queries for the cleanup scheduled task and token validation checks without full-table scans.
 - **MCP Native Prompts Protocol (`classes/local/prompt_registry.php`, `classes/server.php`)**:
   - *Change*: Implemented the MCP `prompts/list` and `prompts/get` protocol methods and advertised `'prompts'` capability during MCP `initialize`.
-  - *Reason*: Exposes 16 pedagogical prompt templates (Course Ingestion, H5P Flashcards/Quiz Builder, Question Scaffolding, Assignment/Rubric Scaffolding, Course Announcements, Calendar Scheduling, Early Warning Detection, Rubric Grading) directly to AI desktop assistants (Claude Desktop, Cursor, Codex). Teachers can select them natively inside their AI client's prompt menu or copy them directly from the dashboard.
+  - *Reason*: Exposes pedagogical prompt templates for course ingestion, H5P, assessment/rubric scaffolding, calendar scheduling, early warning detection, and grading directly to AI desktop assistants. Teachers can select them natively inside their AI client's prompt menu or copy them directly from the dashboard.
 - **Teacher Token Role Presets (`my_agent.php`, `templates/my_agent.mustache`, `classes/server.php`)**:
   - *Change*: Added scope presets during manual token creation in the Teacher Dashboard: *Full Co-Pilot* (`all`), *Grading Assistant* (`read`, `grade`), *Curriculum Designer* (`read`, `write`), and *Read-Only Observer / Tutor* (`read`).
   - *Reason*: Adheres to the principle of least privilege by allowing teachers to constrain agent connections according to the intended use case.
@@ -43,10 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - *Change*: Added terminal CLI health check script `cli/mcp_doctor.php` (with 8 automated verification steps including an end-to-end JSON-RPC dry-run) and manual maintenance runner `cli/cleanup.php`.
   - *Reason*: Enables system administrators and DevOps engineers to diagnose environment health, database integrity, extension requirements, and test the JSON-RPC execution pipeline directly via CLI.
 - **Comprehensive Unit Tests (`tests/auth_test.php`, `tests/server_test.php`, `tests/content_tools_test.php`, `tests/tools_extended_test.php`)**:
-  - *Change*: Added `tests/tools_extended_test.php` and extended test cases covering cleanup task execution, prompt retrieval, resource discovery and dynamic URI readers, assignment creation, forum interactions, calendar scheduling, and all 25 built-in tools.
-  - *Reason*: Achieved 100% class coverage across all 43 PHP classes in the plugin.
+  - *Change*: Added `tests/tools_extended_test.php` and extended test cases covering cleanup task execution, prompt retrieval, resource discovery and dynamic URI readers, assignment creation, and calendar scheduling.
 
 ### Fixed
+- **Release-surface hardening**:
+  - *Change*: Removed the forum mutation tool and calendar-event deletion action from the exposed MCP surface; protected-resource metadata now advertises the same least-privilege OAuth scopes as the authorization server; resources require a read grant for listing and reading and are output-bounded; assignment and browser-launch input handling is hardened.
+  - *Reason*: Prevents unsupported mutation paths, scope bypasses, resource enumeration, oversized responses, and command-shell interpretation.
 - **Missing `moodle_exception` Language Strings (`lang/en/tool_teachermcp.php`, `lang/nl/tool_teachermcp.php`)**:
   - *Change*: Added 7 missing localized exception strings with complete English/Dutch parity:
     - `error_invalid_token`

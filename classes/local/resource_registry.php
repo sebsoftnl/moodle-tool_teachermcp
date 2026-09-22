@@ -34,6 +34,9 @@ use stdClass;
  */
 final class resource_registry {
 
+    /** Maximum number of announcements returned from one resource. */
+    private const ANNOUNCEMENT_LIMIT = 5;
+
     /**
      * List all concrete static resources.
      *
@@ -96,7 +99,7 @@ final class resource_registry {
             $list = [];
             foreach ($courses as $c) {
                 $context = context_course::instance($c->id);
-                if (has_capability('tool/teachermcp:connectagent', $context) || is_siteadmin()) {
+                if (self::can_access_course($context)) {
                     $list[] = [
                         'id' => (int)$c->id,
                         'shortname' => $c->shortname,
@@ -127,7 +130,7 @@ final class resource_registry {
                 return null;
             }
             $context = context_course::instance($courseid);
-            if (!has_capability('moodle/course:view', $context) && !is_siteadmin()) {
+            if (!self::can_access_course($context)) {
                 return null;
             }
 
@@ -182,7 +185,7 @@ final class resource_registry {
                 return null;
             }
             $context = context_course::instance($courseid);
-            if (!has_capability('moodle/course:view', $context) && !is_siteadmin()) {
+            if (!self::can_access_course($context)) {
                 return null;
             }
 
@@ -200,7 +203,14 @@ final class resource_registry {
                 ];
             }
 
-            $discussions = $DB->get_records('forum_discussions', ['forum' => $newsforum->id], 'timemodified DESC', '*', 0, 5);
+            $discussions = $DB->get_records(
+                'forum_discussions',
+                ['forum' => $newsforum->id],
+                'timemodified DESC',
+                '*',
+                0,
+                self::ANNOUNCEMENT_LIMIT
+            );
             $md = "# Announcements: {$course->fullname}\n\n";
 
             if (empty($discussions)) {
@@ -208,12 +218,10 @@ final class resource_registry {
             } else {
                 foreach ($discussions as $d) {
                     $post = $DB->get_record('forum_posts', ['id' => $d->firstpost]);
-                    $author = $DB->get_record('user', ['id' => $d->userid], 'id, firstname, lastname');
-                    $authorname = $author ? fullname($author) : 'Teacher';
                     $date = userdate($d->created);
 
                     $md .= "## {$d->name}\n";
-                    $md .= "**Posted by:** {$authorname} on {$date}\n\n";
+                    $md .= "**Posted:** {$date}\n\n";
                     if ($post) {
                         $md .= strip_tags($post->message) . "\n\n";
                     }
@@ -240,7 +248,7 @@ final class resource_registry {
                 return null;
             }
             $context = context_module::instance($cmid);
-            if (!has_capability('moodle/course:manageactivities', $context) && !is_siteadmin()) {
+            if (!self::can_access_module($cm, $context)) {
                 return null;
             }
 
@@ -284,5 +292,44 @@ final class resource_registry {
         }
 
         return null;
+    }
+
+    /**
+     * Check the Teacher MCP course-level access contract without revealing why access failed.
+     *
+     * A Teacher MCP user needs active enrolment and the plugin connection capability.
+     * Resource content is read-only and deliberately available to both teacher and
+     * editingteacher roles; individual mutation tools enforce their own stronger
+     * capabilities.
+     *
+     * @param context_course $context Course context.
+     * @return bool True when the current user may access Teacher MCP course resources.
+     */
+    private static function can_access_course(context_course $context): bool {
+        global $USER;
+
+        if (is_siteadmin()) {
+            return true;
+        }
+        return is_enrolled($context, $USER->id, '', true)
+            && has_capability('tool/teachermcp:connectagent', $context);
+    }
+
+    /**
+     * Check the Teacher MCP module-level access contract.
+     *
+     * @param stdClass $cm Course module record.
+     * @param context_module $context Module context.
+     * @return bool True when the current user may access Teacher MCP module resources.
+     */
+    private static function can_access_module(stdClass $cm, context_module $context): bool {
+        global $USER;
+
+        if (is_siteadmin()) {
+            return true;
+        }
+        $coursecontext = context_course::instance((int)$cm->course);
+        return is_enrolled($coursecontext, $USER->id, '', true)
+            && has_capability('tool/teachermcp:connectagent', $context);
     }
 }

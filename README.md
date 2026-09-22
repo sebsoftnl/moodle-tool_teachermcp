@@ -14,7 +14,7 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
 - **`analyze_class_understanding`**: Post-assessment diagnostic psychometrics. Analyzes finished quiz attempts (`\mod_quiz\quiz_attempt::FINISHED`), question versions, question difficulty (facility index), error distributions, and tracks unassessed responses (`needs_grading`).
 - **`prepare_grading_session`**: Batch grading assistant. Bundles ungraded submissions, submitted student texts, file attachment metadata, rubric criteria, and student context into a single payload for rapid AI-assisted grading.
 
-### 2. Complete Suite of 25 MCP Tools
+### 2. Complete Suite of 24 MCP Tools
 1. `get_my_profile`: Teacher identity, system permissions, and environment info.
 2. `get_teacher_courses`: Courses where teacher is actively enrolled with teaching/grading rights.
 3. `get_course_contents`: Section tree, activity names, descriptions, and completion rules.
@@ -24,7 +24,7 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
 7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
 8. `manage_activity`: Inspect or update module settings, names, descriptions, or visibility.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
-10. `delete_activity`: Safely delete activities with mandatory two-step dry-run confirmation (`confirm=true`).
+10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
 11. `get_h5p_libraries`: Inspect installed H5P content types and parameter schemas.
 12. `create_h5p_activity`: Deploy standalone H5P interactive activities (Flashcards, Multiple Choice, Interactive Video) directly to courses.
 13. `scaffold_assessment_unit`: Scaffold complete quizzes, question items, options, and section placement.
@@ -38,12 +38,11 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
 21. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
 22. `detect_at_risk_students`: Compute early-warning dropout risk index based on activity and grades.
 23. `send_student_message`: Dispatch direct Moodle messages to enrolled students with contact checks and rate limiting.
-24. `manage_course_forum`: Inspect discussion threads, reply to student queries, and post official course announcements.
-25. `manage_course_calendar`: Schedule course deadlines, office hours, and review sessions on the calendar.
+24. `manage_course_calendar`: Schedule course deadlines, office hours, and review sessions on the calendar.
 
 ### 3. MCP Protocol Primitives: Prompts & Resources
 - **Native Prompts (`prompts/list`, `prompts/get`)**:
-  - Exposes 13 pre-built pedagogical prompt workflows directly inside AI assistant menus (Claude Desktop, Cursor, Codex) for syllabus ingestion, H5P creation, quiz scaffolding, rubric generation, and early warning intervention.
+  - Exposes 15 pre-built pedagogical prompt workflows directly inside AI assistant menus (Claude Desktop, Cursor, Codex) for syllabus ingestion, H5P creation, quiz scaffolding, rubric generation, calendar scheduling, and early warning intervention.
 - **Native Read-Only Resources (`resources/list`, `resources/read`)**:
   - `moodle://courses`: Real-time JSON listing of the teacher's active teaching courses.
   - `moodle://course/{course_id}/syllabus`: Dynamic Markdown course syllabus and structural outline.
@@ -77,7 +76,7 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
    - Every tool call triggers a `\tool_teachermcp\event\tool_executed` event in Moodle's standard logstore (`mdl_logstore_standard_log`), recording tool name, execution status, course ID, and token ID without logging sensitive payloads.
 5. **Rate Limiting & Safety Guardrails**:
    - Direct messaging (`send_student_message`) includes configurable per-hour rate limits and checks recipient contact preferences.
-   - Destructive operations (`delete_activity`) require explicit two-step confirmation (`confirm=true`).
+   - Destructive operations (`delete_activity`) require explicit UI confirmation or a short-lived preview `confirm_token`.
 
 ---
 

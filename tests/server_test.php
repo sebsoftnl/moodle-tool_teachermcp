@@ -170,6 +170,11 @@ final class server_test extends \advanced_testcase {
         $output = server::format_tool_result_for_response(str_repeat('x', 2048));
         $this->assertLessThanOrEqual(1024, strlen($output));
         $this->assertStringContainsString('[Output truncated', $output);
+
+        $unicodeoutput = server::format_tool_result_for_response(str_repeat('€', 1024));
+        $this->assertLessThanOrEqual(1024, strlen($unicodeoutput));
+        $this->assertTrue(mb_check_encoding($unicodeoutput, 'UTF-8'));
+        $this->assertNotFalse(json_encode($unicodeoutput, JSON_UNESCAPED_UNICODE));
     }
 
     public function test_mcp_rate_limit_blocks_a_second_request_in_same_window(): void {
@@ -249,6 +254,23 @@ final class server_test extends \advanced_testcase {
         $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenCurriculum));
     }
 
+    public function test_resources_require_a_read_grant(): void {
+        $this->resetAfterTest(true);
+
+        $this->assertTrue(server::is_resource_allowed_by_token((object)[
+            'permissions' => json_encode(['scopes' => ['read']]),
+        ]));
+        $this->assertTrue(server::is_resource_allowed_by_token((object)[
+            'permissions' => json_encode(['all_teacher_tools' => true]),
+        ]));
+        $this->assertFalse(server::is_resource_allowed_by_token((object)[
+            'permissions' => json_encode(['scopes' => ['grade']]),
+        ]));
+        $this->assertFalse(server::is_resource_allowed_by_token((object)[
+            'permissions' => json_encode(['tool_teachermcp.example' => true]),
+        ]));
+    }
+
     public function test_prompts_list_and_get(): void {
         $this->resetAfterTest(true);
 
@@ -272,7 +294,7 @@ final class server_test extends \advanced_testcase {
         $this->assertArrayHasKey('result', $listresponse);
         $prompts = $listresponse['result']['prompts'];
         $this->assertIsArray($prompts);
-        $this->assertGreaterThanOrEqual(10, count($prompts));
+        $this->assertCount(15, $prompts);
 
         $names = array_column($prompts, 'name');
         $this->assertContains('ingest_course', $names);
@@ -312,6 +334,12 @@ final class server_test extends \advanced_testcase {
         $this->resetAfterTest(true);
 
         $server = new server();
+
+        $tokenproperty = new \ReflectionProperty(auth::class, 'currenttoken');
+        $tokenproperty->setAccessible(true);
+        $tokenproperty->setValue(null, (object)[
+            'permissions' => json_encode(['scopes' => ['read']]),
+        ]);
 
         // 1. Check initialize returns resources capability.
         $initresponse = $server->handle_payload(json_encode([
@@ -359,5 +387,23 @@ final class server_test extends \advanced_testcase {
         ]));
         $this->assertArrayHasKey('error', $badread);
         $this->assertSame(-32602, $badread['error']['code']);
+
+        $tokenproperty->setValue(null, (object)[
+            'permissions' => json_encode(['scopes' => ['grade']]),
+        ]);
+        foreach (['resources/list', 'resources/templates/list', 'resources/read'] as $method) {
+            $request = [
+                'jsonrpc' => '2.0',
+                'id' => 5,
+                'method' => $method,
+            ];
+            if ($method === 'resources/read') {
+                $request['params'] = ['uri' => 'moodle://courses'];
+            }
+            $response = $server->handle_payload(json_encode($request));
+            $this->assertSame(-32602, $response['error']['code']);
+            $this->assertSame('Resource not found or inaccessible.', $response['error']['message']);
+        }
+        $tokenproperty->setValue(null, null);
     }
 }

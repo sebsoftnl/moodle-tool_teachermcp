@@ -400,63 +400,49 @@ final class content_tools_test extends \advanced_testcase {
         $this->assertGreaterThan(0, $res['cmid']);
         $this->assertGreaterThan(0, $res['assignment_id']);
         $this->assertTrue($DB->record_exists('assign', ['id' => $res['assignment_id']]));
+
+        try {
+            $tool->execute([
+                'course_id' => (int)$course->id,
+                'title' => 'Invalid Assignment',
+                'due_date' => time() + 7200,
+                'cutoff_date' => time() + 3600,
+            ]);
+            $this->fail('Expected invalid assignment dates to be rejected.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_invalid_params', $e->errorcode);
+        }
+
+        $invalidassignments = [
+            ['title' => ''],
+            [
+                'title' => 'No submission method',
+                'allow_online_text' => false,
+                'allow_file_submissions' => false,
+            ],
+            [
+                'title' => 'Invalid rubric type',
+                'rubric_criteria' => 'not-an-array',
+            ],
+            [
+                'title' => 'Invalid rubric weight',
+                'rubric_criteria' => [['description' => 'Criterion', 'weight_percentage' => -1]],
+            ],
+            [
+                'title' => 'Invalid grade',
+                'max_grade' => 'not-a-number',
+            ],
+        ];
+        foreach ($invalidassignments as $params) {
+            try {
+                $tool->execute(['course_id' => (int)$course->id] + $params);
+                $this->fail('Expected invalid assignment input to be rejected.');
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_invalid_params', $e->errorcode);
+            }
+        }
     }
 
-    public function test_manage_course_forum_tool(): void {
-        global $DB;
-        $this->resetAfterTest(true);
-        $generator = $this->getDataGenerator();
-
-        $course = $generator->create_course();
-        $teacher = $generator->create_user();
-        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
-        $this->setUser($teacher);
-
-        $forum = $generator->create_module('forum', ['course' => $course->id, 'name' => 'General Forum']);
-
-        $tool = new \tool_teachermcp\tools\manage_course_forum();
-
-        // 1. Post announcement / discussion
-        $postres = $tool->execute([
-            'course_id' => (int)$course->id,
-            'forum_id' => (int)$forum->id,
-            'action' => 'post_announcement',
-            'subject' => 'Welcome to Class',
-            'message' => '<p>Welcome everyone to the course!</p>',
-        ]);
-        $this->assertSame('success', $postres['status']);
-        $discussionid = $postres['discussion_id'];
-        $this->assertGreaterThan(0, $discussionid);
-
-        // 2. List discussions
-        $listres = $tool->execute([
-            'course_id' => (int)$course->id,
-            'forum_id' => (int)$forum->id,
-            'action' => 'list_discussions',
-        ]);
-        $this->assertNotEmpty($listres['discussions']);
-        $this->assertSame('Welcome to Class', $listres['discussions'][0]['subject']);
-
-        // 3. Reply to post
-        $replyres = $tool->execute([
-            'course_id' => (int)$course->id,
-            'forum_id' => (int)$forum->id,
-            'action' => 'reply_to_post',
-            'discussion_id' => $discussionid,
-            'message' => '<p>Office hours are on Fridays.</p>',
-        ]);
-        $this->assertSame('success', $replyres['status']);
-        $this->assertGreaterThan(0, $replyres['post_id']);
-
-        // 4. Get discussion thread
-        $getres = $tool->execute([
-            'course_id' => (int)$course->id,
-            'forum_id' => (int)$forum->id,
-            'action' => 'get_discussion',
-            'discussion_id' => $discussionid,
-        ]);
-        $this->assertCount(2, $getres['posts']);
-    }
 
     public function test_manage_course_calendar_tool(): void {
         global $DB;
@@ -491,13 +477,9 @@ final class content_tools_test extends \advanced_testcase {
         $this->assertNotEmpty($listres['events']);
         $this->assertSame('Midterm Review Session', $listres['events'][0]['name']);
 
-        // 3. Delete event
-        $delres = $tool->execute([
-            'course_id' => (int)$course->id,
-            'action' => 'delete_event',
-            'event_id' => $eventid,
-        ]);
-        $this->assertSame('success', $delres['status']);
-        $this->assertFalse($DB->record_exists('event', ['id' => $eventid]));
+        // Deleting calendar entries is intentionally not exposed through this write tool.
+        $schema = $tool->get_input_schema();
+        $this->assertNotContains('delete_event', $schema['properties']['action']['enum']);
+        $this->assertTrue($DB->record_exists('event', ['id' => $eventid]));
     }
 }

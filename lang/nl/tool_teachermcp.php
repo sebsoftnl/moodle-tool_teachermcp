@@ -162,9 +162,7 @@ $string['prompt_assignment_title'] = 'Opdracht met Beoordelingsrubriek Assembler
 $string['prompt_assignment_desc'] = 'Maakt een rijke Moodle-opdracht (mod_assign) aan met inleverregels, deadlines en rubriekcriteria.';
 $string['prompt_assignment_text'] = 'Gebruik "create_assignment" om een opdracht aan te maken in cursus ID {$a->courseid}, sectie 3 getiteld "Essay over AI-ethiek". Voeg gedetailleerde instructies toe, stel de inleverdeadline in over 14 dagen en voeg rubriekcriteria toe voor Argumentatie (50%) en Helderheid (50%).';
 
-$string['prompt_announcement_title'] = 'Cursusaankondiging Plaatsen';
-$string['prompt_announcement_desc'] = 'Plaatst een officieel docentbericht direct in het Nieuwsforum van de cursus.';
-$string['prompt_announcement_text'] = 'Gebruik "manage_course_forum" met action="post_announcement" in cursus ID {$a->courseid}. Plaats een mededeling met als onderwerp "Welkom bij week 3" met daarin de mijlpalen van deze week en de spreekuren.';
+
 
 $string['prompt_calendar_title'] = 'Vragenuur of Herhalingsles Inplannen';
 $string['prompt_calendar_desc'] = 'Plant een deadline of live bijeenkomst direct in op de Moodle cursuskalender.';
@@ -254,7 +252,7 @@ $string['prompt_cat_maintenance'] = 'Cursusonderhoud & Veiligheid';
 $string['prompt_badge_maintenance'] = 'Gevaarlijke Acties';
 $string['prompt_delete_title'] = 'Veilig Verwijderen van Verouderde Activiteit (2-Staps Bevestiging)';
 $string['prompt_delete_desc'] = 'Gebruikt de gevaarlijke delete_activity tool met veilige inspectie vooraf.';
-$string['prompt_delete_text'] = 'Inspecteer activiteit cmid [vul_cmid_in] en roep "delete_activity" aan met confirm=false. Toon mij eerst de activiteitdetails en eventuele waarschuwingen. Verwijder pas als ik expliciet akkoord geef.';
+$string['prompt_delete_text'] = 'Inspecteer activiteit cmid [vul_cmid_in] met "delete_activity". Toon mij eerst de activiteitdetails en eventuele waarschuwingen. Verwijder pas als ik expliciet akkoord geef; gebruik daarna de UI-bevestigingsflow of, wanneer UI-bevestiging is uitgeschakeld, de confirm_token uit de preview.';
 
 // Agent Skill UI strings.
 $string['agent_skill_title'] = 'AI Agent Systeemprompt & Vaardigheden (Skill)';

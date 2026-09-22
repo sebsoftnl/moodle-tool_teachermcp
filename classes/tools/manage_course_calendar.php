@@ -49,7 +49,7 @@ class manage_course_calendar extends base_tool {
                 ],
                 'action' => [
                     'type' => 'string',
-                    'enum' => ['list_events', 'create_event', 'delete_event'],
+                    'enum' => ['list_events', 'create_event'],
                     'description' => 'Calendar action to perform.',
                 ],
                 'name' => [
@@ -68,10 +68,7 @@ class manage_course_calendar extends base_tool {
                     'type' => 'integer',
                     'description' => 'Duration in minutes (for create_event, default: 60).',
                 ],
-                'event_id' => [
-                    'type' => 'integer',
-                    'description' => 'Event ID (for delete_event).',
-                ],
+
             ],
             'required' => ['course_id', 'action'],
         ];
@@ -144,18 +141,6 @@ class manage_course_calendar extends base_tool {
                     'timestart' => userdate($timestart),
                     'duration_minutes' => $durationmins,
                     'message' => "Course event '{$name}' created successfully.",
-                ];
-
-            case 'delete_event':
-                $eventid = (int)($params['event_id'] ?? 0);
-                $eventrec = $DB->get_record('event', ['id' => $eventid, 'courseid' => $course->id], '*', MUST_EXIST);
-                $event = \calendar_event::load($eventrec);
-                $event->delete();
-
-                return [
-                    'status' => 'success',
-                    'event_id' => $eventid,
-                    'message' => 'Event deleted successfully.',
                 ];
 
             default:

@@ -162,9 +162,7 @@ $string['prompt_assignment_title'] = 'Scaffold Assignment with Evaluation Rubric
 $string['prompt_assignment_desc'] = 'Creates a rich assignment (mod_assign) with instructions, due date, submission rules, and rubric criteria.';
 $string['prompt_assignment_text'] = 'Use "create_assignment" to create an assignment in course ID {$a->courseid}, section 3 titled "Critical Essay on AI Ethics". Include comprehensive instructions, set the due date 14 days from now, allow online text and PDF submissions, and embed rubric evaluation criteria for Argumentation (50%) and Clarity (50%).';
 
-$string['prompt_announcement_title'] = 'Post Course Announcement';
-$string['prompt_announcement_desc'] = 'Posts an official teacher announcement directly to the course Announcements forum.';
-$string['prompt_announcement_text'] = 'Use "manage_course_forum" with action="post_announcement" in course ID {$a->courseid}. Post an announcement with subject "Welcome to Week 3: Getting Started with Assessments" summarizing this week\'s milestones and office hours.';
+
 
 $string['prompt_calendar_title'] = 'Schedule Course Review Session or Office Hours';
 $string['prompt_calendar_desc'] = 'Schedules a deadline or live review session onto the Moodle course calendar.';
@@ -254,7 +252,7 @@ $string['prompt_cat_maintenance'] = 'Course Maintenance & Safety';
 $string['prompt_badge_maintenance'] = 'Dangerous Actions';
 $string['prompt_delete_title'] = 'Safely Delete Outdated Activity (Two-Step Confirmation)';
 $string['prompt_delete_desc'] = 'Uses the dangerous delete_activity tool with safe preview before permanent removal.';
-$string['prompt_delete_text'] = 'Inspect activity cmid [enter_cmid] and run "delete_activity" with confirm=false. Show me the activity details and warn me about any consequences. Do not delete until I explicitly give confirmation.';
+$string['prompt_delete_text'] = 'Inspect activity cmid [enter_cmid] with "delete_activity". Show me the activity details and consequences. Do not delete until I explicitly give confirmation; then use the UI confirmation flow or the preview-issued confirm_token when UI confirmation is disabled.';
 
 // Agent Skill UI strings.
 $string['agent_skill_title'] = 'AI Agent System Prompt & Skills';

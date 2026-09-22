@@ -284,18 +284,7 @@ $promptlibrary = [
             ],
         ],
     ],
-    [
-        'category' => get_string('prompt_cat_communication', 'tool_teachermcp'),
-        'icon' => 'fa-comments',
-        'badge' => get_string('prompt_badge_communication', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_announcement_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_announcement_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_announcement_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
+
     [
         'category' => get_string('prompt_cat_calendar', 'tool_teachermcp'),
         'icon' => 'fa-calendar-alt',

@@ -384,28 +384,7 @@ final class prompt_registry {
                         "and include rubric evaluation criteria with percentage weights.";
                 },
             ],
-            'post_announcement' => [
-                'desc_key' => 'prompt_announcement_desc',
-                'arguments' => [
-                    [
-                        'name' => 'course_id',
-                        'description' => 'Target Moodle course ID.',
-                        'required' => true,
-                    ],
-                    [
-                        'name' => 'subject',
-                        'description' => 'Subject/title for the announcement.',
-                        'required' => false,
-                    ],
-                ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $subject = $args['subject'] ?? 'Welcome & Week Overview';
-                    return "Use \"manage_course_forum\" with action=\"post_announcement\" in course ID {$cid}. " .
-                        "Post an announcement with subject \"{$subject}\" summarizing upcoming learning objectives, " .
-                        "assessment milestones, and available office hours.";
-                },
-            ],
+
             'schedule_event' => [
                 'desc_key' => 'prompt_calendar_desc',
                 'arguments' => [

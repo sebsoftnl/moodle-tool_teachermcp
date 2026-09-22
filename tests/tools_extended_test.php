@@ -389,7 +389,7 @@ final class tools_extended_test extends \advanced_testcase {
             'summary' => 'Introduction to robotics engineering.',
         ]);
         $teacher = $generator->create_user();
-        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $generator->enrol_user($teacher->id, $course->id, 'teacher');
         $this->setUser($teacher);
 
         $page = $generator->create_module('page', [
@@ -426,6 +426,12 @@ final class tools_extended_test extends \advanced_testcase {
 
         // 5. Non-existent resource returns null
         $this->assertNull(\tool_teachermcp\local\resource_registry::read_resource('moodle://nonexistent'));
+
+        // 6. A user without Teacher MCP access in another course cannot read it.
+        $othercourse = $generator->create_course(['fullname' => 'Unrelated course']);
+        $this->assertNull(\tool_teachermcp\local\resource_registry::read_resource(
+            "moodle://course/{$othercourse->id}/syllabus"
+        ));
     }
 
     public function test_token_events_sink(): void {
@@ -477,10 +483,6 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertStringContainsString('create_assignment', $pAssign['messages'][0]['content']['text']);
         $this->assertStringContainsString('55', $pAssign['messages'][0]['content']['text']);
 
-        $pForum = \tool_teachermcp\local\prompt_registry::get_prompt('post_announcement', ['course_id' => 55]);
-        $this->assertNotNull($pForum);
-        $this->assertStringContainsString('manage_course_forum', $pForum['messages'][0]['content']['text']);
-
         $pCal = \tool_teachermcp\local\prompt_registry::get_prompt('schedule_event', ['course_id' => 55]);
         $this->assertNotNull($pCal);
         $this->assertStringContainsString('manage_course_calendar', $pCal['messages'][0]['content']['text']);
@@ -489,14 +491,20 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertNull(\tool_teachermcp\local\prompt_registry::get_prompt('nonexistent_prompt', []));
     }
 
+    public function test_unsafe_forum_tool_is_not_published(): void {
+        $this->resetAfterTest(true);
+
+        $this->assertArrayNotHasKey('manage_course_forum', \tool_teachermcp\server::get_all_tools());
+    }
+
     public function test_external_tool_adapter_direct(): void {
         $declaration = new \tool_teachermcp\local\provider_tool_declaration(
             'mod_quiz',
             'grade_quiz',
-            'moodle/grade:edit',
-            'enable_ai',
+            \tool_teachermcp\tools\base_tool::class,
             'read',
-            \tool_teachermcp\tools\base_tool::class
+            'mod/quiz:grade',
+            'mod_quiz/enable_ai'
         );
 
         $fakeTool = new class implements \tool_teachermcp\local\external_tool {
@@ -521,7 +529,7 @@ final class tools_extended_test extends \advanced_testcase {
             ['type' => 'object']
         );
 
-        $this->assertSame('mod_quiz__grade_quiz', $adapter->get_name());
+        $this->assertSame('mod_quiz.grade_quiz', $adapter->get_name());
         $this->assertSame('Adapter description', $adapter->get_description());
         $this->assertSame(['type' => 'object'], $adapter->get_input_schema());
 

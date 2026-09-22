@@ -111,7 +111,10 @@ class create_assignment extends base_tool {
         $courseid = (int)($params['course_id'] ?? 0);
         $course = $this->require_course_access($courseid, 'mod/assign:addinstance');
 
-        $title = isset($params['title']) ? clean_param($params['title'], PARAM_TEXT) : 'Untitled Assignment';
+        $title = isset($params['title']) ? clean_param($params['title'], PARAM_TEXT) : '';
+        if ($title === '') {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
         $intro = isset($params['intro']) ? $this->clean_agent_html($params['intro']) : '';
         $sectionnum = (int)($params['section_number'] ?? 0);
 
@@ -130,14 +133,36 @@ class create_assignment extends base_tool {
 
         // If rubric criteria are specified, append a clean formatted rubric section to the intro.
         $rubric = $params['rubric_criteria'] ?? null;
+        if ($rubric !== null && !is_array($rubric)) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
         if (is_array($rubric) && !empty($rubric)) {
+            if (count($rubric) > 20) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+            }
+            $totalweight = 0.0;
             $intro .= '<div class="alert alert-secondary mt-3"><h5>' . get_string('rubric', 'grades') . '</h5><ul class="mb-0">';
             foreach ($rubric as $criterion) {
-                $desc = clean_param($criterion['description'] ?? '', PARAM_TEXT);
-                $weight = isset($criterion['weight_percentage']) ? ' (' . (float)$criterion['weight_percentage'] . '%)' : '';
-                if (!empty($desc)) {
-                    $intro .= '<li><strong>' . $desc . '</strong>' . $weight . '</li>';
+                if (!is_array($criterion)) {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
                 }
+                $desc = clean_param($criterion['description'] ?? '', PARAM_TEXT);
+                if ($desc === '') {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+                }
+                $rawweight = $criterion['weight_percentage'] ?? null;
+                if (!is_numeric($rawweight)) {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+                }
+                $weightvalue = (float)$rawweight;
+                if (!is_finite($weightvalue) || $weightvalue < 0 || $weightvalue > 100) {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+                }
+                $totalweight += $weightvalue;
+                $intro .= '<li><strong>' . $desc . '</strong> (' . $weightvalue . '%)</li>';
+            }
+            if ($totalweight <= 0.0 || $totalweight > 100.0) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
             }
             $intro .= '</ul></div>';
         }
@@ -146,8 +171,21 @@ class create_assignment extends base_tool {
         $cutoffdate = !empty($params['cutoff_date']) ? (int)$params['cutoff_date'] : 0;
         $allowonlinetext = $params['allow_online_text'] ?? true;
         $allowfile = $params['allow_file_submissions'] ?? true;
+        if (!$allowonlinetext && !$allowfile) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
         $maxfiles = isset($params['max_files']) ? max(1, min(20, (int)$params['max_files'])) : 2;
-        $maxgrade = isset($params['max_grade']) ? max(1, (float)$params['max_grade']) : 100;
+        $rawmaxgrade = $params['max_grade'] ?? 100;
+        if (!is_numeric($rawmaxgrade)) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
+        $maxgrade = (float)$rawmaxgrade;
+        if (!is_finite($maxgrade) || $maxgrade < 1 || $maxgrade > 100000) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
+        if ($duedate > 0 && $cutoffdate > 0 && $cutoffdate < $duedate) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+        }
 
         $moduleinfo = new stdClass();
         $moduleinfo->modulename = 'assign';

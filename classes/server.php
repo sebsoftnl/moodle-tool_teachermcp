@@ -74,7 +74,6 @@ class server {
 
         // Message tools.
         'send_student_message' => 'message',
-        'manage_course_forum' => 'message',
 
         // Delete tools.
         'delete_activity' => 'delete',
@@ -257,6 +256,23 @@ class server {
     }
 
     /**
+     * Determine whether a token may read MCP resources.
+     *
+     * Resources expose course data and therefore follow the same read-scope
+     * policy as built-in read tools. External-tool grants never imply read access.
+     *
+     * @param stdClass|null $token Authenticated token record.
+     * @return bool True when the token has a Teacher MCP read grant.
+     */
+    public static function is_resource_allowed_by_token(?stdClass $token): bool {
+        if ($token === null) {
+            return false;
+        }
+
+        return self::is_tool_allowed_by_token('get_course_contents', $token);
+    }
+
+    /**
      * Get a bounded numeric MCP limit from plugin configuration.
      *
      * Invalid or unset values use the supplied default; values are clamped to
@@ -297,7 +313,27 @@ class server {
 
         $suffix = "\n[Output truncated at {$limit} bytes. Narrow the request or request a smaller result set.]";
         $available = max(0, $limit - strlen($suffix));
-        return substr($text, 0, $available) . $suffix;
+        return \core_text::str_max_bytes($text, $available) . $suffix;
+    }
+
+    /**
+     * Bound each text value in an MCP resource response.
+     *
+     * @param array $response MCP resource response.
+     * @return array Resource response with bounded text content.
+     */
+    public static function format_resource_response_for_response(array $response): array {
+        if (!isset($response['contents']) || !is_array($response['contents'])) {
+            return ['contents' => []];
+        }
+
+        foreach ($response['contents'] as $index => $content) {
+            if (!is_array($content) || !isset($content['text']) || !is_string($content['text'])) {
+                continue;
+            }
+            $response['contents'][$index]['text'] = self::format_tool_result_for_response($content['text']);
+        }
+        return $response;
     }
 
     /**
@@ -584,6 +620,10 @@ class server {
                     if ($isnotification) {
                         return null;
                     }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
                     return $this->build_jsonrpc_success($id, [
                         'resources' => \tool_teachermcp\local\resource_registry::get_resources(),
                     ]);
@@ -591,6 +631,10 @@ class server {
                 case 'resources/templates/list':
                     if ($isnotification) {
                         return null;
+                    }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
                     }
                     return $this->build_jsonrpc_success($id, [
                         'resourceTemplates' => \tool_teachermcp\local\resource_registry::get_templates(),
@@ -604,11 +648,18 @@ class server {
                     if (!is_string($uri) || empty($uri)) {
                         return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing or invalid uri.');
                     }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
                     $res = \tool_teachermcp\local\resource_registry::read_resource($uri);
                     if ($res === null) {
-                        return $this->build_jsonrpc_error($id, -32602, "Resource not found or inaccessible: {$uri}");
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
                     }
-                    return $this->build_jsonrpc_success($id, $res);
+                    return $this->build_jsonrpc_success(
+                        $id,
+                        self::format_resource_response_for_response($res)
+                    );
 
                 case 'tools/call':
                     if ($isnotification) {

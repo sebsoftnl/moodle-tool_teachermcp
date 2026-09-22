@@ -80,6 +80,18 @@ class oauth_server {
     }
 
     /**
+     * Get all OAuth scopes currently supported by this server.
+     *
+     * @return string[]
+     */
+    public static function get_supported_scopes(): array {
+        return array_values(array_unique(array_merge(
+            self::SUPPORTED_SCOPES,
+            server::get_grantable_external_tool_names()
+        )));
+    }
+
+    /**
      * Get OAuth 2.0 / RFC 8414 Authorization Server Metadata.
      *
      * @return array Metadata dictionary
@@ -97,7 +109,7 @@ class oauth_server {
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'], // K3-R3: S256 only, plain removed.
-            'scopes_supported' => self::SUPPORTED_SCOPES,
+            'scopes_supported' => self::get_supported_scopes(),
             'token_endpoint_auth_methods_supported' => ['none'], // K3-R6: public clients only.
             'service_documentation' => $CFG->wwwroot . '/admin/tool/teachermcp/my_agent.php',
             'resource_registration' => $base . '/protected-resource.php',
