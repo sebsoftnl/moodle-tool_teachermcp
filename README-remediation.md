@@ -19,6 +19,7 @@ Changes implemented
 - Corrected MCP audit event CRUD values for read, update-like and delete tools.
 - Repaired clear stale assertions in the test suite, split the former `mcp_test.php` monolith into seven domain-focused PHPUnit files, and retained regressions for restricted OAuth scopes, suspended module access, remote URL rejection, and the bridge cache mode.
 - Added bounded MCP transport controls: configurable request-body, batch, and response-output budgets plus a per-token-and-source-IP request limit. Tool successes and failures now emit data-minimised audit events; events retain no arguments or tool results.
+- Added an external-provider API slice. Installed Moodle components can declare versioned providers through `*_teachermcp_get_tool_providers()` in `lib.php`; discovery validates qualified `component.local_id` declarations and fails closed. Valid external tools are adapted into the existing MCP catalogue and transport, remain disabled until global plus provider-owned admin settings are enabled, and require exact qualified token grants. The immutable provider context excludes bearer tokens, raw headers and raw payloads. Per-provider admin UI and OAuth grant issuance are not included yet.
 
 Test layout
 
@@ -29,6 +30,7 @@ Test layout
 - `tests/content_tools_test.php`: content, files, H5P and activity deletion.
 - `tests/assessment_tools_test.php`: question bank, quiz, assessment scaffolding and grading.
 - `tests/privacy_test.php`: privacy metadata, context discovery and deletion.
+- `tests/provider_discovery_test.php`: public external-provider contract and fail-closed discovery validation.
 
 Verification performed
 

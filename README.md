@@ -14,7 +14,7 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
 - **`analyze_class_understanding`**: Post-assessment diagnostic psychometrics. Analyzes finished quiz attempts (`\mod_quiz\quiz_attempt::FINISHED`), question versions, question difficulty (facility index), error distributions, and tracks unassessed responses (`needs_grading`).
 - **`prepare_grading_session`**: Batch grading assistant. Bundles ungraded submissions, submitted student texts, file attachment metadata, rubric criteria, and student context into a single payload for rapid AI-assisted grading.
 
-### 2. Complete Suite of 22 MCP Tools
+### 2. Complete Suite of 24 MCP Tools
 1. `get_my_profile`: Teacher identity, system permissions, and environment info.
 2. `get_teacher_courses`: Courses where teacher is actively enrolled with teaching/grading rights.
 3. `get_course_contents`: Section tree, activity names, descriptions, and completion rules.
@@ -24,19 +24,39 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
 7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
 8. `manage_activity`: Inspect or update module settings, names, descriptions, or visibility.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
-10. `delete_activity`: Safely delete activities with mandatory two-step dry-run confirmation (`confirm=true`).
+10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
 11. `get_h5p_libraries`: Inspect installed H5P content types and parameter schemas.
 12. `create_h5p_activity`: Deploy standalone H5P interactive activities (Flashcards, Multiple Choice, Interactive Video) directly to courses.
 13. `scaffold_assessment_unit`: Scaffold complete quizzes, question items, options, and section placement.
-14. `manage_question_bank`: Browse categories, questions, types, and manage question bank items within course contexts.
-15. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
-16. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
-17. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
-18. `manage_grades`: Inspect gradebook items and update individual student grade entries.
-19. `get_group_students`: List students belonging to course groups where teacher has access.
-20. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
-21. `detect_at_risk_students`: Compute early-warning dropout risk index based on activity and grades.
-22. `send_student_message`: Dispatch direct Moodle messages to enrolled students with contact checks and rate limiting.
+14. `create_assignment`: Build complete `mod_assign` activities with due dates, submission settings, and optional grading rubric criteria.
+15. `manage_question_bank`: Browse categories, questions, types, and manage question bank items within course contexts.
+16. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
+17. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
+18. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
+19. `manage_grades`: Inspect gradebook items and update individual student grade entries.
+20. `get_group_students`: List students belonging to course groups where teacher has access.
+21. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
+22. `detect_at_risk_students`: Compute early-warning dropout risk index based on activity and grades.
+23. `send_student_message`: Dispatch direct Moodle messages to enrolled students with contact checks and rate limiting.
+24. `manage_course_calendar`: Schedule course deadlines, office hours, and review sessions on the calendar.
+
+### 3. MCP Protocol Primitives: Prompts & Resources
+- **Native Prompts (`prompts/list`, `prompts/get`)**:
+  - Exposes 15 pre-built pedagogical prompt workflows directly inside AI assistant menus (Claude Desktop, Cursor, Codex) for syllabus ingestion, H5P creation, quiz scaffolding, rubric generation, calendar scheduling, and early warning intervention.
+- **Native Read-Only Resources (`resources/list`, `resources/read`)**:
+  - `moodle://courses`: Real-time JSON listing of the teacher's active teaching courses.
+  - `moodle://course/{course_id}/syllabus`: Dynamic Markdown course syllabus and structural outline.
+  - `moodle://course/{course_id}/announcements`: Latest announcements extracted directly from the course news forum.
+  - `moodle://activity/{cmid}/rubric`: Detailed evaluation rubric and scoring guide definition for assignments.
+
+### 4. Admin CLI Diagnostics & Maintenance
+- **Health Check Doctor (`cli/mcp_doctor.php`)**:
+  ```bash
+  php admin/tool/teachermcp/cli/mcp_doctor.php
+  ```
+  Runs automated 7-step diagnostics covering PHP runtime, required extensions, database tables, token/OAuth stats, tool catalog integrity, prompt/resource status, and HTTPS security.
+- **Scheduled Maintenance Task (`cli/cleanup.php` / Moodle Cron)**:
+  Runs daily at 03:15 AM (or on-demand via CLI) to purge expired OAuth codes, clean inactive authorization tokens, and optimize database indexing.
 
 ---
 
@@ -56,7 +76,7 @@ Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, *
    - Every tool call triggers a `\tool_teachermcp\event\tool_executed` event in Moodle's standard logstore (`mdl_logstore_standard_log`), recording tool name, execution status, course ID, and token ID without logging sensitive payloads.
 5. **Rate Limiting & Safety Guardrails**:
    - Direct messaging (`send_student_message`) includes configurable per-hour rate limits and checks recipient contact preferences.
-   - Destructive operations (`delete_activity`) require explicit two-step confirmation (`confirm=true`).
+   - Destructive operations (`delete_activity`) require explicit UI confirmation or a short-lived preview `confirm_token`.
 
 ---
 
@@ -96,6 +116,11 @@ Moodle endpoints require the `Authorization` header to be passed to PHP:
 ### 4. Capabilities
 - `tool/teachermcp:connectagent`: Allows teachers to create agent connections and use MCP endpoints (granted to editingteacher and manager by default).
 - `tool/teachermcp:manageall`: Allows site administrators to view all site connections and configure settings.
+
+### 5. External MCP tool providers
+Teacher MCP can safely discover tools supplied by independently installed Moodle plugins. These tools are disabled by default, require the global Teacher MCP enablement plus a provider-owned setting, and need an exact qualified token grant. They remain subject to the same token checks, schema validation, request and response limits, rate limiting, and audit logging as built-in tools.
+
+Provider contract, security obligations, and enablement requirements are documented in [docs/developer/extending-teachermcp.md](docs/developer/extending-teachermcp.md).
 
 ---
 

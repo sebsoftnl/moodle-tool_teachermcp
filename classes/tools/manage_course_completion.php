@@ -61,13 +61,14 @@ class manage_course_completion extends base_tool {
     }
 
     public function execute(array $params) {
-        global $CFG, $DB;
+        global $CFG, $DB, $USER;
         require_once($CFG->libdir . '/completionlib.php');
 
         $courseid = (int)($params['course_id'] ?? 0);
         $action = $params['action'] ?? 'get_criteria';
 
         $course = $this->require_course_access($courseid, 'report/completion:view');
+        $context = \context_course::instance($course->id);
         $completion = new \completion_info($course);
 
         if (!$completion->is_enabled()) {

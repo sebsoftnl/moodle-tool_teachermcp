@@ -89,12 +89,13 @@ final class access_test extends \advanced_testcase {
         $this->assertEquals($course->id, $resStudents['course_id']);
 
         $tReadFile = new \tool_teachermcp\tools\read_activity_file();
-        $resReadFile = $tReadFile->execute(['course_id' => (int)$course->id, 'cmid' => (int)$page->cmid]);
-        $this->assertNotEmpty($resReadFile['filename']);
+        $resReadFile = $tReadFile->execute(['cmid' => (int)$page->cmid]);
+        $this->assertSame('empty', $resReadFile['status']);
+        $this->assertSame([], $resReadFile['files']);
 
         $tContentAct = new \tool_teachermcp\tools\manage_content_activity();
         $resContentAct = $tContentAct->execute(['action' => 'get_content', 'cmid' => (int)$page->cmid]);
-        $this->assertEquals('Page', $resContentAct['type']);
+        $this->assertEquals('page', $resContentAct['type']);
 
         // 2. Suspended teacher must fail with error_not_enrolled on require_course_access.
         $this->setUser($suspendedteacher);

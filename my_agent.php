@@ -64,7 +64,37 @@ if ($action === 'create' && confirm_sesskey()) {
         throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
     }
 
-    $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity);
+    $scopepreset = optional_param('scope_preset', 'full', PARAM_ALPHA);
+    $permissions = [];
+    switch ($scopepreset) {
+        case 'grading':
+            $permissions['scopes'] = ['read', 'grade'];
+            break;
+        case 'curriculum':
+            $permissions['scopes'] = ['read', 'write'];
+            break;
+        case 'readonly':
+            $permissions['scopes'] = ['read'];
+            break;
+        case 'full':
+        default:
+            $permissions['all_teacher_tools'] = true;
+            break;
+    }
+
+    $requestedexternaltools = optional_param_array('externaltools', [], PARAM_RAW_TRIMMED);
+    $grantableexternaltools = \tool_teachermcp\server::get_grantable_external_tool_names();
+    $selectedexternaltools = [];
+    foreach ($requestedexternaltools as $toolname) {
+        if (is_string($toolname) && in_array($toolname, $grantableexternaltools, true)) {
+            $selectedexternaltools[$toolname] = true;
+        }
+    }
+    if (!empty($selectedexternaltools)) {
+        $permissions = array_merge($permissions, $selectedexternaltools);
+    }
+
+    $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity, null, $permissions);
     \core\notification::success(get_string('token_created', 'tool_teachermcp'));
 } else if ($action === 'revoke' && confirm_sesskey() && $tokenid) {
     \tool_teachermcp\auth::revoke_token($tokenid, $USER->id);
@@ -163,6 +193,17 @@ $prompta = (object)[
 
 $server = new \tool_teachermcp\server();
 $activetoolscount = count($server->get_tools());
+$externaltooloptions = [];
+foreach (\tool_teachermcp\server::get_grantable_external_tool_names() as $externaltoolname) {
+    $tool = $server->get_tools()[$externaltoolname] ?? null;
+    if ($tool === null) {
+        continue;
+    }
+    $externaltooloptions[] = [
+        'name' => $externaltoolname,
+        'description' => $tool->get_description(),
+    ];
+}
 
 $promptlibrary = [
     [
@@ -236,6 +277,24 @@ $promptlibrary = [
                 'description' => get_string('prompt_scaffold_desc', 'tool_teachermcp'),
                 'prompt' => get_string('prompt_scaffold_text', 'tool_teachermcp', $prompta),
             ],
+            [
+                'title' => get_string('prompt_assignment_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_assignment_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_assignment_text', 'tool_teachermcp', $prompta),
+            ],
+        ],
+    ],
+
+    [
+        'category' => get_string('prompt_cat_calendar', 'tool_teachermcp'),
+        'icon' => 'fa-calendar-alt',
+        'badge' => get_string('prompt_badge_calendar', 'tool_teachermcp'),
+        'items' => [
+            [
+                'title' => get_string('prompt_calendar_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_calendar_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_calendar_text', 'tool_teachermcp', $prompta),
+            ],
         ],
     ],
     [
@@ -306,9 +365,13 @@ $templatedata = [
     'prompt_categories' => $promptlibrary,
     'has_courses' => !empty($courseoptions),
     'courses' => $courseoptions,
+    'has_external_tools' => !empty($externaltooloptions),
+    'external_tools' => $externaltooloptions,
     'tools_count_badge' => get_string('active_tools_count', 'tool_teachermcp', $activetoolscount),
     'selected_course_id' => $courseid,
     'chatgpt_step3_text' => get_string('chatgpt_step3', 'tool_teachermcp', $endpointurl),
+    'mcp_resources' => \tool_teachermcp\local\resource_registry::get_resources(),
+    'mcp_resource_templates' => \tool_teachermcp\local\resource_registry::get_templates(),
 ];
 
 echo $OUTPUT->render_from_template('tool_teachermcp/my_agent', $templatedata);

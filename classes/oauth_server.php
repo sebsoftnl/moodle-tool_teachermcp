@@ -49,20 +49,46 @@ class oauth_server {
         }
 
         $requested = array_values(array_unique($requested));
+        $externaltools = server::get_grantable_external_tool_names();
+        $legacyscopes = [];
+        $externalgrants = [];
         foreach ($requested as $item) {
-            if (!in_array($item, self::SUPPORTED_SCOPES, true)) {
+            if (in_array($item, $externaltools, true)) {
+                $externalgrants[$item] = true;
+            } else if (in_array($item, self::SUPPORTED_SCOPES, true)) {
+                $legacyscopes[] = $item;
+            } else {
                 throw new moodle_exception('error_invalid_scope', 'tool_teachermcp');
             }
         }
 
-        if (in_array('teachermcp', $requested, true) || in_array('all', $requested, true)) {
-            if (count($requested) !== 1) {
+        if (in_array('teachermcp', $legacyscopes, true) || in_array('all', $legacyscopes, true)) {
+            if (count($legacyscopes) !== 1) {
                 throw new moodle_exception('error_invalid_scope', 'tool_teachermcp');
             }
-            return ['scope' => $requested[0], 'permissions' => ['all_teacher_tools' => true]];
+            return [
+                'scope' => implode(' ', $requested),
+                'permissions' => array_merge(['all_teacher_tools' => true], $externalgrants),
+            ];
         }
 
-        return ['scope' => implode(' ', $requested), 'permissions' => ['scopes' => $requested]];
+        $permissions = $externalgrants;
+        if (!empty($legacyscopes)) {
+            $permissions['scopes'] = $legacyscopes;
+        }
+        return ['scope' => implode(' ', $requested), 'permissions' => $permissions];
+    }
+
+    /**
+     * Get all OAuth scopes currently supported by this server.
+     *
+     * @return string[]
+     */
+    public static function get_supported_scopes(): array {
+        return array_values(array_unique(array_merge(
+            self::SUPPORTED_SCOPES,
+            server::get_grantable_external_tool_names()
+        )));
     }
 
     /**
@@ -83,7 +109,7 @@ class oauth_server {
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'], // K3-R3: S256 only, plain removed.
-            'scopes_supported' => self::SUPPORTED_SCOPES,
+            'scopes_supported' => self::get_supported_scopes(),
             'token_endpoint_auth_methods_supported' => ['none'], // K3-R6: public clients only.
             'service_documentation' => $CFG->wwwroot . '/admin/tool/teachermcp/my_agent.php',
             'resource_registration' => $base . '/protected-resource.php',

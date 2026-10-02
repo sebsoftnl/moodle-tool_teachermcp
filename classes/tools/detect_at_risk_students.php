@@ -142,16 +142,17 @@ class detect_at_risk_students extends base_tool {
         // L4: Batch modinfo outside of loop.
         $modinfo = get_fast_modinfo($course);
 
-        // Get enrolled students (strictly filtered by allowed groups if separate groups or group_id specified).
+        // Get active learners only, strictly filtered by allowed groups if separate groups or group_id specified.
+        $userfields = \core_user\fields::for_name()->including('id', 'email')->get_sql('u', false, '', '', false)->selects;
         if ($targetgroupids !== null) {
-            $students = get_enrolled_users($context, 'moodle/course:isincomplete', $targetgroupids, 'u.id, u.firstname, u.lastname, u.email');
-            if (empty($students)) {
-                $students = get_enrolled_users($context, '', $targetgroupids, 'u.id, u.firstname, u.lastname, u.email');
-            }
+            $students = get_enrolled_users($context, '', $targetgroupids, $userfields, '', 0, 0, true);
         } else {
-            $students = get_enrolled_users($context, 'moodle/course:isincomplete', 0, 'u.id, u.firstname, u.lastname, u.email');
-            if (empty($students)) {
-                $students = get_enrolled_users($context, '', 0, 'u.id, u.firstname, u.lastname, u.email');
+            $students = get_enrolled_users($context, '', 0, $userfields, '', 0, 0, true);
+        }
+
+        foreach ($students as $userid => $student) {
+            if (has_capability('moodle/grade:viewall', $context, $userid)) {
+                unset($students[$userid]);
             }
         }
 
@@ -228,9 +229,6 @@ class detect_at_risk_students extends base_tool {
         $atrisk = [];
 
         foreach ($students as $student) {
-            if (has_capability('moodle/course:manageactivities', $context, $student->id)) {
-                continue;
-            }
 
             $riskpoints = 0;
             $flags = [];

@@ -365,7 +365,126 @@ final class content_tools_test extends \advanced_testcase {
             ]);
             $this->fail('Expected exception on confirmation token replay');
         } catch (\moodle_exception $e) {
-            $this->assertEquals('invalidcoursemodule', $e->errorcode);
+            $this->assertEquals('invalidrecordunknown', $e->errorcode);
         }
+    }
+
+    public function test_create_assignment_tool(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $tool = new \tool_teachermcp\tools\create_assignment();
+        $res = $tool->execute([
+            'course_id' => (int)$course->id,
+            'title' => 'AI Ethics Essay',
+            'intro' => '<p>Write an essay on AI ethics.</p>',
+            'due_date' => time() + (7 * 86400),
+            'allow_online_text' => true,
+            'allow_file_submissions' => true,
+            'max_files' => 3,
+            'max_grade' => 100,
+            'rubric_criteria' => [
+                ['description' => 'Critical Reasoning', 'weight_percentage' => 50],
+                ['description' => 'Grammar & Clarity', 'weight_percentage' => 50],
+            ],
+        ]);
+
+        $this->assertSame('success', $res['status']);
+        $this->assertSame('assign', $res['activity_type']);
+        $this->assertGreaterThan(0, $res['cmid']);
+        $this->assertGreaterThan(0, $res['assignment_id']);
+        $this->assertTrue($DB->record_exists('assign', ['id' => $res['assignment_id']]));
+        $assignment = $DB->get_record('assign', ['id' => $res['assignment_id']], '*', MUST_EXIST);
+        $this->assertSame(0, (int)$assignment->teamsubmission);
+        $this->assertSame(0, (int)$assignment->blindmarking);
+        $this->assertSame(0, (int)$assignment->markingworkflow);
+        $this->assertSame(0, (int)$assignment->markingallocation);
+
+        try {
+            $tool->execute([
+                'course_id' => (int)$course->id,
+                'title' => 'Invalid Assignment',
+                'due_date' => time() + 7200,
+                'cutoff_date' => time() + 3600,
+            ]);
+            $this->fail('Expected invalid assignment dates to be rejected.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('error_invalid_params', $e->errorcode);
+        }
+
+        $invalidassignments = [
+            ['title' => ''],
+            [
+                'title' => 'No submission method',
+                'allow_online_text' => false,
+                'allow_file_submissions' => false,
+            ],
+            [
+                'title' => 'Invalid rubric type',
+                'rubric_criteria' => 'not-an-array',
+            ],
+            [
+                'title' => 'Invalid rubric weight',
+                'rubric_criteria' => [['description' => 'Criterion', 'weight_percentage' => -1]],
+            ],
+            [
+                'title' => 'Invalid grade',
+                'max_grade' => 'not-a-number',
+            ],
+        ];
+        foreach ($invalidassignments as $params) {
+            try {
+                $tool->execute(['course_id' => (int)$course->id] + $params);
+                $this->fail('Expected invalid assignment input to be rejected.');
+            } catch (\moodle_exception $e) {
+                $this->assertSame('error_invalid_params', $e->errorcode);
+            }
+        }
+    }
+
+
+    public function test_manage_course_calendar_tool(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $tool = new \tool_teachermcp\tools\manage_course_calendar();
+
+        // 1. Create event
+        $createres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'action' => 'create_event',
+            'name' => 'Midterm Review Session',
+            'description' => '<p>Bring questions on chapter 1 to 4.</p>',
+            'timestart' => time() + 7200,
+            'duration_minutes' => 90,
+        ]);
+        $this->assertSame('success', $createres['status']);
+        $eventid = $createres['event_id'];
+        $this->assertGreaterThan(0, $eventid);
+
+        // 2. List events
+        $listres = $tool->execute([
+            'course_id' => (int)$course->id,
+            'action' => 'list_events',
+        ]);
+        $this->assertNotEmpty($listres['events']);
+        $this->assertSame('Midterm Review Session', $listres['events'][0]['name']);
+
+        // Deleting calendar entries is intentionally not exposed through this write tool.
+        $schema = $tool->get_input_schema();
+        $this->assertNotContains('delete_event', $schema['properties']['action']['enum']);
+        $this->assertTrue($DB->record_exists('event', ['id' => $eventid]));
     }
 }

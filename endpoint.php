@@ -57,10 +57,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Basic healthcheck / discovery on GET (L1: moodle_release removed for security).
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $oauthmeta = \tool_teachermcp\oauth_server::get_metadata();
+    $tools = \tool_teachermcp\server::get_all_tools();
+    $prompts = \tool_teachermcp\local\prompt_registry::get_all_prompts();
+    $resources = \tool_teachermcp\local\resource_registry::get_resources();
+    $templates = \tool_teachermcp\local\resource_registry::get_templates();
+
     echo json_encode([
         'status' => 'online',
         'server' => 'Moodle Teacher MCP Agent Endpoint',
         'protocol' => 'MCP (JSON-RPC 2.0)',
+        'capabilities' => [
+            'tools' => [
+                'count' => count($tools),
+                'listChanged' => false,
+            ],
+            'prompts' => [
+                'count' => count($prompts),
+                'listChanged' => false,
+            ],
+            'resources' => [
+                'static_count' => count($resources),
+                'template_count' => count($templates),
+                'subscribe' => false,
+                'listChanged' => false,
+            ],
+        ],
         'auth' => [
             'type' => 'Bearer / OAuth 2.0 (RFC 7636 PKCE)',
             'authorization_endpoint' => $oauthmeta['authorization_endpoint'],

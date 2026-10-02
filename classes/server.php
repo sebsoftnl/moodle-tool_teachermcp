@@ -19,10 +19,12 @@ namespace tool_teachermcp;
 defined('MOODLE_INTERNAL') || die();
 
 use Exception;
+use moodle_exception;
 use Throwable;
 use stdClass;
 use context_system;
 use tool_teachermcp\tools\base_tool;
+use tool_teachermcp\local\tool_registry;
 
 /**
  * Model Context Protocol (MCP) JSON-RPC 2.0 server for Moodle.
@@ -36,9 +38,6 @@ class server {
 
     /** @var base_tool[] Map of registered tool instances by name */
     protected array $tools = [];
-
-    /** @var base_tool[]|null Cached tool instances */
-    protected static ?array $alltools = null;
 
     /**
      * Tool scope categories mapping (N6).
@@ -64,6 +63,8 @@ class server {
         'manage_activity' => 'write',
         'manage_course_completion' => 'write',
         'duplicate_activity' => 'write',
+        'create_assignment' => 'write',
+        'manage_course_calendar' => 'write',
 
         // Grade tools.
         'prepare_grading_session' => 'grade',
@@ -92,44 +93,7 @@ class server {
      * @return base_tool[]
      */
     public static function get_all_tools(): array {
-        if (self::$alltools !== null) {
-            return self::$alltools;
-        }
-
-        $toolclasses = [
-            \tool_teachermcp\tools\get_my_profile::class,
-            \tool_teachermcp\tools\get_teacher_courses::class,
-            \tool_teachermcp\tools\export_course_learning_material::class,
-            \tool_teachermcp\tools\get_course_contents::class,
-            \tool_teachermcp\tools\scaffold_assessment_unit::class,
-            \tool_teachermcp\tools\detect_at_risk_students::class,
-            \tool_teachermcp\tools\analyze_class_understanding::class,
-            \tool_teachermcp\tools\prepare_grading_session::class,
-            \tool_teachermcp\tools\manage_activity::class,
-            \tool_teachermcp\tools\grade_submission::class,
-            \tool_teachermcp\tools\manage_grades::class,
-            \tool_teachermcp\tools\get_group_students::class,
-            \tool_teachermcp\tools\manage_course_completion::class,
-            \tool_teachermcp\tools\send_student_message::class,
-            \tool_teachermcp\tools\manage_question_bank::class,
-            \tool_teachermcp\tools\duplicate_activity::class,
-            \tool_teachermcp\tools\read_activity_file::class,
-            \tool_teachermcp\tools\delete_activity::class,
-            \tool_teachermcp\tools\upload_course_asset::class,
-            \tool_teachermcp\tools\manage_content_activity::class,
-            \tool_teachermcp\tools\get_h5p_libraries::class,
-            \tool_teachermcp\tools\create_h5p_activity::class,
-        ];
-
-        self::$alltools = [];
-        foreach ($toolclasses as $class) {
-            if (class_exists($class)) {
-                $instance = new $class();
-                self::$alltools[$instance->get_name()] = $instance;
-            }
-        }
-
-        return self::$alltools;
+        return tool_registry::get_all_tools();
     }
 
     /**
@@ -139,6 +103,10 @@ class server {
      * @return string
      */
     public static function get_tool_scope(string $toolname): string {
+        $metadata = tool_registry::get_tool_metadata($toolname);
+        if (!empty($metadata['external']) && isset($metadata['scope'])) {
+            return $metadata['scope'];
+        }
         return self::TOOL_SCOPES[$toolname] ?? 'read';
     }
 
@@ -168,6 +136,62 @@ class server {
     }
 
     /**
+     * Determine whether a registered tool was contributed by another component.
+     *
+     * @param string $toolname MCP tool name.
+     * @return bool True for a validated external tool.
+     */
+    public static function is_external_tool(string $toolname): bool {
+        $metadata = tool_registry::get_tool_metadata($toolname);
+        return !empty($metadata['external']);
+    }
+
+    /**
+     * Check whether externally contributed tools are globally enabled.
+     *
+     * The default is deny, so a fresh or unset installation never publishes an
+     * independently installed component's MCP tools without administrator action.
+     *
+     * @return bool
+     */
+    public static function is_external_tools_enabled_by_admin(?string $toolname = null): bool {
+        if ((int)get_config('tool_teachermcp', 'enable_external_tools') !== 1) {
+            return false;
+        }
+        if ($toolname === null) {
+            return true;
+        }
+        $metadata = tool_registry::get_tool_metadata($toolname);
+        $setting = $metadata['enabledsetting'] ?? null;
+        if (!is_string($setting) || $setting === '') {
+            // Registry validation makes this unreachable for a published v1
+            // provider, but fail closed if a future registry violates it.
+            return false;
+        }
+        [$component, $settingname] = explode('/', $setting, 2);
+        return (int)get_config($component, $settingname) === 1;
+    }
+
+    /**
+     * Return external MCP tool names currently approved for token selection.
+     *
+     * The result intentionally does not evaluate a user's provider capability:
+     * providers must evaluate that against the real resource context at call time.
+     *
+     * @return string[]
+     */
+    public static function get_grantable_external_tool_names(): array {
+        $names = [];
+        foreach (self::get_tools() as $name => $unusedtool) {
+            if (self::is_external_tool($name)) {
+                $names[] = $name;
+            }
+        }
+        sort($names);
+        return $names;
+    }
+
+    /**
      * Check whether a tool is allowed for a given token record.
      *
      * @param string $toolname Name of the tool.
@@ -176,6 +200,20 @@ class server {
      */
     public static function is_tool_allowed_by_token(string $toolname, stdClass $token): bool {
         $toolscope = self::get_tool_scope($toolname);
+
+        // External tools are opt-in per qualified name. Legacy wildcard and scope
+        // grants apply only to the built-in catalogue and must never expand to a
+        // newly installed provider.
+        if (self::is_external_tool($toolname)) {
+            if (empty($token->permissions)) {
+                return false;
+            }
+            $allowed = is_array($token->permissions) ? $token->permissions : json_decode($token->permissions, true);
+            if (!is_array($allowed)) {
+                return false;
+            }
+            return !empty($allowed[$toolname]) || in_array($toolname, $allowed, true);
+        }
 
         // 1. Check token permissions field (JSON encoded or array).
         if (!empty($token->permissions)) {
@@ -219,6 +257,23 @@ class server {
     }
 
     /**
+     * Determine whether a token may read MCP resources.
+     *
+     * Resources expose course data and therefore follow the same read-scope
+     * policy as built-in read tools. External-tool grants never imply read access.
+     *
+     * @param stdClass|null $token Authenticated token record.
+     * @return bool True when the token has a Teacher MCP read grant.
+     */
+    public static function is_resource_allowed_by_token(?stdClass $token): bool {
+        if ($token === null) {
+            return false;
+        }
+
+        return self::is_tool_allowed_by_token('get_course_contents', $token);
+    }
+
+    /**
      * Get a bounded numeric MCP limit from plugin configuration.
      *
      * Invalid or unset values use the supplied default; values are clamped to
@@ -259,7 +314,27 @@ class server {
 
         $suffix = "\n[Output truncated at {$limit} bytes. Narrow the request or request a smaller result set.]";
         $available = max(0, $limit - strlen($suffix));
-        return substr($text, 0, $available) . $suffix;
+        return \core_text::str_max_bytes($text, $available) . $suffix;
+    }
+
+    /**
+     * Bound each text value in an MCP resource response.
+     *
+     * @param array $response MCP resource response.
+     * @return array Resource response with bounded text content.
+     */
+    public static function format_resource_response_for_response(array $response): array {
+        if (!isset($response['contents']) || !is_array($response['contents'])) {
+            return ['contents' => []];
+        }
+
+        foreach ($response['contents'] as $index => $content) {
+            if (!is_array($content) || !isset($content['text']) || !is_string($content['text'])) {
+                continue;
+            }
+            $response['contents'][$index]['text'] = self::format_tool_result_for_response($content['text']);
+        }
+        return $response;
     }
 
     /**
@@ -290,16 +365,23 @@ class server {
             'tokenid' => $token ? $token->id : null,
             'success' => $success,
         ];
+        $metadata = tool_registry::get_tool_metadata($toolname);
+        if (!empty($metadata['external']) && !empty($metadata['component'])) {
+            $other['providercomponent'] = $metadata['component'];
+        }
         if (!$success && $error !== null) {
             $other['errorcode'] = $error instanceof \moodle_exception ? $error->errorcode : 'internal_error';
             $other['errorclass'] = (new \ReflectionClass($error))->getShortName();
         }
 
-        \tool_teachermcp\event\tool_executed::create([
+        $eventdata = [
             'context' => $eventcontext,
-            'courseid' => $courseid ?: SITEID,
             'other' => $other,
-        ])->trigger();
+        ];
+        if ($courseid && $eventcontext instanceof \context_course) {
+            $eventdata['courseid'] = $courseid;
+        }
+        \tool_teachermcp\event\tool_executed::create($eventdata)->trigger();
     }
 
     /**
@@ -319,6 +401,9 @@ class server {
 
         foreach ($all as $name => $tool) {
             $scope = self::get_tool_scope($name);
+            if (self::is_external_tool($name) && !self::is_external_tools_enabled_by_admin($name)) {
+                continue;
+            }
             // Filter disabled scopes.
             if (!self::is_scope_enabled_by_admin($scope)) {
                 continue;
@@ -349,6 +434,9 @@ class server {
 
         // N6: Verify scope is enabled by admin.
         $scope = self::get_tool_scope($toolname);
+        if (self::is_external_tool($toolname) && !self::is_external_tools_enabled_by_admin($toolname)) {
+            throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
+        }
         if (!self::is_scope_enabled_by_admin($scope)) {
             throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
         }
@@ -468,6 +556,13 @@ class server {
                             'tools' => [
                                 'listChanged' => false,
                             ],
+                            'prompts' => [
+                                'listChanged' => false,
+                            ],
+                            'resources' => [
+                                'subscribe' => false,
+                                'listChanged' => false,
+                            ],
                             'logging' => new \stdClass(),
                         ],
                     ]);
@@ -495,6 +590,80 @@ class server {
                         ];
                     }
                     return $this->build_jsonrpc_success($id, ['tools' => $toollist]);
+
+                case 'prompts/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'prompts' => \tool_teachermcp\local\prompt_registry::get_all_prompts(),
+                    ]);
+
+                case 'prompts/get':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $promptname = $params['name'] ?? '';
+                    $promptargs = $params['arguments'] ?? [];
+
+                    if (!is_string($promptname) || empty($promptname)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing prompt name.');
+                    }
+
+                    if (!is_array($promptargs)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Arguments must be an object.');
+                    }
+
+                    $prompt = \tool_teachermcp\local\prompt_registry::get_prompt($promptname, $promptargs);
+                    if ($prompt === null) {
+                        return $this->build_jsonrpc_error($id, -32602, "Prompt '{$promptname}' not found.");
+                    }
+                    return $this->build_jsonrpc_success($id, $prompt);
+
+                case 'resources/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'resources' => \tool_teachermcp\local\resource_registry::get_resources(),
+                    ]);
+
+                case 'resources/templates/list':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
+                    return $this->build_jsonrpc_success($id, [
+                        'resourceTemplates' => \tool_teachermcp\local\resource_registry::get_templates(),
+                    ]);
+
+                case 'resources/read':
+                    if ($isnotification) {
+                        return null;
+                    }
+                    $uri = $params['uri'] ?? '';
+                    if (!is_string($uri) || empty($uri)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing or invalid uri.');
+                    }
+                    $token = auth::get_current_token();
+                    if (!self::is_resource_allowed_by_token($token)) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
+                    $res = \tool_teachermcp\local\resource_registry::read_resource($uri);
+                    if ($res === null) {
+                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                    }
+                    return $this->build_jsonrpc_success(
+                        $id,
+                        self::format_resource_response_for_response($res)
+                    );
 
                 case 'tools/call':
                     if ($isnotification) {
@@ -525,6 +694,12 @@ class server {
 
                     // N6: Check admin scope toggle.
                     $scope = self::get_tool_scope($toolname);
+                    if (self::is_external_tool($toolname) && !self::is_external_tools_enabled_by_admin($toolname)) {
+                        return $this->build_jsonrpc_success($id, [
+                            'content' => [['type' => 'text', 'text' => get_string('error_tool_disabled', 'tool_teachermcp', $toolname)]],
+                            'isError' => true,
+                        ]);
+                    }
                     if (!self::is_scope_enabled_by_admin($scope)) {
                         return $this->build_jsonrpc_success($id, [
                             'content' => [
@@ -595,14 +770,16 @@ class server {
                     'content' => [
                         [
                             'type' => 'text',
-                            'text' => 'Moodle error: ' . $e->getMessage(),
+                            'text' => $e instanceof \moodle_exception
+                                ? 'Moodle error: ' . $e->getMessage()
+                                : 'Internal tool execution error.',
                         ],
                     ],
                     'isError' => true,
                 ]);
             }
 
-            return $isnotification ? null : $this->build_jsonrpc_error($id, -32603, 'Internal error: ' . $e->getMessage());
+            return $isnotification ? null : $this->build_jsonrpc_error($id, -32603, 'Internal server error.');
         }
     }
 
@@ -646,6 +823,9 @@ class server {
 
         foreach ($args as $name => $val) {
             if (!isset($properties[$name])) {
+                if (($schema['additionalProperties'] ?? true) === false) {
+                    return ['valid' => false, 'error' => "Unexpected parameter '{$name}'."];
+                }
                 continue;
             }
             $prop = $properties[$name];

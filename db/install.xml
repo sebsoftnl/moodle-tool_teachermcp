@@ -27,6 +27,7 @@
       <INDEXES>
         <INDEX NAME="tokenhash_idx" UNIQUE="true" FIELDS="tokenhash"/>
         <INDEX NAME="userid_status_idx" UNIQUE="false" FIELDS="userid, status"/>
+        <INDEX NAME="timeexpires_idx" UNIQUE="false" FIELDS="timeexpires"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="tool_teachermcp_oauth_clients" COMMENT="Registered OAuth 2.0 clients for Teacher MCP">
@@ -71,6 +72,7 @@
       <INDEXES>
         <INDEX NAME="codehash_idx" UNIQUE="true" FIELDS="codehash"/>
         <INDEX NAME="clientid_idx" UNIQUE="false" FIELDS="clientid"/>
+        <INDEX NAME="timeexpires_idx" UNIQUE="false" FIELDS="timeexpires"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="tool_teachermcp_assets" COMMENT="Files created by Teacher MCP for privacy tracking">

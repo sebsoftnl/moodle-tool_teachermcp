@@ -142,7 +142,8 @@ class grade_submission extends base_tool {
             }
 
             // Get enrolled students in group.
-            $users = get_enrolled_users($context, 'mod/assign:submit', $querygroup, 'u.id, u.firstname, u.lastname, u.email');
+            $userfields = \core_user\fields::for_name()->including('id', 'email')->get_sql('u', false, '', '', false)->selects;
+            $users = get_enrolled_users($context, 'mod/assign:submit', $querygroup, $userfields);
 
             $list = [];
             foreach ($users as $student) {

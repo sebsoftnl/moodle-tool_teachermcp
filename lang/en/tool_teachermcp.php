@@ -158,6 +158,16 @@ $string['prompt_scaffold_title'] = 'Scaffold Complete Assessment Unit';
 $string['prompt_scaffold_desc'] = 'Creates a ready-to-use quiz with 5 multiple-choice questions, feedback explanations, and timing constraints.';
 $string['prompt_scaffold_text'] = 'Use "scaffold_assessment_unit" to create a formative quiz of 5 multiple-choice questions in course ID {$a->courseid}, section 2. Base questions on the course material, include didactic feedback for distractors, and keep the quiz hidden for teacher review.';
 
+$string['prompt_assignment_title'] = 'Scaffold Assignment with Evaluation Rubric';
+$string['prompt_assignment_desc'] = 'Creates a rich assignment (mod_assign) with instructions, due date, submission rules, and rubric criteria.';
+$string['prompt_assignment_text'] = 'Use "create_assignment" to create an assignment in course ID {$a->courseid}, section 3 titled "Critical Essay on AI Ethics". Include comprehensive instructions, set the due date 14 days from now, allow online text and PDF submissions, and embed rubric evaluation criteria for Argumentation (50%) and Clarity (50%).';
+
+
+
+$string['prompt_calendar_title'] = 'Schedule Course Review Session or Office Hours';
+$string['prompt_calendar_desc'] = 'Schedules a deadline or live review session onto the Moodle course calendar.';
+$string['prompt_calendar_text'] = 'Use "manage_course_calendar" with action="create_event" in course ID {$a->courseid}. Schedule a 60-minute "Midterm Exam Review Session" for tomorrow at 14:00 with meeting notes and preparation guidelines.';
+
 $string['prompt_atrisk_title'] = 'Identify Students at Academic Risk';
 $string['prompt_atrisk_desc'] = 'Calculates risk signals from inactivity, overdue tasks, and failing scores.';
 $string['prompt_atrisk_text'] = 'Run "detect_at_risk_students" for course ID {$a->courseid}. Which students are inactive or have missing work? Draft a motivating check-in message for the 3 students with highest risk that I can send via "send_student_message".';
@@ -242,7 +252,7 @@ $string['prompt_cat_maintenance'] = 'Course Maintenance & Safety';
 $string['prompt_badge_maintenance'] = 'Dangerous Actions';
 $string['prompt_delete_title'] = 'Safely Delete Outdated Activity (Two-Step Confirmation)';
 $string['prompt_delete_desc'] = 'Uses the dangerous delete_activity tool with safe preview before permanent removal.';
-$string['prompt_delete_text'] = 'Inspect activity cmid [enter_cmid] and run "delete_activity" with confirm=false. Show me the activity details and warn me about any consequences. Do not delete until I explicitly give confirmation.';
+$string['prompt_delete_text'] = 'Inspect activity cmid [enter_cmid] with "delete_activity". Show me the activity details and consequences. Do not delete until I explicitly give confirmation; then use the UI confirmation flow or the preview-issued confirm_token when UI confirmation is disabled.';
 
 // Agent Skill UI strings.
 $string['agent_skill_title'] = 'AI Agent System Prompt & Skills';
@@ -281,9 +291,17 @@ $string['error_item_not_found'] = 'Item not found.';
 $string['error_invalid_params'] = 'Invalid parameters: {$a}';
 $string['error_grade_locked'] = 'Grade item is locked.';
 $string['error_grade_out_of_range'] = 'Grade is out of allowed range.';
+$string['error_invalid_token'] = 'Invalid or revoked agent authentication token.';
+$string['error_expired_token'] = 'Agent authentication token has expired.';
+$string['error_invalid_client'] = 'Invalid client authentication or unknown client.';
+$string['error_unsupported_response_type'] = 'The requested response type is not supported.';
+$string['error_unsupported_grant_type'] = 'The authorization grant type is not supported.';
+$string['error_invalid_grant'] = 'The provided authorization grant is invalid, expired, or already used.';
+$string['error_registration_disabled'] = 'Dynamic client registration is disabled by the site administrator.';
 $string['event_token_created'] = 'Teacher MCP token created';
 $string['event_token_revoked'] = 'Teacher MCP token revoked';
 $string['event_tool_executed'] = 'Teacher MCP tool executed';
+$string['task_cleanup'] = 'Clean up expired Teacher MCP authorization codes and tokens';
 
 // Admin dashboard strings (L7).
 $string['stat_active_tokens'] = 'Active Agent Connections';
@@ -310,6 +328,8 @@ $string['error_library_not_found'] = 'Requested H5P library was not found or is 
 $string['error_create_zip'] = 'Failed to create temporary H5P zip archive.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
+$string['setting_enable_external_tools'] = 'Enable externally contributed MCP tools';
+$string['setting_enable_external_tools_desc'] = 'Allows independently installed Moodle plugins to publish validated Teacher MCP tools. Each provider tool remains hidden until both this setting and its provider-owned enable setting are enabled.';
 $string['setting_enable_write_tools'] = 'Enable authoring and write tools';
 $string['setting_enable_write_tools_desc'] = 'Allows AI agents to create and modify course content, activities, question bank items, and completion criteria.';
 $string['setting_enable_grade_tools'] = 'Enable grading tools';
@@ -335,6 +355,9 @@ $string['error_tool_disabled'] = 'Tool "{$a}" is disabled by the site administra
 $string['error_tool_not_permitted'] = 'Tool "{$a}" is not permitted for this agent token.';
 $string['error_tool_not_found'] = 'Tool "{$a}" not found.';
 $string['error_group_access_denied'] = 'You do not have access to this group or separate groups mode restricts viewing this group.';
+
+$string['external_tool_grants'] = 'External MCP tool grants';
+$string['external_tool_grants_desc'] = 'Select each independently provided tool this token may use. These grants are in addition to the built-in Teacher MCP tools.';
 
 // Privacy metadata strings (M5).
 $string['privacy:metadata:tool_teachermcp_tokens'] = 'Authentication tokens issued for teacher AI agent connections.';
@@ -369,3 +392,18 @@ $string['tokens'] = 'Access tokens';
 $string['oauth_codes'] = 'OAuth authorization codes';
 $string['course_assets'] = 'Course assets';
 $string['revoked'] = 'Revoked';
+
+// Token role presets and MCP resources.
+$string['scope_preset'] = 'Permission Role Preset';
+$string['scope_preset_help'] = 'Restrict what actions this AI agent connection is allowed to perform.';
+$string['scope_preset_full'] = 'Full Co-Pilot (Read, Author, Grade, Messages, Delete)';
+$string['scope_preset_grading'] = 'Grading Assistant (Read submissions, Post grades & feedback)';
+$string['scope_preset_curriculum'] = 'Curriculum Designer (Read materials, Create pages, quizzes & activities)';
+$string['scope_preset_readonly'] = 'Read-Only Observer / Tutor (Ingest syllabus & course contents only)';
+$string['mcp_resources_title'] = 'MCP Read-Only Dynamic Resources';
+$string['mcp_resources_desc'] = 'Standardized read-only URIs that AI agents can inspect to obtain real-time course structure, announcements, and evaluation rubrics.';
+$string['prompt_cat_communication'] = 'Course Communication';
+$string['prompt_badge_communication'] = 'Forums & Messages';
+$string['prompt_cat_calendar'] = 'Course Scheduling';
+$string['prompt_badge_calendar'] = 'Calendar & Deadlines';
+

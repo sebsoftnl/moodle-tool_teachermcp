@@ -120,4 +120,61 @@ final class auth_test extends \advanced_testcase {
         \tool_teachermcp\observer::capability_assigned($capevent);
         $this->assertFalse($cache->get($user->id));
     }
+
+    public function test_cleanup_task(): void {
+        global $DB;
+
+        $this->resetAfterTest(true);
+
+        $now = time();
+        $user = $this->getDataGenerator()->create_user();
+
+        // 1. Insert an expired OAuth code.
+        $expiredcodeid = $DB->insert_record('tool_teachermcp_oauth_codes', (object)[
+            'codehash' => hash('sha256', 'expiredcode'),
+            'clientid' => 'test-client',
+            'userid' => $user->id,
+            'redirecturi' => 'https://example.com/cb',
+            'timecreated' => $now - 3600,
+            'timeexpires' => $now - 1800,
+            'status' => 0,
+        ]);
+
+        // 2. Insert an active (unexpired) OAuth code.
+        $activecodeid = $DB->insert_record('tool_teachermcp_oauth_codes', (object)[
+            'codehash' => hash('sha256', 'activecode'),
+            'clientid' => 'test-client',
+            'userid' => $user->id,
+            'redirecturi' => 'https://example.com/cb',
+            'timecreated' => $now,
+            'timeexpires' => $now + 600,
+            'status' => 0,
+        ]);
+
+        // 3. Insert an active token that has expired.
+        $expiredtokenid = $DB->insert_record('tool_teachermcp_tokens', (object)[
+            'userid' => $user->id,
+            'name' => 'Expired Token',
+            'tokenhash' => hash('sha256', 'expiredtok'),
+            'tokenlastchars' => 'redtok',
+            'timeexpires' => $now - 3600,
+            'timecreated' => $now - 7200,
+            'timemodified' => $now - 7200,
+            'status' => 1,
+        ]);
+
+        // Run the cleanup task.
+        $task = new \tool_teachermcp\task\cleanup_task();
+        ob_start();
+        $task->execute();
+        ob_end_clean();
+
+        // Expired code should be deleted, active code preserved.
+        $this->assertFalse($DB->record_exists('tool_teachermcp_oauth_codes', ['id' => $expiredcodeid]));
+        $this->assertTrue($DB->record_exists('tool_teachermcp_oauth_codes', ['id' => $activecodeid]));
+
+        // Expired active token should have status changed to 0 (revoked).
+        $token = $DB->get_record('tool_teachermcp_tokens', ['id' => $expiredtokenid]);
+        $this->assertSame(0, (int)$token->status);
+    }
 }

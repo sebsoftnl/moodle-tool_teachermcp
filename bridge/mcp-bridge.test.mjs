@@ -4,7 +4,27 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { getTokenFilePath, saveTokenStore } from './mcp-bridge.mjs';
+import { getBrowserLauncher, getTokenFilePath, saveTokenStore } from './mcp-bridge.mjs';
+
+test('getBrowserLauncher avoids command shells on every supported platform', () => {
+    const url = 'https://example.test/callback?state=one&next=two|three';
+
+    assert.deepEqual(getBrowserLauncher(url, 'win32'), {
+        command: 'explorer.exe',
+        args: [url],
+    });
+    assert.deepEqual(getBrowserLauncher(url, 'darwin'), {
+        command: 'open',
+        args: [url],
+    });
+    assert.deepEqual(getBrowserLauncher(url, 'linux'), {
+        command: 'xdg-open',
+        args: [url],
+    });
+
+    assert.throws(() => getBrowserLauncher('file:///tmp/nope', 'win32'));
+    assert.throws(() => getBrowserLauncher('https://user:secret@example.test/', 'win32'));
+});
 
 test('saveTokenStore creates a private Unix token cache', () => {
     const temporaryHome = fs.mkdtempSync(path.join(os.tmpdir(), 'teachermcp-bridge-'));
@@ -17,8 +37,10 @@ test('saveTokenStore creates a private Unix token cache', () => {
             endpoint: {access_token: 'test-token'},
         });
 
-        assert.equal(fs.statSync(path.dirname(tokenFilePath)).mode & 0o777, 0o700);
-        assert.equal(fs.statSync(tokenFilePath).mode & 0o777, 0o600);
+        if (process.platform !== 'win32') {
+            assert.equal(fs.statSync(path.dirname(tokenFilePath)).mode & 0o777, 0o700);
+            assert.equal(fs.statSync(tokenFilePath).mode & 0o777, 0o600);
+        }
         assert.deepEqual(JSON.parse(fs.readFileSync(tokenFilePath, 'utf8')), {
             endpoint: {access_token: 'test-token'},
         });

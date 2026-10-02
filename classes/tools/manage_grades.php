@@ -83,7 +83,7 @@ class manage_grades extends base_tool {
     }
 
     public function execute(array $params) {
-        global $DB, $CFG;
+        global $DB, $CFG, $USER;
         require_once($CFG->libdir . '/gradelib.php');
 
         $courseid = (int)($params['course_id'] ?? 0);

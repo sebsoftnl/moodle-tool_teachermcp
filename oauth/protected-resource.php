@@ -42,9 +42,9 @@ $metadata = [
     'authorization_servers' => [
         $CFG->wwwroot . '/admin/tool/teachermcp/oauth',
     ],
-    'scopes_supported' => [
-        'teachermcp',
-    ],
+    // Keep discovery aligned with authorization-server metadata so OAuth clients
+    // can request the least-privilege scopes that the server actually enforces.
+    'scopes_supported' => \tool_teachermcp\oauth_server::get_supported_scopes(),
     'bearer_methods_supported' => [
         'header',
     ],

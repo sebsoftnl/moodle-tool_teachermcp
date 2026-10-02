@@ -17,7 +17,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 // Default English fallback strings (managed and localized via standard Moodle AMOS).
 let I18N = /* __MOODLE_I18N_INJECT_START__ */ {
@@ -108,15 +108,28 @@ async function loadStringsFromMoodle(baseUrl, lang) {
     }
 }
 
-function openBrowser(url) {
-    const platform = process.platform;
-    if (platform === 'win32') {
-        exec(`start "" "${url}"`);
-    } else if (platform === 'darwin') {
-        exec(`open "${url}"`);
-    } else {
-        exec(`xdg-open "${url}"`);
+export function getBrowserLauncher(url, platform = process.platform) {
+    const target = validateEndpoint(url);
+    if (target.username || target.password) {
+        throw new Error('Endpoint URL must not contain credentials.');
     }
+    const safeUrl = target.href;
+    if (platform === 'win32') {
+        return {
+            command: 'explorer.exe',
+            args: [safeUrl],
+        };
+    }
+    if (platform === 'darwin') {
+        return {command: 'open', args: [safeUrl]};
+    }
+    return {command: 'xdg-open', args: [safeUrl]};
+}
+
+function openBrowser(url) {
+    const launcher = getBrowserLauncher(url);
+    const child = spawn(launcher.command, launcher.args, {shell: false, stdio: 'ignore'});
+    child.unref();
 }
 
 function base64Url(buffer) {

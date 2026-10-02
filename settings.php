@@ -108,6 +108,14 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 
+    // External providers are disabled until a site administrator explicitly opts in.
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_teachermcp/enable_external_tools',
+        get_string('setting_enable_external_tools', 'tool_teachermcp'),
+        get_string('setting_enable_external_tools_desc', 'tool_teachermcp'),
+        0
+    ));
+
     // N3: Allow deleting questions via MCP tools (default 0).
     $settings->add(new admin_setting_configcheckbox(
         'tool_teachermcp/allow_delete_questions',

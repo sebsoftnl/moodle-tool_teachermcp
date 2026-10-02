@@ -21,7 +21,7 @@ defined('MOODLE_INTERNAL') || die();
 use moodle_exception;
 use stdClass;
 use Throwable;
-use question_version_status;
+use core_question\local\bank\question_version_status;
 
 /**
  * MCP tool to scaffold an assessment unit (Quiz + question pool) via official Moodle APIs.
@@ -167,7 +167,8 @@ class scaffold_assessment_unit extends base_tool {
 
         try {
             // Find default category or create subcategory under it (never parent=0).
-            $defaultcat = question_get_default_category($context->id);
+            $contexts = new \core_question\local\bank\question_edit_contexts($context);
+            $defaultcat = question_make_default_categories($contexts->all());
             $catname = clean_param($quiztitle . ' Questions', PARAM_TEXT);
 
             $category = $DB->get_record('question_categories', [
@@ -202,6 +203,7 @@ class scaffold_assessment_unit extends base_tool {
             $moduleinfo->section = $sectionnum;
             $moduleinfo->visible = $visible ? 1 : 0;
             $moduleinfo->visibleoncoursepage = 1;
+            $moduleinfo->cmidnumber = '';
             $moduleinfo->name = $quiztitle;
             $moduleinfo->introeditor = [
                 'text' => $quizintro,
@@ -279,8 +281,8 @@ class scaffold_assessment_unit extends base_tool {
             $moduleinfo->reviewoverallfeedback = $quizconfig->reviewoverallfeedback ?? 0x10000;
 
             // Feedback fields for quiz_process_options().
-            $moduleinfo->feedbacktext = [['text' => '', 'format' => FORMAT_HTML]];
-            $moduleinfo->feedbackboundaries = [];
+            $moduleinfo->feedbacktext = [['text' => '', 'format' => FORMAT_HTML, 'itemid' => 0]];
+            $moduleinfo->feedbackboundaries = [0];
 
             $moduleinfo->questionsperpage = $quizconfig->questionsperpage ?? 1;
             $moduleinfo->shuffleanswers = $quizconfig->shuffleanswers ?? 1;
@@ -403,6 +405,8 @@ class scaffold_assessment_unit extends base_tool {
      * Save an individual question into Moodle question bank.
      */
     protected function build_and_save_question(int $categoryid, array $qdef): stdClass {
+        global $USER;
+
         $qtype = $qdef['qtype'];
         $qtypeobj = \question_bank::get_qtype($qtype);
 
@@ -465,6 +469,9 @@ class scaffold_assessment_unit extends base_tool {
             }
         }
 
-        return $qtypeobj->save_question(new stdClass(), $form);
+        $basequestion = new stdClass();
+        $basequestion->qtype = $qtype;
+        $basequestion->createdby = $USER->id;
+        return $qtypeobj->save_question($basequestion, $form);
     }
 }
