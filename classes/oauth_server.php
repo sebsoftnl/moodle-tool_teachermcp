@@ -80,6 +80,40 @@ class oauth_server {
     }
 
     /**
+     * Describe currently enabled tools without changing the normalized OAuth grants.
+     *
+     * @param array $permissions Permissions returned by normalise_scope().
+     * @return array[] Consent rows with an id and a translated description.
+     */
+    public static function get_consent_permissions(array $permissions): array {
+        $scopes = [];
+        $external = [];
+        $token = (object)['permissions' => $permissions];
+        foreach (server::get_tools($token) as $name => $tool) {
+            if (server::is_external_tool($name)) {
+                $external[$name] = [
+                    'id' => $name,
+                    'description' => get_string('oauth_perm_external', 'tool_teachermcp', $name),
+                ];
+            } else {
+                $scopes[server::get_tool_scope($name)] = true;
+            }
+        }
+
+        $rows = [];
+        foreach (['read', 'write', 'grade', 'message', 'delete'] as $scope) {
+            if (isset($scopes[$scope])) {
+                $rows[] = [
+                    'id' => $scope,
+                    'description' => get_string('oauth_perm_' . $scope, 'tool_teachermcp'),
+                ];
+            }
+        }
+        ksort($external);
+        return array_merge($rows, array_values($external));
+    }
+
+    /**
      * Get all OAuth scopes currently supported by this server.
      *
      * @return string[]

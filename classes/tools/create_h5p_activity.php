@@ -81,6 +81,11 @@ class create_h5p_activity extends base_tool {
                     'description' => 'Whether to also store this H5P in the course Content Bank for future teacher re-use and editing (default: true).',
                     'default' => true,
                 ],
+                'visible' => [
+                    'type' => 'boolean',
+                    'description' => 'Whether the activity should be immediately visible to students (default: false).',
+                    'default' => false,
+                ],
                 'max_grade' => [
                     'type' => 'number',
                     'description' => 'Maximum grade points for this activity (default: 100).',
@@ -123,8 +128,8 @@ class create_h5p_activity extends base_tool {
 
         // N4: Validate JSON structure if passed as string and enforce max 2.5 MB limit.
         if (is_string($contentparams)) {
-            $decoded = json_decode($contentparams, true);
-            if ($decoded === null) {
+            $decoded = json_decode($contentparams);
+            if (!$decoded instanceof stdClass) {
                 throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null, 'Invalid JSON structure in params.');
             }
             $contentparams = $decoded;
@@ -134,6 +139,10 @@ class create_h5p_activity extends base_tool {
         $this->check_params_depth($contentparams);
 
         $encodedparams = json_encode($contentparams);
+        if ($encodedparams === false || $encodedparams === '{}' || !str_starts_with($encodedparams, '{')) {
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
+                'H5P content parameters must encode a nonempty JSON object.');
+        }
         if (strlen($encodedparams) > 2621440) {
             throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null, 'H5P content parameters exceed maximum allowed size of 2.5 MB.');
         }
@@ -151,8 +160,13 @@ class create_h5p_activity extends base_tool {
 
         // N5: Activities are hidden by default (visible = 0).
         $visible = !empty($params['visible']) ? 1 : 0;
-        if ($visible === 1) {
-            require_capability('moodle/course:activityvisibility', $coursecontext);
+        if ($deployasactivity) {
+            require_capability('mod/h5pactivity:addinstance', $coursecontext);
+            if ($visible === 1) {
+                require_capability('moodle/course:activityvisibility', $coursecontext);
+            }
+        } else if ($addtocontentbank) {
+            require_capability('moodle/contentbank:upload', $coursecontext);
         }
 
         // 1. Locate latest runnable library matching the requested exact name.
@@ -173,6 +187,20 @@ class create_h5p_activity extends base_tool {
                 null,
                 "H5P library '{$libraryname}' was not found or is disabled on this Moodle site. Call get_h5p_libraries to check available types."
             );
+        }
+
+        if (!$deployasactivity && !$addtocontentbank) {
+            return [
+                'status' => 'success',
+                'title' => $title,
+                'library' => "{$lib->machinename} v{$lib->majorversion}.{$lib->minorversion}",
+                'cmid' => null,
+                'view_url' => null,
+                'content_bank_id' => null,
+                'course_id' => $course->id,
+                'section_number' => $sectionnum,
+                'message' => 'No destination was requested; nothing was stored or deployed.',
+            ];
         }
 
         // 2. Fetch preloaded dependencies.
@@ -241,126 +269,161 @@ class create_h5p_activity extends base_tool {
         $cmid = null;
         $viewurl = null;
 
-        // 5. Add to Content Bank if requested (N5).
-        $contentbankwarning = null;
-        if ($addtocontentbank) {
-            try {
-                if (!has_capability('moodle/contentbank:upload', $coursecontext)) {
-                    $contentbankwarning = 'Could not save to Content Bank: missing moodle/contentbank:upload capability.';
-                } else {
-                    $cb = new \core_contentbank\contentbank();
-                    $contenttype = $cb->get_contenttype_for_file($safefilename . '.h5p');
-                    if ($contenttype && !$contenttype->can_upload()) {
-                        $contentbankwarning = 'Could not save to Content Bank: content type cannot be uploaded.';
+        $transaction = $DB->start_delegated_transaction();
+        try {
+            // 5. Add to Content Bank if requested (N5).
+            $contentbankwarning = null;
+            if ($addtocontentbank) {
+                $cbfile = null;
+                try {
+                    if (!has_capability('moodle/contentbank:upload', $coursecontext)) {
+                        $contentbankwarning = 'Could not save to Content Bank: missing moodle/contentbank:upload capability.';
                     } else {
-                        $cbrecord = [
-                            'contextid' => $coursecontext->id,
-                            'component' => 'contentbank',
-                            'filearea' => 'public',
-                            'itemid' => 0,
-                            'filepath' => '/',
-                            'filename' => $safefilename . '_' . time() . '.h5p',
-                            'userid' => $USER->id,
-                        ];
-                        $cbfile = $fs->create_file_from_pathname($cbrecord, $zippath);
-                        $cbcontent = $cb->create_content_from_file($coursecontext, $USER->id, $cbfile);
-                        if ($cbcontent) {
-                            $contentbankid = (int)$cbcontent->get_id();
+                        $cb = new \core_contentbank\contentbank();
+                        if ($cb->get_extension_supporter('.h5p', $coursecontext) === null) {
+                            $contentbankwarning = 'Could not save to Content Bank: content type cannot be uploaded.';
                         } else {
-                            $contentbankwarning = 'Could not save to Content Bank: creation returned empty content.';
+                            $cbrecord = [
+                                'contextid' => $coursecontext->id,
+                                'component' => 'contentbank',
+                                'filearea' => 'public',
+                                'itemid' => 0,
+                                'filepath' => '/',
+                                'filename' => $safefilename . '_' . time() . '.h5p',
+                                'userid' => $USER->id,
+                            ];
+                            $cbfile = $fs->create_file_from_pathname($cbrecord, $zippath);
+                            $cbcontent = $cb->create_content_from_file($coursecontext, $USER->id, $cbfile);
+                            if ($cbcontent) {
+                                $contentbankid = (int)$cbcontent->get_id();
+                            } else {
+                                $contentbankwarning = 'Could not save to Content Bank: creation returned empty content.';
+                            }
                         }
                     }
+                } catch (\Throwable $cbe) {
+                    $contentbankwarning = 'Could not save to Content Bank: ' . $cbe->getMessage();
+                } finally {
+                    if ($cbfile !== null) {
+                        $cbfile->delete();
+                    }
                 }
-            } catch (\Throwable $cbe) {
-                $contentbankwarning = 'Could not save to Content Bank: ' . $cbe->getMessage();
+            }
+            if (!$deployasactivity && $contentbankid === null) {
+                throw new moodle_exception('error_h5p_save_failed', 'tool_teachermcp');
+            }
+
+            // 6. Deploy as mod_h5pactivity in course if requested (N5).
+            if ($deployasactivity) {
+                $modulerec = $DB->get_record('modules', ['name' => 'h5pactivity'], '*', MUST_EXIST);
+
+                $cm = new stdClass();
+                $cm->course = $course->id;
+                $cm->module = $modulerec->id;
+                $cm->instance = 0;
+                $cm->section = $sectionnum;
+                $cm->idnumber = '';
+                $cm->added = time();
+                $cm->score = 0;
+                $cm->indent = 0;
+                $cm->visible = $visible;
+                $cm->visibleold = $visible;
+                $cm->groupmode = 0;
+                $cm->groupingid = 0;
+                $cm->completion = 0;
+
+                $cmid = add_course_module($cm);
+                course_add_cm_to_section($course, $cmid, $sectionnum);
+
+                $modcontext = \context_module::instance($cmid);
+                $modfilerecord = [
+                    'contextid' => $modcontext->id,
+                    'component' => 'mod_h5pactivity',
+                    'filearea' => 'package',
+                    'itemid' => 0,
+                    'filepath' => '/',
+                    'filename' => $safefilename . '.h5p',
+                    'userid' => $USER->id,
+                ];
+                $packagefile = $fs->create_file_from_pathname($modfilerecord, $zippath);
+
+                $h5pactivity = new stdClass();
+                $h5pactivity->course = $course->id;
+                $h5pactivity->name = $title;
+                $h5pactivity->intro = $intro;
+                $h5pactivity->introformat = FORMAT_HTML;
+                $h5pactivity->grade = $maxgrade;
+                $h5pactivity->grademethod = 1; // Highest attempt.
+                $h5pactivity->enabletracking = 1;
+                $h5pactivity->coursemodule = $cmid;
+                $h5pactivity->cmidnumber = '';
+                $h5pactivity->reference = $packagefile->get_filename();
+
+                $factory = new \core_h5p\factory();
+                $core = $factory->get_core();
+                $config = \core_h5p\helper::decode_display_options($core);
+                $h5pactivity->displayoptions = \core_h5p\helper::get_display_options($core, $config);
+
+                h5pactivity_add_instance($h5pactivity, null);
+
+                // Deploy and register the H5P content into core {h5p} tables.
+                if (!$this->save_activity_content($factory, $packagefile)) {
+                    throw new moodle_exception('error_h5p_save_failed', 'tool_teachermcp');
+                }
+
+                \course_modinfo::purge_course_module_cache($course->id, $cmid);
+                rebuild_course_cache($course->id, true);
+
+                $viewurl = (new moodle_url('/mod/h5pactivity/view.php', ['id' => $cmid]))->out(false);
+            }
+
+            $result = [
+                'status' => 'success',
+                'title' => $title,
+                'library' => "{$lib->machinename} v{$lib->majorversion}.{$lib->minorversion}",
+                'cmid' => $cmid,
+                'view_url' => $viewurl,
+                'content_bank_id' => $contentbankid,
+                'course_id' => $course->id,
+                'section_number' => $sectionnum,
+                'message' => $cmid !== null ? "H5P activity '{$title}' successfully built, validated, and deployed."
+                    : "H5P content '{$title}' successfully saved to the Content Bank.",
+            ];
+
+            if ($cmid !== null) {
+                $result['visible'] = (bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST);
+            }
+
+            if ($contentbankwarning !== null) {
+                $result['warning'] = $contentbankwarning;
+            }
+
+            $transaction->allow_commit();
+            return $result;
+        } catch (\Throwable $error) {
+            try {
+                $transaction->rollback($error);
+            } finally {
+                // Native module caches are outside the database transaction.
+                $cache = \cache::make('core', 'coursemodinfo');
+                $cache->acquire_lock($course->id);
+                try {
+                    $cache->delete($course->id);
+                } finally {
+                    $cache->release_lock($course->id);
+                }
+                \course_modinfo::clear_instance_cache();
+            }
+        } finally {
+            if (file_exists($zippath)) {
+                unlink($zippath);
             }
         }
+    }
 
-        // 6. Deploy as mod_h5pactivity in course if requested (N5).
-        if ($deployasactivity) {
-            require_capability('mod/h5pactivity:addinstance', $coursecontext);
-            $modulerec = $DB->get_record('modules', ['name' => 'h5pactivity'], '*', MUST_EXIST);
-
-            $cm = new stdClass();
-            $cm->course = $course->id;
-            $cm->module = $modulerec->id;
-            $cm->instance = 0;
-            $cm->section = $sectionnum;
-            $cm->idnumber = '';
-            $cm->added = time();
-            $cm->score = 0;
-            $cm->indent = 0;
-            $cm->visible = $visible;
-            $cm->visibleold = $visible;
-            $cm->groupmode = 0;
-            $cm->groupingid = 0;
-            $cm->completion = 0;
-
-            $cmid = add_course_module($cm);
-            course_add_cm_to_section($course, $cmid, $sectionnum);
-
-            $modcontext = \context_module::instance($cmid);
-            $modfilerecord = [
-                'contextid' => $modcontext->id,
-                'component' => 'mod_h5pactivity',
-                'filearea' => 'package',
-                'itemid' => 0,
-                'filepath' => '/',
-                'filename' => $safefilename . '.h5p',
-                'userid' => $USER->id,
-            ];
-            $packagefile = $fs->create_file_from_pathname($modfilerecord, $zippath);
-
-            $h5pactivity = new stdClass();
-            $h5pactivity->course = $course->id;
-            $h5pactivity->name = $title;
-            $h5pactivity->intro = $intro;
-            $h5pactivity->introformat = FORMAT_HTML;
-            $h5pactivity->grade = $maxgrade;
-            $h5pactivity->grademethod = 1; // Highest attempt.
-            $h5pactivity->enabletracking = 1;
-            $h5pactivity->coursemodule = $cmid;
-            $h5pactivity->cmidnumber = '';
-            $h5pactivity->reference = $packagefile->get_filename();
-
-            $factory = new \core_h5p\factory();
-            $core = $factory->get_core();
-            $config = \core_h5p\helper::decode_display_options($core);
-            $h5pactivity->displayoptions = \core_h5p\helper::get_display_options($core, $config);
-
-            $instanceid = h5pactivity_add_instance($h5pactivity, null);
-
-            // Deploy and register the H5P content into core {h5p} tables.
-            \core_h5p\helper::save_h5p($factory, $packagefile, (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]);
-
-            \course_modinfo::purge_course_module_cache($course->id, $cmid);
-            rebuild_course_cache($course->id, true);
-
-            $viewurl = (new moodle_url('/mod/h5pactivity/view.php', ['id' => $cmid]))->out(false);
-        }
-
-        // Clean up temporary local zip file.
-        if (file_exists($zippath)) {
-            @unlink($zippath);
-        }
-
-        $result = [
-            'status' => 'success',
-            'title' => $title,
-            'library' => "{$lib->machinename} v{$lib->majorversion}.{$lib->minorversion}",
-            'cmid' => $cmid,
-            'view_url' => $viewurl,
-            'content_bank_id' => $contentbankid,
-            'course_id' => $course->id,
-            'section_number' => $sectionnum,
-            'message' => "H5P activity '{$title}' successfully built, validated, and deployed.",
-        ];
-
-        if ($contentbankwarning !== null) {
-            $result['warning'] = $contentbankwarning;
-        }
-
-        return $result;
+    protected function save_activity_content(\core_h5p\factory $factory, \stored_file $file): int|false|null {
+        return \core_h5p\helper::save_h5p($factory, $file,
+            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]);
     }
 
     /**

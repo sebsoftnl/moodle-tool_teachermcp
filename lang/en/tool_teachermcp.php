@@ -38,6 +38,7 @@ $string['agent_name'] = 'Agent Name / Device';
 $string['agent_name_help'] = 'E.g. "Work Laptop Claude", "Home Desktop Codex"';
 $string['token_created'] = 'Agent token generated successfully. Copy it now, as it will never be displayed again!';
 $string['token_revoked'] = 'Agent connection revoked successfully.';
+$string['token_revoke_failed'] = 'The agent connection could not be revoked. It may not exist or you may not have permission.';
 $string['validuntil'] = 'Valid until';
 $string['lastaccess'] = 'Last active';
 $string['never'] = 'Never';
@@ -60,11 +61,14 @@ $string['endpoint_url'] = 'Moodle MCP Endpoint URL';
 // Setup & Tokens
 $string['active_tools_count'] = '{$a} Active MCP Tools';
 $string['copied'] = 'Copied!';
+$string['copy_failed'] = 'Copy failed. Select the text and copy it manually.';
 $string['copy'] = 'Copy';
 $string['copy_config'] = 'Copy Configuration';
 $string['copy_claude_config'] = 'Copy Claude Config';
 $string['copy_codex_config'] = 'Copy Codex/Cursor Config';
 $string['validity_period'] = 'Validity period';
+$string['validity_days'] = '{$a} days';
+$string['token_validity_error'] = 'Choose a validity from 1 to {$a} days. No token was created.';
 $string['validity_30'] = '30 days';
 $string['validity_90'] = '90 days (recommended)';
 $string['validity_180'] = '180 days (one semester)';
@@ -78,8 +82,8 @@ $string['course_filter_all'] = 'Select a course to personalize example prompts';
 
 // Guides
 $string['how_to_connect'] = 'How to Connect Your AI Agent';
-$string['claude_desktop_title'] = 'Claude Desktop Configuration';
-$string['claude_desktop_desc'] = 'Paste this JSON snippet into your claude_desktop_config.json configuration file:';
+$string['claude_desktop_title'] = 'Claude Desktop: manual bearer token';
+$string['claude_desktop_desc'] = 'Create a token with the required permission preset, then use this configuration. Replace YOUR_BEARER_TOKEN_HERE if no new token is shown. Keep the token private; this mode does not use OAuth.';
 $string['codex_cursor_title'] = 'Codex / Cursor / HTTP Client Configuration';
 $string['codex_cursor_desc'] = 'For agents with native HTTP/SSE MCP support:';
 $string['chatgpt_title'] = 'ChatGPT / Custom GPT Custom Actions';
@@ -184,7 +188,14 @@ $string['prompt_grading_text'] = 'Prepare ungraded submissions for assignment CM
 $string['oauth_authorize_title'] = 'Connect AI Agent (OAuth 2.0)';
 $string['oauth_prompt'] = 'The application <strong>{$a}</strong> is requesting permission to connect to your Moodle teacher account via the Model Context Protocol (MCP).';
 $string['oauth_account_scope_notice'] = 'This connection will only be granted access to courses and data where your account has active teaching permissions.';
-$string['oauth_permissions_header'] = 'Requested Capabilities:';
+$string['oauth_permissions_header'] = 'Requested permissions (currently enabled tools):';
+$string['oauth_perm_read'] = 'Read course content, learner information and teaching reports';
+$string['oauth_perm_write'] = 'Create and update course content, activities, questions and calendar events';
+$string['oauth_perm_grade'] = 'Review submissions and record grades and feedback';
+$string['oauth_perm_message'] = 'Send messages to students';
+$string['oauth_perm_delete'] = 'Delete course activities, subject to confirmation';
+$string['oauth_perm_external'] = 'Use the external tool: {$a}';
+$string['oauth_perm_none'] = 'None of the requested tools are currently enabled. The requested permissions still apply if those tools are enabled later.';
 $string['oauth_perm_courses'] = 'Read teaching courses, sections, and activities';
 $string['oauth_perm_content'] = 'Export course texts, books, H5P modules, and glossary entries';
 $string['oauth_perm_files'] = 'Read and analyze attached PDFs, documents, and presentations';
@@ -197,15 +208,17 @@ $string['label_unverified_client'] = 'Unverified Application';
 $string['desc_unverified_client'] = 'This application has not been verified by the site administrator. Ensure you trust this software before authorizing access.';
 $string['oauth_redirect_destination'] = 'Tokens will be returned to: {$a}';
 $string['oauth_tab_title'] = '1-Click OAuth 2.0 (Recommended)';
-$string['oauth_setup_title'] = 'Seamless OAuth 2.0 Connection for Claude Desktop';
-$string['oauth_setup_desc'] = 'Connect Claude Desktop without manually generating or copying secret tokens. Claude handles the authorization flow directly in your browser using PKCE:';
+$string['oauth_setup_title'] = 'OAuth 2.0 connection through the bridge';
+$string['oauth_setup_desc'] = 'For a new connection, an administrator must enable OAuth client registration. Start the downloaded bridge with --oauth to open Moodle consent in your browser using PKCE. This mode does not need a manually created bearer token.';
 $string['oauth_endpoints_title'] = 'OAuth 2.0 Server Endpoints';
 $string['oauth_auth_endpoint'] = 'Authorization Endpoint';
 $string['oauth_token_endpoint'] = 'Token Endpoint';
 $string['oauth_metadata_endpoint'] = 'Discovery Metadata';
 $string['claude_oauth_bridge_desc'] = 'Add this configuration to your claude_desktop_config.json with the --oauth flag:';
+$string['claude_manual_bridge_desc'] = 'Add this configuration to claude_desktop_config.json with your manual token, not the --oauth flag:';
+$string['bridge_path_placeholder'] = '/ABSOLUTE/PATH/TO/mcp-bridge.mjs';
 $string['download_bridge_title'] = '1. Download the bridge script to your computer';
-$string['download_bridge_desc'] = 'Claude Desktop runs locally on your PC. Save mcp-bridge.mjs to your user folder or project directory:';
+$string['download_bridge_desc'] = 'Install Node.js 22.11 or newer and save mcp-bridge.mjs locally. In the configuration below, replace the example script path with its actual absolute path on your computer:';
 $string['download_bridge_btn'] = 'Download mcp-bridge.mjs';
 
 // Bridge script (Node.js) strings for AMOS translation.
@@ -326,6 +339,7 @@ $string['error_fetch_url'] = 'Could not fetch image from remote URL.';
 $string['error_invalid_base64'] = 'Invalid base64 payload provided.';
 $string['error_library_not_found'] = 'Requested H5P library was not found or is disabled on this site.';
 $string['error_create_zip'] = 'Failed to create temporary H5P zip archive.';
+$string['error_h5p_save_failed'] = 'Could not save H5P content to the requested destination. No activity or Content Bank item was created.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
 $string['setting_enable_external_tools'] = 'Enable externally contributed MCP tools';
@@ -395,7 +409,7 @@ $string['revoked'] = 'Revoked';
 
 // Token role presets and MCP resources.
 $string['scope_preset'] = 'Permission Role Preset';
-$string['scope_preset_help'] = 'Restrict what actions this AI agent connection is allowed to perform.';
+$string['scope_preset_help'] = 'Presets restrict MCP actions; Moodle permissions and site settings still apply. Read-only access includes completion reports.';
 $string['scope_preset_full'] = 'Full Co-Pilot (Read, Author, Grade, Messages, Delete)';
 $string['scope_preset_grading'] = 'Grading Assistant (Read submissions, Post grades & feedback)';
 $string['scope_preset_curriculum'] = 'Curriculum Designer (Read materials, Create pages, quizzes & activities)';
@@ -406,4 +420,3 @@ $string['prompt_cat_communication'] = 'Course Communication';
 $string['prompt_badge_communication'] = 'Forums & Messages';
 $string['prompt_cat_calendar'] = 'Course Scheduling';
 $string['prompt_badge_calendar'] = 'Calendar & Deadlines';
-

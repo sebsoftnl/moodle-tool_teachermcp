@@ -18,7 +18,9 @@
     @template tool_teachermcp/my_agent
     Teacher MCP agent connection dashboard.
 }}
-<div class="tool_teachermcp_dashboard">
+<div class="tool_teachermcp_dashboard container-fluid"
+     data-copy-success="{{#str}}copied, tool_teachermcp{{/str}}"
+     data-copy-failure="{{#str}}copy_failed, tool_teachermcp{{/str}}">
     <!-- Header Block -->
     <div class="row mb-3">
         <div class="col-12">
@@ -36,13 +38,13 @@
                         {{#str}}dashboard_desc, tool_teachermcp{{/str}}
                     </p>
                     <div class="bg-white border rounded p-2 px-3 d-flex flex-wrap align-items-center justify-content-between">
-                        <div class="d-flex align-items-center my-1">
+                        <div class="d-flex flex-wrap align-items-center my-1">
                             <span class="font-weight-bold text-secondary mr-2 me-2">
                                 <i class="fa fa-link mr-1 me-1"></i>{{#str}}endpoint_url, tool_teachermcp{{/str}}:
                             </span>
                             <code class="text-primary font-weight-bold user-select-all" id="endpointDisplay">{{endpoint_url}}</code>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary my-1" onclick="navigator.clipboard.writeText('{{endpoint_url}}'); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy, tool_teachermcp{{/str}}'; }, 2000);">
+                        <button type="button" class="btn btn-sm btn-outline-secondary my-1" data-copy-target="endpointDisplay">
                             <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy, tool_teachermcp{{/str}}
                         </button>
                     </div>
@@ -63,7 +65,7 @@
                 <div class="input-group">
                     <input type="text" class="form-control font-monospace font-weight-bold bg-white" id="newlyGeneratedToken" value="{{new_token}}" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-dark" type="button" onclick="navigator.clipboard.writeText(document.getElementById('newlyGeneratedToken').value); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy_token, tool_teachermcp{{/str}}'; }, 2000);">
+                        <button class="btn btn-dark" type="button" data-copy-target="newlyGeneratedToken">
                             <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_token, tool_teachermcp{{/str}}
                         </button>
                     </div>
@@ -96,21 +98,20 @@
                             </div>
                             <div class="form-group mb-2">
                                 <label for="scope_preset" class="small font-weight-bold text-muted mb-1">{{#str}}scope_preset, tool_teachermcp{{/str}}</label>
-                                <select name="scope_preset" id="scope_preset" class="form-control form-control-sm custom-select bg-white">
+                                <select name="scope_preset" id="scope_preset" class="form-control form-control-sm custom-select bg-white" aria-describedby="scopePresetHelp">
                                     <option value="full" selected>{{#str}}scope_preset_full, tool_teachermcp{{/str}}</option>
                                     <option value="grading">{{#str}}scope_preset_grading, tool_teachermcp{{/str}}</option>
                                     <option value="curriculum">{{#str}}scope_preset_curriculum, tool_teachermcp{{/str}}</option>
                                     <option value="readonly">{{#str}}scope_preset_readonly, tool_teachermcp{{/str}}</option>
                                 </select>
+                                <p id="scopePresetHelp" class="small text-muted mt-1 mb-0">{{#str}}scope_preset_help, tool_teachermcp{{/str}}</p>
                             </div>
                             <div class="form-group mb-3">
                                 <label for="validity" class="small font-weight-bold text-muted mb-1">{{#str}}validity_period, tool_teachermcp{{/str}}</label>
                                 <select name="validity" id="validity" class="form-control form-control-sm custom-select bg-white">
-                                    <option value="30">{{#str}}validity_30, tool_teachermcp{{/str}}</option>
-                                    <option value="90" selected>{{#str}}validity_90, tool_teachermcp{{/str}}</option>
-                                    <option value="180">{{#str}}validity_180, tool_teachermcp{{/str}}</option>
-                                    <option value="365">{{#str}}validity_365, tool_teachermcp{{/str}}</option>
-
+                                    {{#validity_options}}
+                                    <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                                    {{/validity_options}}
                                 </select>
                             </div>
                             {{#has_external_tools}}
@@ -235,7 +236,7 @@
                             <!-- Step 2: Configure Claude Desktop -->
                             <p class="small font-weight-bold text-secondary mb-1">2. {{#str}}claude_oauth_bridge_desc, tool_teachermcp{{/str}}</p>
                             <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="claudeOAuthConfigBlock"><code>{{config_claude_oauth}}</code></pre>
-                            <button class="btn btn-sm btn-primary mb-3" onclick="navigator.clipboard.writeText(document.getElementById('claudeOAuthConfigBlock').innerText); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy_claude_config, tool_teachermcp{{/str}}'; }, 2000);">
+                            <button type="button" class="btn btn-sm btn-primary mb-3" data-copy-target="claudeOAuthConfigBlock">
                                 <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_claude_config, tool_teachermcp{{/str}}
                             </button>
 
@@ -272,9 +273,9 @@
                                 </a>
                             </div>
 
-                            <p class="small font-weight-bold text-secondary mb-1">2. {{#str}}claude_oauth_bridge_desc, tool_teachermcp{{/str}}</p>
+                            <p class="small font-weight-bold text-secondary mb-1">2. {{#str}}claude_manual_bridge_desc, tool_teachermcp{{/str}}</p>
                             <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="claudeConfigBlock"><code>{{config_claude}}</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('claudeConfigBlock').innerText); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy_claude_config, tool_teachermcp{{/str}}'; }, 2000);">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="claudeConfigBlock">
                                 <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_claude_config, tool_teachermcp{{/str}}
                             </button>
                         </div>
@@ -284,7 +285,7 @@
                             <h6 class="font-weight-bold">{{#str}}codex_cursor_title, tool_teachermcp{{/str}}</h6>
                             <p class="small text-muted mb-2">{{#str}}codex_cursor_desc, tool_teachermcp{{/str}}</p>
                             <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="codexConfigBlock"><code>{{config_codex}}</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('codexConfigBlock').innerText); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy_codex_config, tool_teachermcp{{/str}}'; }, 2000);">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="codexConfigBlock">
                                 <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_codex_config, tool_teachermcp{{/str}}
                             </button>
                         </div>
@@ -342,7 +343,7 @@
                                 <a href="{{download_skill_url}}" class="btn btn-sm btn-outline-primary mr-2 me-2">
                                     <i class="fa fa-download mr-1 me-1"></i>{{#str}}download_skill_file, tool_teachermcp{{/str}}
                                 </a>
-                                <button class="btn btn-sm btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('agentSystemPromptBlock').innerText); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy_skill_prompt, tool_teachermcp{{/str}}'; }, 2000);">
+                                <button type="button" class="btn btn-sm btn-primary" data-copy-target="agentSystemPromptBlock">
                                     <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_skill_prompt, tool_teachermcp{{/str}}
                                 </button>
                             </div>
@@ -364,7 +365,7 @@
                         <i class="fa fa-lightbulb mr-2 me-2 text-warning"></i>{{#str}}prompt_library_title, tool_teachermcp{{/str}}
                     </h5>
                     {{#has_courses}}
-                    <div class="d-flex align-items-center mt-2 mt-sm-0">
+                    <div class="d-flex flex-wrap align-items-center mt-2 mt-sm-0">
                         <label for="promptCourseFilter" class="small font-weight-bold text-muted mr-2 me-2 mb-0">
                             {{#str}}course_filter_label, tool_teachermcp{{/str}}
                         </label>
@@ -394,7 +395,7 @@
                                     <div class="mb-3 p-3 bg-white rounded border">
                                         <div class="d-flex justify-content-between align-items-start mb-1">
                                             <strong class="text-dark small">{{title}}</strong>
-                                            <button class="btn btn-sm btn-outline-secondary py-0 px-2 ml-2 ms-2" type="button" onclick="navigator.clipboard.writeText(this.getAttribute('data-prompt')); var b=this; b.innerHTML='<i class=\'fa fa-check\'></i> {{#str}}copied, tool_teachermcp{{/str}}'; setTimeout(function(){ b.innerHTML='<i class=\'fa fa-copy\'></i> {{#str}}copy, tool_teachermcp{{/str}}'; }, 2000);" data-prompt="{{prompt}}">
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-2 ml-2 ms-2" type="button" data-prompt="{{prompt}}">
                                                 <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy, tool_teachermcp{{/str}}
                                             </button>
                                         </div>
@@ -425,3 +426,37 @@
     </div>
     {{/return_url}}
 </div>
+{{#js}}
+const dashboard = document.querySelector('.tool_teachermcp_dashboard');
+dashboard.querySelectorAll('button[data-copy-target], button[data-prompt]').forEach(button => {
+    const label = button.innerHTML;
+    let restore;
+    button.setAttribute('aria-live', 'polite');
+    button.addEventListener('click', async () => {
+        clearTimeout(restore);
+        button.innerHTML = label;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        try {
+            let text = button.dataset.prompt;
+            if (button.dataset.copyTarget) {
+                const target = document.getElementById(button.dataset.copyTarget);
+                text = target instanceof HTMLInputElement ? target.value : target.innerText;
+            }
+            await navigator.clipboard.writeText(text);
+            button.textContent = dashboard.dataset.copySuccess;
+            restore = setTimeout(() => {
+                button.innerHTML = label;
+            }, 2000);
+        } catch {
+            button.textContent = dashboard.dataset.copyFailure;
+        } finally {
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            if (document.activeElement === document.body) {
+                button.focus({preventScroll: true});
+            }
+        }
+    });
+});
+{{/js}}

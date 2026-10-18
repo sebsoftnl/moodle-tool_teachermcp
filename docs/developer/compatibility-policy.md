@@ -2,7 +2,7 @@
 
 ## Public API
 
-Teacher MCP v1.4.4-beta exposes provider API version `1` for Moodle 4.5 LTS and PHP 8.1 or later.
+Provider API version `1` was introduced in Teacher MCP v1.4.4-beta and remains unchanged in v1.4.5-beta. The plugin minimum is Moodle 4.5 and PHP 8.1; use the runtime supported by the selected Moodle release. See [testing.md](testing.md) for the exact locally exercised boundary, not a blanket compatibility guarantee.
 
 The supported public PHP types are:
 
@@ -32,6 +32,7 @@ They are host internals and may change in a beta release without a provider migr
 - Removing or changing an existing required public method, declaration field, validation rule, permission rule, or name-generation rule requires a new provider API version.
 - A provider declares the API version it implements. Teacher MCP skips unsupported versions rather than attempting compatibility guessing.
 - A provider should test the oldest supported Moodle and Teacher MCP release before publishing a new version.
+- Built-in boolean normalization does not apply to provider payloads. Existing provider argument values, strict enum validation, declaration shape, qualified names, context privacy and exact grants are unchanged.
 
 ## Support boundary
 

@@ -38,6 +38,7 @@ $string['agent_name'] = 'Agent Naam / Apparaat';
 $string['agent_name_help'] = 'Bijv. "Werk Laptop Claude", "Thuis Desktop Codex"';
 $string['token_created'] = 'Agent token succesvol gegenereerd. Kopieer het nu direct, want het wordt hierna nooit meer getoond!';
 $string['token_revoked'] = 'Agent koppeling succesvol ingetrokken.';
+$string['token_revoke_failed'] = 'De agentkoppeling kon niet worden ingetrokken. De koppeling bestaat mogelijk niet of je hebt geen toestemming.';
 $string['validuntil'] = 'Geldig tot';
 $string['lastaccess'] = 'Laatst actief';
 $string['never'] = 'Nooit';
@@ -60,11 +61,14 @@ $string['endpoint_url'] = 'Moodle MCP Endpoint URL';
 // Setup & Tokens
 $string['active_tools_count'] = '{$a} Actieve MCP Tools';
 $string['copied'] = 'Gekopieerd!';
+$string['copy_failed'] = 'Kopiëren mislukt. Selecteer de tekst en kopieer deze handmatig.';
 $string['copy'] = 'Kopieer';
 $string['copy_config'] = 'Kopieer Configuratie';
 $string['copy_claude_config'] = 'Kopieer Claude Config';
 $string['copy_codex_config'] = 'Kopieer Codex/Cursor Config';
 $string['validity_period'] = 'Geldigheidsduur';
+$string['validity_days'] = '{$a} dagen';
+$string['token_validity_error'] = 'Kies een geldigheidsduur van 1 tot {$a} dagen. Er is geen token aangemaakt.';
 $string['validity_30'] = '30 dagen';
 $string['validity_90'] = '90 dagen (aanbevolen)';
 $string['validity_180'] = '180 dagen (één semester)';
@@ -78,8 +82,8 @@ $string['course_filter_all'] = 'Selecteer een cursus om voorbeeldprompts te pers
 
 // Guides
 $string['how_to_connect'] = 'Hoe verbind je jouw AI-agent?';
-$string['claude_desktop_title'] = 'Claude Desktop Configuratie';
-$string['claude_desktop_desc'] = 'Plak onderstaand JSON-fragment in je claude_desktop_config.json configuratiebestand:';
+$string['claude_desktop_title'] = 'Claude Desktop: handmatig bearer-token';
+$string['claude_desktop_desc'] = 'Maak een token met het gewenste rechtenprofiel en gebruik daarna deze configuratie. Vervang YOUR_BEARER_TOKEN_HERE als er geen nieuw token wordt getoond. Houd het token geheim; deze methode gebruikt geen OAuth.';
 $string['codex_cursor_title'] = 'Codex / Cursor / HTTP Client Configuratie';
 $string['codex_cursor_desc'] = 'Voor clients met native HTTP/SSE MCP ondersteuning:';
 $string['chatgpt_title'] = 'ChatGPT / Custom GPT Custom Actions';
@@ -184,7 +188,14 @@ $string['prompt_grading_text'] = 'Zet met "prepare_grading_session" de ongecorri
 $string['oauth_authorize_title'] = 'AI Agent Verbinden (OAuth 2.0)';
 $string['oauth_prompt'] = 'De applicatie <strong>{$a}</strong> vraagt toestemming om te verbinden met jouw Moodle docentenaccount via het Model Context Protocol (MCP).';
 $string['oauth_account_scope_notice'] = 'Deze verbinding krijgt uitsluitend toegang tot cursussen en gegevens waar jouw account actieve docentrechten voor bezit.';
-$string['oauth_permissions_header'] = 'Gevraagde rechten:';
+$string['oauth_permissions_header'] = 'Gevraagde rechten (momenteel ingeschakelde tools):';
+$string['oauth_perm_read'] = 'Cursusinhoud, studentgegevens en onderwijsrapporten inzien';
+$string['oauth_perm_write'] = 'Cursusinhoud, activiteiten, vragen en kalenderafspraken aanmaken en bewerken';
+$string['oauth_perm_grade'] = 'Inzendingen beoordelen en cijfers en feedback vastleggen';
+$string['oauth_perm_message'] = 'Berichten naar studenten sturen';
+$string['oauth_perm_delete'] = 'Cursusactiviteiten verwijderen, na bevestiging';
+$string['oauth_perm_external'] = 'De externe tool gebruiken: {$a}';
+$string['oauth_perm_none'] = 'Geen van de gevraagde tools is momenteel ingeschakeld. De gevraagde rechten blijven gelden als deze tools later worden ingeschakeld.';
 $string['oauth_perm_courses'] = 'Eigen cursussen, secties en activiteiten inzien';
 $string['oauth_perm_content'] = 'Lesstof, boekteksten, H5P-modules en begrippen exporteren';
 $string['oauth_perm_files'] = 'Bijgevoegde PDF\'s, documenten en presentaties uitlezen en analyseren';
@@ -197,15 +208,17 @@ $string['label_unverified_client'] = 'Niet-geverifieerde applicatie';
 $string['desc_unverified_client'] = 'Deze applicatie is niet geverifieerd door de beheerder van deze Moodle site. Autoriseer alleen als je deze software vertrouwt.';
 $string['oauth_redirect_destination'] = 'Tokens worden teruggestuurd naar: {$a}';
 $string['oauth_tab_title'] = '1-Klik OAuth 2.0 (Aanbevolen)';
-$string['oauth_setup_title'] = 'Naadloze OAuth 2.0 Koppeling voor Claude';
-$string['oauth_setup_desc'] = 'Koppel Claude zonder handmatig geheime tokens te hoeven kopiëren of genereren. Claude regelt de autorisatie rechtstreeks via een browserbevestiging met PKCE-beveiliging:';
+$string['oauth_setup_title'] = 'OAuth 2.0-verbinding via de bridge';
+$string['oauth_setup_desc'] = 'Voor een nieuwe verbinding moet een beheerder OAuth-clientregistratie inschakelen. Start de gedownloade bridge met --oauth om de Moodle-toestemmingspagina met PKCE in je browser te openen. Hiervoor is geen handmatig aangemaakt bearer-token nodig.';
 $string['oauth_endpoints_title'] = 'OAuth 2.0 Server Endpoints';
 $string['oauth_auth_endpoint'] = 'Autorisatie-endpoint';
 $string['oauth_token_endpoint'] = 'Token-endpoint';
 $string['oauth_metadata_endpoint'] = 'Discovery Metadata';
 $string['claude_oauth_bridge_desc'] = 'Voeg deze configuratie toe aan claude_desktop_config.json met de --oauth vlag:';
+$string['claude_manual_bridge_desc'] = 'Voeg deze configuratie toe aan claude_desktop_config.json met je handmatige token, niet met de --oauth vlag:';
+$string['bridge_path_placeholder'] = '/ABSOLUUT/PAD/NAAR/mcp-bridge.mjs';
 $string['download_bridge_title'] = '1. Download het bridge-script naar jouw computer';
-$string['download_bridge_desc'] = 'Claude Desktop draait lokaal op jouw computer. Sla mcp-bridge.mjs op in je gebruikersmap of Downloads:';
+$string['download_bridge_desc'] = 'Installeer Node.js 22.11 of nieuwer en sla mcp-bridge.mjs lokaal op. Vervang het voorbeeldpad in de configuratie hieronder door het werkelijke absolute pad op je computer:';
 $string['download_bridge_btn'] = 'Download mcp-bridge.mjs';
 
 // Bridge script (Node.js) strings for AMOS translation.
@@ -326,6 +339,7 @@ $string['error_fetch_url'] = 'Kon afbeelding niet ophalen van externe URL.';
 $string['error_invalid_base64'] = 'Ongeldige base64-gegevens opgegeven.';
 $string['error_library_not_found'] = 'Gevraagde H5P-bibliotheek is niet gevonden of is uitgeschakeld op deze site.';
 $string['error_create_zip'] = 'Aanmaken van tijdelijk H5P zip-archief is mislukt.';
+$string['error_h5p_save_failed'] = 'H5P-inhoud kon niet op de gevraagde bestemming worden opgeslagen. Er is geen activiteit of Content Bank-item aangemaakt.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
 $string['setting_enable_external_tools'] = 'Extern bijgedragen MCP-tools inschakelen';
@@ -395,7 +409,7 @@ $string['revoked'] = 'Ingetrokken';
 
 // Token role presets and MCP resources.
 $string['scope_preset'] = 'Machtigingsprofiel / Rol';
-$string['scope_preset_help'] = 'Beperk welke acties deze AI-agentverbinding mag uitvoeren.';
+$string['scope_preset_help'] = 'Profielen beperken MCP-acties; Moodle-rechten en site-instellingen blijven gelden. Alleen-lezen omvat ook voltooiingsrapporten.';
 $string['scope_preset_full'] = 'Volledige Co-Pilot (Lezen, Schrijven, Nakijken, Berichten, Verwijderen)';
 $string['scope_preset_grading'] = 'Nakijkassistent (Inzendingen inzien, Cijfers & Feedback geven)';
 $string['scope_preset_curriculum'] = 'Onderwijsontwerper (Lesstof lezen, Pagina\'s, Toetsen & Opdrachten bouwen)';
@@ -406,4 +420,3 @@ $string['prompt_cat_communication'] = 'Cursuscommunicatie';
 $string['prompt_badge_communication'] = 'Forums & Berichten';
 $string['prompt_cat_calendar'] = 'Planning & Agenda';
 $string['prompt_badge_calendar'] = 'Kalender & Deadlines';
-

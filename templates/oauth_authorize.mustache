@@ -67,11 +67,12 @@
                     {{#str}}oauth_permissions_header, tool_teachermcp{{/str}}
                 </h6>
                 <ul class="small text-muted pl-3 ps-3 mb-4">
-                    <li class="mb-1">{{#str}}oauth_perm_courses, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_content, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_files, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_assessment, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_grading, tool_teachermcp{{/str}}</li>
+                    {{#permissions}}
+                    <li class="mb-1" data-scope="{{id}}">{{description}}</li>
+                    {{/permissions}}
+                    {{^permissions}}
+                    <li class="mb-1">{{#str}}oauth_perm_none, tool_teachermcp{{/str}}</li>
+                    {{/permissions}}
                 </ul>
 
                 <form method="post" action="">

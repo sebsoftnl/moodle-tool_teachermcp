@@ -29,6 +29,182 @@ defined('MOODLE_INTERNAL') || die();
  * @covers     \tool_teachermcp\tools
  */
 final class content_tools_test extends \advanced_testcase {
+    public function test_content_visibility_schema_defaults_hidden(): void {
+        $schema = (new \tool_teachermcp\tools\manage_content_activity())->get_input_schema();
+        $this->assertFalse($schema['properties']['visible']['default'], 'Page/Book schema must match hidden runtime defaults');
+    }
+
+    public function test_content_mutations_report_persisted_visibility(): void {
+        [$course] = $this->publication_fixture();
+        $server = new server();
+        $token = (object)['permissions' => json_encode(['all_teacher_tools' => true])];
+        foreach (['create_page', 'create_book'] as $action) {
+            foreach ([[[], false], [['visible' => 'false'], false], [['visible' => true], true]] as [$visibility, $expected]) {
+                $result = $server->execute_tool('manage_content_activity', [
+                    'action' => $action, 'course_id' => (int)$course->id,
+                    'title' => 'Publication fixture', 'content' => '<p>Original</p>',
+                ] + $visibility, $token);
+                $this->assert_reported_visibility($result, $expected);
+            }
+            if ($action === 'create_page') {
+                $pageid = $result['cmid'];
+            } else {
+                $bookid = $result['cmid'];
+            }
+        }
+        foreach ([true, 'false'] as $visible) {
+            $result = $server->execute_tool('manage_content_activity', [
+                'action' => 'update_page', 'cmid' => $pageid, 'title' => 'Updated', 'visible' => $visible,
+            ], $token);
+            $this->assert_reported_visibility($result, $visible === true);
+        }
+        $chapter = $server->execute_tool('manage_content_activity', [
+            'action' => 'add_book_chapter', 'cmid' => $bookid, 'chapter_title' => 'Added', 'content' => '<p>Added</p>',
+        ], $token);
+        $this->assert_reported_visibility($chapter, true);
+        $updated = $server->execute_tool('manage_content_activity', [
+            'action' => 'update_book_chapter', 'cmid' => $bookid, 'chapter_id' => $chapter['chapter_id'],
+            'chapter_title' => 'Updated chapter',
+        ], $token);
+        $this->assert_reported_visibility($updated, true);
+    }
+
+    public function test_assignment_creation_reports_persisted_visibility(): void {
+        [$course] = $this->publication_fixture();
+        $server = new server();
+        $token = (object)['permissions' => json_encode(['all_teacher_tools' => true])];
+        foreach ([[[], false], [['visible' => 'false'], false], [['visible' => true], true]] as [$visibility, $expected]) {
+            $result = $server->execute_tool('create_assignment', [
+                'course_id' => (int)$course->id, 'title' => 'Publication assignment',
+            ] + $visibility, $token);
+            $this->assert_reported_visibility($result, $expected);
+        }
+    }
+
+    public function test_denied_page_visibility_update_cannot_partially_write_content(): void {
+        global $DB;
+        [$course, $teacher] = $this->publication_fixture();
+        $page = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id, 'name' => 'Original title', 'intro' => 'Original intro',
+            'content' => '<p>Original content</p>', 'visible' => 0,
+        ]);
+        $this->deny_publication($course, $teacher);
+        $tool = new \tool_teachermcp\tools\manage_content_activity();
+        $before = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
+        foreach ([true, false] as $visible) {
+            try {
+                $tool->execute(['action' => 'update_page', 'cmid' => (int)$page->cmid,
+                    'title' => 'Must not persist', 'intro' => 'Must not persist',
+                    'content' => '<p>Must not persist</p>', 'visible' => $visible]);
+                $this->fail('Visibility updates require activityvisibility before writing content');
+            } catch (\required_capability_exception $error) {
+                $this->assertStringContainsString(get_capability_string('moodle/course:activityvisibility'), $error->getMessage());
+            }
+            $this->assertEquals($before, $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST),
+                'Rejected visibility change must preserve title, content, intro, revision and modification time');
+            $this->assertSame(0, (int)$DB->get_field('course_modules', 'visible', ['id' => $page->cmid], MUST_EXIST));
+        }
+    }
+
+    public function test_content_only_update_does_not_require_publication_permission(): void {
+        global $DB;
+        [$course, $teacher] = $this->publication_fixture();
+        $page = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id, 'name' => 'Original title', 'visible' => 0,
+        ]);
+        $before = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
+        $this->deny_publication($course, $teacher);
+        $result = (new \tool_teachermcp\tools\manage_content_activity())->execute([
+            'action' => 'update_page', 'cmid' => (int)$page->cmid, 'title' => 'Permitted content edit',
+        ]);
+        $after = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
+        $this->assertSame('success', $result['status']);
+        $this->assertSame('Permitted content edit', $after->name);
+        $this->assertSame((int)$before->revision + 1, (int)$after->revision);
+        $this->assertSame(0, (int)$DB->get_field('course_modules', 'visible', ['id' => $page->cmid], MUST_EXIST));
+    }
+
+    public function test_denied_explicit_publication_creates_no_activity(): void {
+        global $DB;
+        [$course, $teacher] = $this->publication_fixture();
+        $this->deny_publication($course, $teacher);
+        $cases = [
+            'manage_content_activity' => ['action' => 'create_page', 'title' => 'Denied page'],
+            'create_assignment' => ['title' => 'Denied assignment'],
+            'create_h5p_activity' => ['title' => 'Denied H5P', 'library_name' => 'H5P.Blanks', 'params' => ['text' => 'Text']],
+            'scaffold_assessment_unit' => ['quiz_title' => 'Denied quiz', 'questions' => [
+                ['name' => 'Q', 'text' => 'True?', 'qtype' => 'truefalse', 'correct_truefalse' => true],
+            ]],
+        ];
+        $tables = ['course_modules', 'page', 'book', 'assign', 'h5pactivity', 'quiz', 'question', 'question_categories'];
+        $before = array_map(static fn($table) => $DB->count_records($table), $tables);
+        $server = new server();
+        foreach ($cases as $name => $arguments) {
+            try {
+                $server->execute_tool($name, $arguments + ['course_id' => (int)$course->id, 'visible' => true],
+                    (object)['permissions' => json_encode(['all_teacher_tools' => true])]);
+                $this->fail('Explicit publication must require visibility permission: ' . $name);
+            } catch (\required_capability_exception $error) {
+                $this->assertStringContainsString(get_capability_string('moodle/course:activityvisibility'), $error->getMessage());
+            }
+            $this->assertSame($before, array_map(static fn($table) => $DB->count_records($table), $tables));
+        }
+    }
+
+    public function test_h5p_reports_visibility_only_when_an_activity_exists(): void {
+        global $CFG;
+        [$course, $teacher] = $this->publication_fixture();
+        $this->setAdminUser();
+        $path = $CFG->dirroot . '/h5p/tests/fixtures/filltheblanks.h5p';
+        $file = \core_h5p\helper::create_fake_stored_file_from_path($path);
+        $saved = \core_h5p\helper::save_h5p(new \core_h5p\factory(), $file,
+            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]);
+        $this->assertNotEmpty($saved, 'The shipped local H5P fixture must install without external downloads');
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($path));
+        $params = json_decode($zip->getFromName('content/content.json'), true, 512, JSON_THROW_ON_ERROR);
+        $zip->close();
+        $this->setUser($teacher);
+        $tool = new \tool_teachermcp\tools\create_h5p_activity();
+        $arguments = ['course_id' => (int)$course->id, 'title' => 'Publication H5P',
+            'library_name' => 'H5P.Blanks', 'params' => $params];
+        $bankonly = $tool->execute($arguments + ['deploy_as_activity' => false]);
+        $this->assertNull($bankonly['cmid']);
+        $this->assertNotEmpty($bankonly['content_bank_id'], json_encode($bankonly));
+        $this->assertArrayNotHasKey('visible', $bankonly, 'Content-bank-only output must not invent activity visibility');
+        foreach ([false, true] as $visible) {
+            $result = $tool->execute($arguments + ['visible' => $visible, 'add_to_content_bank' => false]);
+            $this->assert_reported_visibility($result, $visible);
+        }
+    }
+
+    private function publication_fixture(): array {
+        $this->resetAfterTest(true);
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+        return [$course, $teacher];
+    }
+
+    private function deny_publication(\stdClass $course, \stdClass $teacher): void {
+        global $DB;
+        $context = \context_course::instance($course->id);
+        $roleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher'], MUST_EXIST);
+        assign_capability('moodle/course:activityvisibility', CAP_PROHIBIT, $roleid, $context->id);
+        $this->setUser($teacher);
+        $this->assertTrue(has_capability('moodle/course:manageactivities', $context));
+        $this->assertFalse(has_capability('moodle/course:activityvisibility', $context));
+    }
+
+    private function assert_reported_visibility(array $result, bool $expected): void {
+        global $DB;
+        $stored = (bool)$DB->get_field('course_modules', 'visible', ['id' => $result['cmid']], MUST_EXIST);
+        $this->assertSame($expected, $stored);
+        $this->assertArrayHasKey('visible', $result, 'Activity result must report persisted visibility beside cmid');
+        $this->assertSame($stored, $result['visible']);
+    }
+
     public function test_file_extractor_whitelist(): void {
         $this->assertTrue(file_extractor::is_allowed_filearea('mod_resource', 'content'));
         $this->assertTrue(file_extractor::is_allowed_filearea('mod_folder', 'content'));

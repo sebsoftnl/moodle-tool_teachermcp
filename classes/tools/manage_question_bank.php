@@ -22,6 +22,7 @@ use moodle_exception;
 use stdClass;
 use context_course;
 use core_question\local\bank\question_version_status;
+use tool_teachermcp\local\question_category_resolver;
 
 /**
  * MCP tool for interacting with the Moodle Question Bank (Moodle 4.0+ schema).
@@ -177,7 +178,9 @@ class manage_question_bank extends base_tool {
         $contexts = [$context->id];
         $modinfo = get_fast_modinfo($course);
         foreach ($modinfo->cms as $cm) {
-            $contexts[] = $cm->context->id;
+            if (has_capability('moodle/question:viewall', $cm->context)) {
+                $contexts[] = $cm->context->id;
+            }
         }
 
         list($ctxsql, $ctxparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
@@ -236,7 +239,9 @@ class manage_question_bank extends base_tool {
             $contexts = [$context->id];
             $modinfo = get_fast_modinfo($course);
             foreach ($modinfo->cms as $cm) {
-                $contexts[] = $cm->context->id;
+                if (has_capability('moodle/question:viewall', $cm->context)) {
+                    $contexts[] = $cm->context->id;
+                }
             }
             list($ctxsql, $ctxparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
             $catids = $DB->get_fieldset_select('question_categories', 'id', "contextid $ctxsql", $ctxparams);
@@ -345,9 +350,7 @@ class manage_question_bank extends base_tool {
      * Create a question using the Moodle Question API (K4).
      */
     protected function action_create_question(stdClass $course, context_course $context, array $params): array {
-        global $DB, $USER, $CFG;
-
-        require_capability('moodle/question:add', $context);
+        global $DB, $USER;
 
         $qtype = trim($params['qtype'] ?? '');
         $supportedtypes = ['multichoice', 'truefalse', 'shortanswer', 'essay'];
@@ -366,119 +369,118 @@ class manage_question_bank extends base_tool {
             throw new moodle_exception('missingparam', 'error', '', 'questiontext');
         }
 
-        // Determine target category and verify course context ownership.
-        $categoryid = (int)($params['category_id'] ?? 0);
-        if ($categoryid > 0) {
-            $category = $DB->get_record('question_categories', ['id' => $categoryid], '*', MUST_EXIST);
-            $catcontext = \context::instance_by_id($category->contextid, IGNORE_MISSING);
-            $catcoursecontext = $catcontext ? $catcontext->get_course_context(false) : null;
-            if (!$catcoursecontext || $catcoursecontext->id != $context->id) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    'Category does not belong to this course.');
-            }
-        } else {
-            $contexts = new \core_question\local\bank\question_edit_contexts($context);
-            $category = question_make_default_categories($contexts->all());
-        }
-
         $this->validate_question_options($qtype, $params);
-
-        $qtypeobj = \question_bank::get_qtype($qtype);
-
-        $form = new stdClass();
-        $form->category = $category->id;
-        $form->name = $name;
-        $form->questiontext = ['text' => $questiontext, 'format' => FORMAT_HTML];
-        $form->generalfeedback = ['text' => isset($params['generalfeedback']) ? $this->clean_agent_html($params['generalfeedback']) : '', 'format' => FORMAT_HTML];
-        $form->defaultmark = isset($params['defaultmark']) ? (float)$params['defaultmark'] : 1.0;
-        $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : 0.3333333;
-        $form->status = question_version_status::QUESTION_STATUS_READY;
-
-        // Feedback defaults.
-        $form->correctfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->partiallycorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->incorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->shownumcorrect = 0;
-
-        if ($qtype === 'multichoice') {
-            $issingle = !isset($params['single']) || !empty($params['single']);
-            $form->single = $issingle ? 1 : 0;
-            $form->shuffleanswers = 1;
-            $form->answernumbering = 'abc';
-            $form->showstandardinstruction = 0;
-
-            $options = $params['options'] ?? [];
-            $form->noanswers = count($options);
-            $form->answer = [];
-            $form->fraction = [];
-            $form->feedback = [];
-
-            foreach ($options as $idx => $opt) {
-                $form->answer[$idx] = ['text' => $this->clean_agent_html($opt['answer']), 'format' => FORMAT_HTML];
-                $form->fraction[$idx] = (string)(float)$opt['fraction'];
-                $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
-            }
-        } else if ($qtype === 'truefalse') {
-            $iscorrecttrue = !empty($params['correct_truefalse']);
-            $form->correctanswer = $iscorrecttrue ? 1 : 0;
-            $form->feedbacktrue = ['text' => '', 'format' => FORMAT_HTML];
-            $form->feedbackfalse = ['text' => '', 'format' => FORMAT_HTML];
-        } else if ($qtype === 'essay') {
-            $form->responseformat = 'editor';
-            $form->responserequired = 1;
-            $form->responsefieldlines = 15;
-            $form->attachments = 0;
-            $form->attachmentsrequired = 0;
-            $form->graderinfo = ['text' => '', 'format' => FORMAT_HTML];
-            $form->responsetemplate = ['text' => '', 'format' => FORMAT_HTML];
-        } else if ($qtype === 'shortanswer') {
-            $form->usecase = 0;
-            $options = $params['options'] ?? [];
-            $form->noanswers = count($options);
-            $form->answer = [];
-            $form->fraction = [];
-            $form->feedback = [];
-
-            foreach ($options as $idx => $opt) {
-                $form->answer[$idx] = clean_param($opt['answer'], PARAM_TEXT);
-                $form->fraction[$idx] = (string)(float)$opt['fraction'];
-                $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
-            }
-        }
-
-        $basequestion = new stdClass();
-        $basequestion->qtype = $qtype;
-        $basequestion->createdby = $USER->id;
-
-        $created = $qtypeobj->save_question($basequestion, $form);
-
-        $result = [
-            'success' => true,
-            'question_id' => (int)$created->id,
-            'category_id' => (int)$category->id,
-            'name' => $created->name,
-            'qtype' => $created->qtype,
-            'defaultmark' => (float)$created->defaultmark,
-        ];
-
-        // Attach to quiz if quiz_id provided (B4).
         $quizid = (int)($params['quiz_id'] ?? 0);
-        if ($quizid > 0) {
-            $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
-            list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
-            list($cm, $course, $quizcontext) = $this->require_cm_access($cm->id, 'mod/quiz:manage');
+        $quiz = $quizid !== 0 ? $this->require_editable_quiz($course, $quizid) : null;
+        $transaction = $DB->start_delegated_transaction();
 
-            require_once($CFG->dirroot . '/mod/quiz/locallib.php');
-            if (quiz_has_attempts($quiz->id)) {
-                throw new moodle_exception('cannoteditafterattempts', 'quiz');
+        try {
+            $category = question_category_resolver::resolve($course, (int)($params['category_id'] ?? 0));
+            if ($quiz !== null) {
+                require_capability('moodle/question:viewall', \context::instance_by_id($category->contextid));
+            }
+            $qtypeobj = \question_bank::get_qtype($qtype);
+
+            $form = new stdClass();
+            $form->category = $category->id;
+            $form->name = $name;
+            $form->questiontext = ['text' => $questiontext, 'format' => FORMAT_HTML];
+            $form->generalfeedback = ['text' => isset($params['generalfeedback']) ? $this->clean_agent_html($params['generalfeedback']) : '', 'format' => FORMAT_HTML];
+            $form->defaultmark = isset($params['defaultmark']) ? (float)$params['defaultmark'] : 1.0;
+            $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : 0.3333333;
+            $form->status = question_version_status::QUESTION_STATUS_READY;
+
+            // Feedback defaults.
+            $form->correctfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->partiallycorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->incorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->shownumcorrect = 0;
+
+            if ($qtype === 'multichoice') {
+                $issingle = !isset($params['single']) || !empty($params['single']);
+                $form->single = $issingle ? 1 : 0;
+                $form->shuffleanswers = 1;
+                $form->answernumbering = 'abc';
+                $form->showstandardinstruction = 0;
+
+                $options = $params['options'] ?? [];
+                $form->noanswers = count($options);
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+
+                foreach ($options as $idx => $opt) {
+                    $form->answer[$idx] = ['text' => $this->clean_agent_html($opt['answer']), 'format' => FORMAT_HTML];
+                    $form->fraction[$idx] = (string)(float)$opt['fraction'];
+                    $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
+                }
+            } else if ($qtype === 'truefalse') {
+                $iscorrecttrue = !empty($params['correct_truefalse']);
+                $form->correctanswer = $iscorrecttrue ? 1 : 0;
+                $form->feedbacktrue = ['text' => '', 'format' => FORMAT_HTML];
+                $form->feedbackfalse = ['text' => '', 'format' => FORMAT_HTML];
+            } else if ($qtype === 'essay') {
+                $form->responseformat = 'editor';
+                $form->responserequired = 1;
+                $form->responsefieldlines = 15;
+                $form->attachments = 0;
+                $form->attachmentsrequired = 0;
+                $form->graderinfo = ['text' => '', 'format' => FORMAT_HTML];
+                $form->responsetemplate = ['text' => '', 'format' => FORMAT_HTML];
+            } else if ($qtype === 'shortanswer') {
+                $form->usecase = 0;
+                $options = $params['options'] ?? [];
+                $form->noanswers = count($options);
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+
+                foreach ($options as $idx => $opt) {
+                    $form->answer[$idx] = clean_param($opt['answer'], PARAM_TEXT);
+                    $form->fraction[$idx] = (string)(float)$opt['fraction'];
+                    $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
+                }
             }
 
-            quiz_add_quiz_question($created->id, $quiz);
-            \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
-            $result['added_to_quiz_id'] = $quiz->id;
-        }
+            $basequestion = new stdClass();
+            $basequestion->qtype = $qtype;
+            $basequestion->createdby = $USER->id;
 
-        return $result;
+            $created = $qtypeobj->save_question($basequestion, $form);
+
+            $result = [
+                'success' => true,
+                'question_id' => (int)$created->id,
+                'category_id' => (int)$category->id,
+                'name' => $created->name,
+                'qtype' => $created->qtype,
+                'defaultmark' => (float)$created->defaultmark,
+            ];
+
+            if ($quiz !== null) {
+                quiz_require_question_use($created->id);
+                quiz_add_quiz_question($created->id, $quiz);
+                \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
+                $result['added_to_quiz_id'] = $quiz->id;
+            }
+
+            $transaction->allow_commit();
+            return $result;
+        } catch (\Throwable $error) {
+            try {
+                $transaction->rollback($error);
+            } finally {
+                // Native module caches are outside the database transaction.
+                $cache = \cache::make('core', 'coursemodinfo');
+                $cache->acquire_lock($course->id);
+                try {
+                    $cache->delete($course->id);
+                } finally {
+                    $cache->release_lock($course->id);
+                }
+                \course_modinfo::clear_instance_cache();
+            }
+        }
     }
 
     /**
@@ -511,6 +513,7 @@ class manage_question_bank extends base_tool {
 
         // B3: Validate category move and verify course context ownership and move capabilities.
         $targetcatid = (int)($params['category_id'] ?? 0);
+        $newcat = null;
         if ($targetcatid > 0 && $targetcatid != $existing->questioncategoryid) {
             $newcat = $DB->get_record('question_categories', ['id' => $targetcatid], '*', MUST_EXIST);
             $newcatcontext = \context::instance_by_id($newcat->contextid, IGNORE_MISSING);
@@ -522,6 +525,7 @@ class manage_question_bank extends base_tool {
 
             require_once($CFG->dirroot . '/lib/questionlib.php');
             question_require_capability_on($existing, 'move');
+            require_capability('moodle/question:add', $newcatcontext);
 
             $ismine = ($existing->createdby == $USER->id);
             if ($ismine) {
@@ -532,6 +536,12 @@ class manage_question_bank extends base_tool {
                 require_capability('moodle/question:moveall', $newcatcontext);
             }
 
+        }
+
+        if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
+            $this->validate_question_options($existing->qtype, $params);
+        }
+        if ($newcat !== null) {
             question_move_questions_to_category([$existing->id], $newcat->id);
             $existing->questioncategoryid = $newcat->id;
         }
@@ -563,7 +573,6 @@ class manage_question_bank extends base_tool {
         }
 
         if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
-            $this->validate_question_options($existing->qtype, $params);
             $options = $params['options'];
             $form->noanswers = count($options);
             $form->answer = [];
@@ -682,7 +691,7 @@ class manage_question_bank extends base_tool {
         }
 
         // Replay prevention.
-        if (get_cache_flag('tool_teachermcp_usedtoken', $tokenhash, time())) {
+        if (get_cache_flag('tool_teachermcp_usedtoken', $tokenhash)) {
             throw new moodle_exception('error_confirmation_token_expired', 'tool_teachermcp');
         }
         set_cache_flag('tool_teachermcp_usedtoken', $tokenhash, 1, time() + 600);
@@ -700,7 +709,7 @@ class manage_question_bank extends base_tool {
      * Add existing question to a quiz (K4 scoped, B4 hardened).
      */
     protected function action_add_to_quiz(stdClass $course, context_course $context, array $params): array {
-        global $DB, $CFG;
+        global $DB;
 
         $quizid = (int)($params['quiz_id'] ?? 0);
         $questionid = (int)($params['question_id'] ?? 0);
@@ -709,16 +718,7 @@ class manage_question_bank extends base_tool {
             throw new moodle_exception('missingparam', 'error', '', 'quiz_id and question_id');
         }
 
-        $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
-
-        // B4: Require mod/quiz:manage on quiz module context and reject if attempts exist.
-        list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
-        list($cm, $course, $quizcontext) = $this->require_cm_access($cm->id, 'mod/quiz:manage');
-
-        require_once($CFG->dirroot . '/mod/quiz/locallib.php');
-        if (quiz_has_attempts($quiz->id)) {
-            throw new moodle_exception('cannoteditafterattempts', 'quiz');
-        }
+        $quiz = $this->require_editable_quiz($course, $quizid);
 
         // Verify question belongs to this course context.
         $sql = "SELECT q.*, qc.contextid
@@ -736,6 +736,8 @@ class manage_question_bank extends base_tool {
                 'Question does not belong to this course.');
         }
 
+        require_capability('moodle/question:viewall', $qcontext);
+        quiz_require_question_use($question->id);
         quiz_add_quiz_question($question->id, $quiz);
 
         \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
@@ -746,6 +748,18 @@ class manage_question_bank extends base_tool {
             'question_id' => (int)$question->id,
             'message' => "Question '{$question->name}' added to quiz '{$quiz->name}'.",
         ];
+    }
+
+    private function require_editable_quiz(stdClass $course, int $quizid): stdClass {
+        global $DB;
+        $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
+        list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
+        $this->require_cm_access($cm->id, 'mod/quiz:manage');
+        if (quiz_has_attempts($quiz->id)) {
+            throw new moodle_exception('cannoteditafterattempts', 'quiz');
+        }
+        $quiz->cmid = $cm->id;
+        return $quiz;
     }
 
     /**

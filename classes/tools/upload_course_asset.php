@@ -130,6 +130,7 @@ class upload_course_asset extends base_tool {
                 throw new moodle_exception('invalidcoursemoduleid', 'error', '', $targetcmid);
             }
             if ($cm->modname === 'page') {
+                require_capability('moodle/course:manageactivities', $modcontext);
                 $component = 'mod_page';
                 $filearea = 'content';
                 $itemid = 0;
@@ -164,7 +165,7 @@ class upload_course_asset extends base_tool {
                 $base64 = $m[1];
             }
             // Size check prior to decoding.
-            if (strlen($base64) * 0.75 > $maxbytes) {
+            if (strlen($base64) > 4 * intdiv((int)$maxbytes + 2, 3)) {
                 throw new moodle_exception('error_file_too_large', 'tool_teachermcp');
             }
             $binarycontent = base64_decode($base64, true);
@@ -219,6 +220,7 @@ class upload_course_asset extends base_tool {
             'itemid' => $itemid,
             'filepath' => '/',
             'filename' => $filename,
+            'mimetype' => $detectedmime,
             'userid' => $USER->id,
             'timecreated' => time(),
             'timemodified' => time(),

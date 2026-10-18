@@ -244,8 +244,9 @@ class manage_grades extends base_tool {
                 // Handle letter grade conversion (H3).
                 $letters = grade_get_letters($context);
                 $targetletter = strtoupper(trim($params['grade_letter']));
-                if (isset($letters[$targetletter])) {
-                    $percentage = (float)$letters[$targetletter] / 100.0;
+                $boundary = array_search($targetletter, array_map('strtoupper', $letters), true);
+                if ($boundary !== false) {
+                    $percentage = (float)$boundary / 100.0;
                     $gradeval = (float)($gradeitem->grademin + ($percentage * ($gradeitem->grademax - $gradeitem->grademin)));
                 } else {
                     throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,

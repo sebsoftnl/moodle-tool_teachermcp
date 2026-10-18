@@ -38,7 +38,7 @@ $responsetype = optional_param('response_type', 'code', PARAM_ALPHA);
 $state = optional_param('state', '', PARAM_RAW);
 $scope = optional_param('scope', 'teachermcp', PARAM_TEXT);
 $codechallenge = optional_param('code_challenge', '', PARAM_RAW);
-$codechallengemethod = optional_param('code_challenge_method', '', PARAM_ALPHA);
+$codechallengemethod = optional_param('code_challenge_method', '', PARAM_RAW);
 
 // K3-R1, R2, R3: Strict validation BEFORE any consent screen or redirect.
 // Throws moodle_exception on invalid client or invalid redirect URI (never redirects).
@@ -120,6 +120,7 @@ $templatedata = [
     'user_fullname' => fullname($USER),
     'user_email' => $USER->email,
     'tools_count' => $toolscount,
+    'permissions' => \tool_teachermcp\oauth_server::get_consent_permissions($scopeconfig['permissions']),
     'sesskey' => sesskey(),
     'client_id' => $clientid,
     'redirect_uri' => $redirecturi,

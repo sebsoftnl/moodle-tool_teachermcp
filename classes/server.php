@@ -24,6 +24,7 @@ use Throwable;
 use stdClass;
 use context_system;
 use tool_teachermcp\tools\base_tool;
+use tool_teachermcp\local\argument_normalizer;
 use tool_teachermcp\local\tool_registry;
 
 /**
@@ -53,6 +54,7 @@ class server {
         'detect_at_risk_students' => 'read',
         'analyze_class_understanding' => 'read',
         'get_h5p_libraries' => 'read',
+        'manage_course_completion' => 'read',
 
         // Write tools.
         'manage_content_activity' => 'write',
@@ -61,7 +63,6 @@ class server {
         'manage_question_bank' => 'write',
         'upload_course_asset' => 'write',
         'manage_activity' => 'write',
-        'manage_course_completion' => 'write',
         'duplicate_activity' => 'write',
         'create_assignment' => 'write',
         'manage_course_calendar' => 'write',
@@ -451,8 +452,7 @@ class server {
 
         $tool = $this->tools[$toolname];
 
-        // Validate tool arguments.
-        $schemavalidation = self::validate_tool_arguments($tool, $arguments);
+        $schemavalidation = self::prepare_tool_arguments($tool, $arguments);
         if ($schemavalidation !== true) {
             throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null, (string)$schemavalidation);
         }
@@ -550,7 +550,7 @@ class server {
                         'protocolVersion' => '2024-11-05',
                         'serverInfo' => [
                             'name' => 'moodle-teachermcp',
-                            'version' => '1.2.0',
+                            'version' => \core_plugin_manager::instance()->get_plugin_info('tool_teachermcp')->release,
                         ],
                         'capabilities' => [
                             'tools' => [
@@ -728,8 +728,7 @@ class server {
 
                     $tool = $this->tools[$toolname];
 
-                    // M6: Validate tool arguments against inputSchema before executing.
-                    $schemavalidation = self::validate_tool_arguments($tool, $arguments);
+                    $schemavalidation = self::prepare_tool_arguments($tool, $arguments);
                     if ($schemavalidation !== true) {
                         return $this->build_jsonrpc_error($id, -32602, 'Invalid params: ' . $schemavalidation);
                     }
@@ -781,6 +780,19 @@ class server {
 
             return $isnotification ? null : $this->build_jsonrpc_error($id, -32603, 'Internal server error.');
         }
+    }
+
+    private static function prepare_tool_arguments(base_tool $tool, array &$arguments): bool|string {
+        $validation = self::validate_tool_arguments($tool, $arguments);
+        if ($validation !== true || self::is_external_tool($tool->get_name())) {
+            return $validation;
+        }
+        try {
+            $arguments = argument_normalizer::normalize($tool, $arguments);
+        } catch (\InvalidArgumentException $error) {
+            return $error->getMessage();
+        }
+        return true;
     }
 
     /**

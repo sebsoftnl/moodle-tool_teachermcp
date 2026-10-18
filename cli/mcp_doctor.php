@@ -64,19 +64,23 @@ if (version_compare($phpversion, '8.1.0', '<')) {
     cli_problem("      FAIL: PHP 8.1+ is required.");
     $issues++;
 } else {
-    cli_write("      OK: PHP version meets Moodle requirements.\n");
+    cli_write("      OK: PHP version meets the plugin minimum.\n");
 }
 
 // 2. Required PHP extensions
 cli_write("[2/8] Checking required PHP extensions...\n");
 $exts = ['json', 'openssl', 'simplexml', 'mbstring', 'curl'];
+$extensionsok = true;
 foreach ($exts as $ext) {
     if (!extension_loaded($ext)) {
         cli_problem("      FAIL: Extension '{$ext}' is missing.");
+        $extensionsok = false;
         $issues++;
     }
 }
-cli_write("      OK: All required extensions are installed.\n");
+if ($extensionsok) {
+    cli_write("      OK: All required extensions are installed.\n");
+}
 
 // 3. Database Schema Integrity
 cli_write("[3/8] Checking database tables & schema integrity...\n");
@@ -86,30 +90,49 @@ $tables = [
     'tool_teachermcp_oauth_codes',
     'tool_teachermcp_assets',
 ];
+$schemaok = true;
 foreach ($tables as $t) {
     if (!$DB->get_manager()->table_exists($t)) {
         cli_problem("      FAIL: Database table '{$t}' does not exist!");
+        $schemaok = false;
         $issues++;
     }
 }
-cli_write("      OK: All 4 plugin tables exist.\n");
+if ($schemaok) {
+    cli_write("      OK: All 4 plugin tables exist.\n");
+}
 
 // 4. Token & Client Statistics
 cli_write("[4/8] Gathering token and OAuth statistics...\n");
-$activetokens = $DB->count_records('tool_teachermcp_tokens', ['status' => 1]);
-$revokedtokens = $DB->count_records('tool_teachermcp_tokens', ['status' => 0]);
-$clients = $DB->count_records('tool_teachermcp_oauth_clients');
-$pendingcodes = $DB->count_records('tool_teachermcp_oauth_codes', ['status' => 0]);
+if ($schemaok) {
+    $activetokens = $DB->count_records('tool_teachermcp_tokens', ['status' => 1]);
+    $revokedtokens = $DB->count_records('tool_teachermcp_tokens', ['status' => 0]);
+    $clients = $DB->count_records('tool_teachermcp_oauth_clients');
+    $pendingcodes = $DB->count_records('tool_teachermcp_oauth_codes', ['status' => 0]);
 
-cli_write("      Active Agent Tokens:    {$activetokens}\n");
-cli_write("      Revoked Tokens:         {$revokedtokens}\n");
-cli_write("      OAuth Clients:          {$clients}\n");
-cli_write("      Pending Auth Codes:     {$pendingcodes}\n");
+    cli_write("      Active Agent Tokens:    {$activetokens}\n");
+    cli_write("      Revoked Tokens:         {$revokedtokens}\n");
+    cli_write("      OAuth Clients:          {$clients}\n");
+    cli_write("      Pending Auth Codes:     {$pendingcodes}\n");
+} else {
+    cli_write("      SKIP: Statistics require all plugin tables.\n");
+}
 
 // 5. Tool Catalog Count
 cli_write("[5/8] Verifying Teacher MCP Tool Catalog...\n");
 $tools = \tool_teachermcp\server::get_all_tools();
 cli_write("      Registered Tools:       " . count($tools) . "\n");
+$catalog = \tool_teachermcp\local\tool_registry::get_builtin_diagnostics();
+cli_write("      Built-in Tools:         {$catalog['registered']}/{$catalog['expected']}\n");
+if ($catalog['complete']) {
+    cli_write("      OK: Expected built-in catalog is registered.\n");
+} else {
+    cli_problem("      FAIL: Built-in catalog is incomplete.");
+    foreach ($catalog['failures'] as $failure) {
+        cli_problem("        {$failure['tool']}: {$failure['reason']}");
+    }
+    $issues++;
+}
 
 // 6. MCP Protocol Capabilities
 cli_write("[6/8] Verifying MCP Protocol primitives...\n");
@@ -129,8 +152,8 @@ if (!$ishttps) {
     cli_write("      OK: Secure HTTPS endpoint configured.\n");
 }
 
-// 8. End-to-End JSON-RPC Pipeline Dry-Run
-cli_write("[8/8] Testing MCP JSON-RPC Server Pipeline (Dry-run)...\n");
+// 8. In-process JSON-RPC initialization and discovery.
+cli_write("[8/8] Checking in-process JSON-RPC initialization and discovery...\n");
 try {
     $server = new \tool_teachermcp\server();
     $initresp = $server->handle_payload(json_encode([
@@ -149,9 +172,9 @@ try {
     if (!isset($toolsresp['result']['tools']) || count($toolsresp['result']['tools']) === 0) {
         throw new \Exception('Tools list response is empty or invalid.');
     }
-    cli_write("      OK: JSON-RPC pipeline initialized successfully (" . count($toolsresp['result']['tools']) . " tools ready).\n");
-} catch (\Throwable $e) {
-    cli_problem("      FAIL: Pipeline dry-run error: " . $e->getMessage());
+    cli_write("      OK: In-process JSON-RPC checks passed (" . count($toolsresp['result']['tools']) . " tools listed).\n");
+} catch (\Throwable) {
+    cli_problem("      FAIL: In-process JSON-RPC checks failed.");
     $issues++;
 }
 
@@ -162,8 +185,10 @@ if (!empty($options['cleanup'])) {
 }
 
 cli_heading('Diagnostic Summary');
+cli_write("Scope: prerequisite, catalog and in-process protocol checks only.\n");
+cli_write("HTTP/stdio transports, teaching workflows and external clients were not qualified by this command.\n");
 if ($issues === 0) {
-    cli_write("SUCCESS: Teacher MCP is fully configured and healthy!\n");
+    cli_write("SUCCESS: Diagnostic checks passed.\n");
     exit(0);
 } else {
     cli_problem("COMPLETED WITH {$issues} ISSUE(S). Please resolve the errors above.");

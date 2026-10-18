@@ -204,6 +204,7 @@ class create_assignment extends base_tool {
         $moduleinfo->gradingduedate = $duedate ? ($duedate + (7 * 86400)) : 0;
         $moduleinfo->allowsubmissionsfromdate = time();
         $moduleinfo->grade = $maxgrade;
+        $moduleinfo->assignfeedback_comments_enabled = (int)get_config('assignfeedback_comments', 'default');
         $moduleinfo->assignsubmission_onlinetext_enabled = $allowonlinetext ? 1 : 0;
         $moduleinfo->assignsubmission_file_enabled = $allowfile ? 1 : 0;
         $moduleinfo->assignsubmission_file_maxfiles = $maxfiles;
@@ -228,6 +229,7 @@ class create_assignment extends base_tool {
             'status' => 'success',
             'activity_type' => 'assign',
             'cmid' => $cmid,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST),
             'assignment_id' => $assignid,
             'title' => $title,
             'course_id' => (int)$course->id,

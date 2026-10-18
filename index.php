@@ -35,8 +35,11 @@ $action = optional_param('action', '', PARAM_ALPHA);
 $tokenid = optional_param('tokenid', 0, PARAM_INT);
 
 if ($action === 'revoke' && confirm_sesskey() && $tokenid) {
-    \tool_teachermcp\auth::revoke_token($tokenid, $USER->id);
-    \core\notification::info(get_string('token_revoked', 'tool_teachermcp'));
+    if (\tool_teachermcp\auth::revoke_token($tokenid, $USER->id)) {
+        \core\notification::info(get_string('token_revoked', 'tool_teachermcp'));
+    } else {
+        \core\notification::error(get_string('token_revoke_failed', 'tool_teachermcp'));
+    }
     redirect(new moodle_url('/admin/tool/teachermcp/index.php'));
 }
 

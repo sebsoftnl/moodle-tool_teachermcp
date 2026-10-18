@@ -108,6 +108,7 @@ class grade_submission extends base_tool {
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
+        require_once($CFG->libdir . '/gradelib.php');
 
         $cmid = (int)($params['cmid'] ?? 0);
         $action = $params['action'] ?? 'list_submissions';
@@ -200,6 +201,20 @@ class grade_submission extends base_tool {
                 }
             }
 
+            $applytoall = !isset($params['applytoall']) || !empty($params['applytoall']);
+            $gradeitem = \grade_item::fetch(['courseid' => $course->id, 'itemtype' => 'mod', 'itemmodule' => 'assign',
+                'iteminstance' => $instance->id, 'itemnumber' => 0]);
+            $gradeuserids = [$studentid];
+            if ($instance->teamsubmission && $applytoall) {
+                $group = $assign->get_submission_group($studentid);
+                $members = $assign->get_submission_group_members($group ? $group->id : 0, true, $assign->show_only_active_users());
+                $gradeuserids = array_map(static fn($member) => (int)$member->id, $members);
+            }
+            foreach ($gradeuserids as $gradeuserid) {
+                if ($gradeitem && $gradeitem->is_locked($gradeuserid)) {
+                    throw new moodle_exception('error_grade_locked', 'tool_teachermcp');
+                }
+            }
             $currentgrade = $assign->get_user_grade($studentid, false);
 
             // H5: Missing grade means preserve existing grade, not -1.
@@ -228,19 +243,26 @@ class grade_submission extends base_tool {
 
             $attemptnumber = isset($params['attemptnumber']) ? (int)$params['attemptnumber'] : -1;
             $feedback = isset($params['feedback_comment']) ? clean_text($params['feedback_comment']) : '';
-            $applytoall = !isset($params['applytoall']) || !empty($params['applytoall']);
-
+            $feedbackformat = FORMAT_HTML;
+            if (!isset($params['feedback_comment']) && $currentgrade) {
+                $commentsplugin = $assign->get_feedback_plugin_by_type('comments');
+                if ($commentsplugin && $commentsplugin->is_enabled()) {
+                    $previouscomments = $commentsplugin->get_feedback_comments($currentgrade->id);
+                    if ($previouscomments) {
+                        $feedback = $previouscomments->commenttext;
+                        $feedbackformat = (int)$previouscomments->commentformat;
+                    }
+                }
+            }
             $gradedata = new stdClass();
             $gradedata->grade = $gradeval;
             $gradedata->attemptnumber = $attemptnumber;
             $gradedata->addattempt = 0;
             $gradedata->applytoall = $applytoall ? 1 : 0;
-            if (isset($params['feedback_comment'])) {
-                $gradedata->assignfeedbackcomments_editor = [
-                    'text' => $feedback,
-                    'format' => FORMAT_HTML,
-                ];
-            }
+            $gradedata->assignfeedbackcomments_editor = [
+                'text' => $feedback,
+                'format' => $feedbackformat,
+            ];
 
             // Marking workflow and allocation.
             if (!empty($instance->markingworkflow) && !empty($params['workflowstate'])) {
@@ -279,7 +301,7 @@ class grade_submission extends base_tool {
                             }
                         }
                     }
-                    $gradedata->assignfeedbackfile_filemanager = $draftitemid;
+                    $gradedata->files_filemanager = $draftitemid;
                 }
             }
 

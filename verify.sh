@@ -52,17 +52,20 @@ assert "mcp_requests_per_minute" in (root / 'settings.php').read_text(encoding='
 assert 'tool_teachermcp_assets' in privacy
 assert 'get_file_by_id' in privacy
 
-testfiles = sorted((root / 'tests').glob('*_test.php'))
-expected_testfiles = {
+testfiles = sorted((root / 'tests').rglob('*_test.php'))
+required_testfiles = {
     'access_test.php', 'assessment_tools_test.php', 'auth_test.php',
     'content_tools_test.php', 'oauth_server_test.php', 'privacy_test.php',
     'provider_discovery_test.php', 'server_test.php', 'tool_registry_test.php', 'tools_extended_test.php',
 }
-assert {testfile.name for testfile in testfiles} == expected_testfiles, testfiles
+discovered_testfiles = {testfile.relative_to(root / 'tests').as_posix() for testfile in testfiles}
+missing_testfiles = required_testfiles - discovered_testfiles
+assert not missing_testfiles, f'Missing original regression files: {sorted(missing_testfiles)}'
 testmethods = []
 for testfile in testfiles:
     content = testfile.read_text(encoding='utf-8')
-    testmethods.extend(re.findall(r'^    public function (test_[A-Za-z0-9_]+)\(', content, re.MULTILINE))
+    methods = re.findall(r'^    public function (test_[A-Za-z0-9_]+)\(', content, re.MULTILINE)
+    testmethods.extend(f'{testfile.relative_to(root / "tests").as_posix()}::{method}' for method in methods)
 assert testmethods and len(testmethods) == len(set(testmethods)), testmethods
 assert not (root / 'tests' / 'mcp_test.php').exists()
 assert not any("array_column($tools, 'name')" in testfile.read_text(encoding='utf-8') for testfile in testfiles)
@@ -103,8 +106,10 @@ print(f'Split test layout: {len(testfiles)} files, {len(testmethods)} unique tes
 print('Remediation static policy checks: passed')
 PY
 
-node --check bridge/mcp-bridge.mjs
-node --test bridge/mcp-bridge.test.mjs
+for file in bridge/*.mjs; do
+    node --check "$file"
+done
+node --test bridge/*.test.mjs
 printf 'Node bridge syntax and tests: passed\n'
 
 python3 - <<'PY'

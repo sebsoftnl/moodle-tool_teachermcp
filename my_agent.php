@@ -51,6 +51,21 @@ $PAGE->set_title(get_string('dashboard_title', 'tool_teachermcp'));
 $PAGE->set_heading(get_string('dashboard_title', 'tool_teachermcp'));
 
 $newtoken = null;
+$maxvalidity = (int)get_config('tool_teachermcp', 'max_token_validity');
+if ($maxvalidity <= 0) {
+    $maxvalidity = 90;
+}
+$validityoptions = [];
+$standardvalidities = [30, 90, 180, 365];
+foreach ($standardvalidities as $period) {
+    $days = min($period, $maxvalidity);
+    $labelkey = in_array($days, $standardvalidities, true) ? 'validity_' . $days : 'validity_days';
+    $validityoptions[$days] = [
+        'value' => $days,
+        'label' => get_string($labelkey, 'tool_teachermcp', $days),
+        'selected' => $days === min(90, $maxvalidity),
+    ];
+}
 
 // Handle actions.
 if ($action === 'create' && confirm_sesskey()) {
@@ -59,46 +74,48 @@ if ($action === 'create' && confirm_sesskey()) {
         $agentname = 'My AI Agent (' . userdate(time(), '%d %b %Y') . ')';
     }
     $validity = optional_param('validity', 90, PARAM_INT);
-    $maxvalidity = (int)get_config('tool_teachermcp', 'max_token_validity') ?: 90;
     if ($validity <= 0 || $validity > $maxvalidity) {
-        throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
-    }
-
-    $scopepreset = optional_param('scope_preset', 'full', PARAM_ALPHA);
-    $permissions = [];
-    switch ($scopepreset) {
-        case 'grading':
-            $permissions['scopes'] = ['read', 'grade'];
-            break;
-        case 'curriculum':
-            $permissions['scopes'] = ['read', 'write'];
-            break;
-        case 'readonly':
-            $permissions['scopes'] = ['read'];
-            break;
-        case 'full':
-        default:
-            $permissions['all_teacher_tools'] = true;
-            break;
-    }
-
-    $requestedexternaltools = optional_param_array('externaltools', [], PARAM_RAW_TRIMMED);
-    $grantableexternaltools = \tool_teachermcp\server::get_grantable_external_tool_names();
-    $selectedexternaltools = [];
-    foreach ($requestedexternaltools as $toolname) {
-        if (is_string($toolname) && in_array($toolname, $grantableexternaltools, true)) {
-            $selectedexternaltools[$toolname] = true;
+        \core\notification::error(get_string('token_validity_error', 'tool_teachermcp', $maxvalidity));
+    } else {
+        $scopepreset = optional_param('scope_preset', 'full', PARAM_ALPHA);
+        $permissions = [];
+        switch ($scopepreset) {
+            case 'grading':
+                $permissions['scopes'] = ['read', 'grade'];
+                break;
+            case 'curriculum':
+                $permissions['scopes'] = ['read', 'write'];
+                break;
+            case 'readonly':
+                $permissions['scopes'] = ['read'];
+                break;
+            case 'full':
+            default:
+                $permissions['all_teacher_tools'] = true;
+                break;
         }
-    }
-    if (!empty($selectedexternaltools)) {
-        $permissions = array_merge($permissions, $selectedexternaltools);
-    }
 
-    $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity, null, $permissions);
-    \core\notification::success(get_string('token_created', 'tool_teachermcp'));
+        $requestedexternaltools = optional_param_array('externaltools', [], PARAM_RAW_TRIMMED);
+        $grantableexternaltools = \tool_teachermcp\server::get_grantable_external_tool_names();
+        $selectedexternaltools = [];
+        foreach ($requestedexternaltools as $toolname) {
+            if (is_string($toolname) && in_array($toolname, $grantableexternaltools, true)) {
+                $selectedexternaltools[$toolname] = true;
+            }
+        }
+        if (!empty($selectedexternaltools)) {
+            $permissions = array_merge($permissions, $selectedexternaltools);
+        }
+
+        $newtoken = \tool_teachermcp\auth::generate_token($USER->id, $agentname, $validity, null, $permissions);
+        \core\notification::success(get_string('token_created', 'tool_teachermcp'));
+    }
 } else if ($action === 'revoke' && confirm_sesskey() && $tokenid) {
-    \tool_teachermcp\auth::revoke_token($tokenid, $USER->id);
-    \core\notification::info(get_string('token_revoked', 'tool_teachermcp'));
+    if (\tool_teachermcp\auth::revoke_token($tokenid, $USER->id)) {
+        \core\notification::info(get_string('token_revoked', 'tool_teachermcp'));
+    } else {
+        \core\notification::error(get_string('token_revoke_failed', 'tool_teachermcp'));
+    }
     redirect($pageurl);
 }
 
@@ -115,14 +132,16 @@ foreach ($tokens as $t) {
         'status_active' => ($t->status == 1),
         'lastaccess' => $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
         'validuntil' => $t->timeexpires ? userdate($t->timeexpires) : get_string('never', 'tool_teachermcp'),
-        'revokelink' => new moodle_url($pageurl, ['action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey()]),
+        'revokelink' => (new moodle_url($pageurl, [
+            'action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey(),
+        ]))->out(false),
     ];
 }
 
 $endpointurl = $CFG->wwwroot . '/admin/tool/teachermcp/endpoint.php';
 
 $downloadbridgeurl = (new moodle_url('/admin/tool/teachermcp/download.php', ['type' => 'bridge']))->out(false);
-$bridgepathsample = '<PAD_NAAR>/mcp-bridge.mjs';
+$bridgepathsample = get_string('bridge_path_placeholder', 'tool_teachermcp');
 
 $currentlang = current_language();
 $langparam = '--lang=' . clean_param($currentlang, PARAM_SAFEDIR);
@@ -347,6 +366,7 @@ $systempromptcontent = file_exists($agentsmdpath) ? file_get_contents($agentsmdp
 echo $OUTPUT->header();
 
 $templatedata = [
+    'validity_options' => array_values($validityoptions),
     'endpoint_url' => $endpointurl,
     'download_bridge_url' => $downloadbridgeurl,
     'download_skill_url' => $downloadskillurl,

@@ -185,7 +185,7 @@ class export_course_learning_material extends base_tool {
         $fulltext = implode("\n", $markdownlines);
         $truncated = false;
         if (strlen($fulltext) > $maxbytes) {
-            $fulltext = substr($fulltext, 0, $maxbytes) . "\n\n... [Output truncated at 750 KB. Use the section_number parameter to inspect individual sections.]";
+            $fulltext = \core_text::str_max_bytes($fulltext, $maxbytes) . "\n\n... [Output truncated at 750 KB. Use the section_number parameter to inspect individual sections.]";
             $truncated = true;
         }
 
@@ -301,6 +301,9 @@ class export_course_learning_material extends base_tool {
                             if ($ext['success'] && !empty($ext['content'])) {
                                 $text .= "\n\n#### Document Content (`{$af->get_filename()}`):\n" . $ext['content'];
                             }
+                            if (!empty($ext['notice'])) {
+                                $text .= "\n\n*(Note: {$ext['notice']})*";
+                            }
                         }
                     }
                 }
@@ -362,7 +365,8 @@ class export_course_learning_material extends base_tool {
                             $ext = \tool_teachermcp\file_extractor::extract_text($rf, 30000);
                             if ($ext['success'] && !empty($ext['content'])) {
                                 $rescontent .= "\n\n#### Extracted Document Content:\n" . $ext['content'];
-                            } else if (!empty($ext['notice'])) {
+                            }
+                            if (!empty($ext['notice'])) {
                                 $rescontent .= "\n\n*(Note: {$ext['notice']})*";
                             }
                         }
@@ -392,6 +396,9 @@ class export_course_learning_material extends base_tool {
                         $ext = \tool_teachermcp\file_extractor::extract_text($ff, 15000);
                         if ($ext['success'] && !empty($ext['content'])) {
                             $line .= "\n  Document text preview:\n  " . str_replace("\n", "\n  ", $ext['content']);
+                        }
+                        if (!empty($ext['notice'])) {
+                            $line .= "\n  *(Note: {$ext['notice']})*";
                         }
                     }
                     $filelines[] = $line;

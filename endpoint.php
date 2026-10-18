@@ -102,7 +102,8 @@ try {
         http_response_code(413);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.'],
+            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.',
+                'data' => ['reason' => 'request_too_large']],
             'id' => null,
         ]);
         exit(0);
@@ -118,7 +119,8 @@ try {
         http_response_code(413);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.'],
+            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.',
+                'data' => ['reason' => 'request_too_large']],
             'id' => null,
         ]);
         exit(0);
@@ -127,7 +129,8 @@ try {
         http_response_code(400);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Empty request body.'],
+            'error' => ['code' => -32600, 'message' => 'Empty request body.',
+                'data' => ['reason' => 'invalid_request']],
             'id' => null,
         ]);
         exit(0);
@@ -142,31 +145,44 @@ try {
         exit(0);
     }
 
-    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-} catch (\moodle_exception $e) {
-    http_response_code(401);
-    $resourcemeta = $CFG->wwwroot . '/admin/tool/teachermcp/oauth/protected-resource.php';
-    header('WWW-Authenticate: Bearer error="invalid_token", resource_metadata="' . $resourcemeta . '"');
-    echo json_encode([
-        'jsonrpc' => '2.0',
-        'error' => [
-            'code' => -32000,
-            'message' => 'Authentication failed: ' . $e->getMessage(),
-        ],
-        'id' => null,
-    ], JSON_UNESCAPED_SLASHES);
-} catch (\Throwable $e) {
-    http_response_code(500);
-    // Generic error to prevent sensitive data leakage unless debugdeveloper is on.
-    $msg = 'Internal server error occurred.';
-    if (debugging('', DEBUG_DEVELOPER)) {
-        $msg .= ' ' . $e->getMessage();
+    if (isset($response['error']) && in_array($response['error']['code'], [-32700, -32600], true)) {
+        $response['error']['data'] = ['reason' => 'invalid_request'];
     }
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+} catch (\Throwable $e) {
+    $reason = 'internal_error';
+    if ($e instanceof \moodle_exception && $e->module === 'tool_teachermcp') {
+        $reason = match ($e->errorcode) {
+            'error_unauthorized' => 'missing_token',
+            'error_invalid_token', 'error_invalid_user' => 'invalid_token',
+            'error_expired_token' => 'expired_token',
+            'error_no_capability' => 'forbidden',
+            'error_rate_limited' => 'rate_limited',
+            default => 'internal_error',
+        };
+    }
+    $status = match ($reason) {
+        'missing_token', 'invalid_token', 'expired_token' => 401,
+        'forbidden' => 403,
+        'rate_limited' => 429,
+        default => 500,
+    };
+    http_response_code($status);
+    if ($status === 401) {
+        $resourcemeta = $CFG->wwwroot . '/admin/tool/teachermcp/oauth/protected-resource.php';
+        $errorparameter = $reason === 'missing_token' ? '' : 'error="invalid_token", ';
+        header('WWW-Authenticate: Bearer ' . $errorparameter . 'resource_metadata="' . $resourcemeta . '"');
+    } else if ($status === 429) {
+        header('Retry-After: ' . (int)$e->a);
+    }
+    $message = $reason === 'internal_error' ? 'Internal server error occurred.'
+        : ($status === 401 ? 'Authentication failed: ' : '') . get_string($e->errorcode, 'tool_teachermcp');
     echo json_encode([
         'jsonrpc' => '2.0',
         'error' => [
-            'code' => -32603,
-            'message' => $msg,
+            'code' => $status === 500 ? -32603 : -32000,
+            'message' => $message,
+            'data' => ['reason' => $reason],
         ],
         'id' => null,
     ]);

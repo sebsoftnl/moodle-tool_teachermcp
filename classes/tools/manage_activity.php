@@ -99,6 +99,9 @@ class manage_activity extends base_tool {
                 throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null,
                     'Updating settings is currently supported only for Page activities.');
             }
+            if (isset($params['visible'])) {
+                require_capability('moodle/course:activityvisibility', $context);
+            }
             // H7: Use core modlib API to update instance and grade item definitions.
             $coursemodule = get_coursemodule_from_id('page', $cm->id, 0, false, MUST_EXIST);
             [, , , $moduleinfo] = get_moduleinfo_data($coursemodule, $course);
@@ -127,17 +130,21 @@ class manage_activity extends base_tool {
                 'itemid' => 0,
             ];
             $moduleinfo->display = $instancerecord->display;
-            $moduleinfo->printintro = 0;
-            $moduleinfo->printlastmodified = 0;
+            $displayoptions = unserialize($instancerecord->displayoptions, ['allowed_classes' => false]);
+            $moduleinfo->printintro = $displayoptions['printintro'] ?? 0;
+            $moduleinfo->printlastmodified = $displayoptions['printlastmodified'] ?? 0;
+            foreach (['popupwidth', 'popupheight'] as $option) {
+                if (isset($displayoptions[$option])) {
+                    $moduleinfo->{$option} = $displayoptions[$option];
+                }
+            }
             $moduleinfo->revision = $instancerecord->revision;
 
             if ($hascontentupdates) {
                 update_moduleinfo($coursemodule, $moduleinfo, $course);
             }
 
-            // H7: Changing visibility requires moodle/course:activityvisibility.
             if (isset($params['visible'])) {
-                require_capability('moodle/course:activityvisibility', $context);
                 set_coursemodule_visible($cm->id, (int)$params['visible']);
                 \core\event\course_module_updated::create_from_cm($cm)->trigger();
                 rebuild_course_cache($course->id, true);

@@ -39,6 +39,9 @@ final class tool_registry {
     /** @var array|null Injectable discovery source, test-only. */
     private static ?array $providercallbackmap = null;
 
+    /** @var array<array{tool: string, reason: string}> Registration failures without exception details. */
+    private static array $builtinfailures = [];
+
     /**
      * Get all registered tools.
      *
@@ -71,6 +74,23 @@ final class tool_registry {
     }
 
     /**
+     * Report fixed built-in catalog integrity independently of external tools and scope filters.
+     *
+     * @return array{expected: int, registered: int, complete: bool, failures: array}
+     */
+    public static function get_builtin_diagnostics(): array {
+        self::load();
+        $expected = count(self::get_builtin_classes());
+        $registered = count(array_filter(self::$metadata, static fn(array $metadata): bool => !$metadata['external']));
+        return [
+            'expected' => $expected,
+            'registered' => $registered,
+            'complete' => $registered === $expected && self::$builtinfailures === [],
+            'failures' => self::$builtinfailures,
+        ];
+    }
+
+    /**
      * Set the provider callback source for an isolated test.
      *
      * @param array|null $callbackmap Callback map, or null for production discovery.
@@ -89,6 +109,7 @@ final class tool_registry {
     public static function purge_for_testing(): void {
         self::$tools = null;
         self::$metadata = null;
+        self::$builtinfailures = [];
     }
 
     /**
@@ -103,19 +124,29 @@ final class tool_registry {
 
         self::$tools = [];
         self::$metadata = [];
+        self::$builtinfailures = [];
         foreach (self::get_builtin_classes() as $class) {
-            if (!class_exists($class)) {
-                continue;
-            }
+            $name = substr($class, strrpos($class, '\\') + 1);
             try {
+                if (!class_exists($class)) {
+                    self::$builtinfailures[] = ['tool' => $name, 'reason' => 'missing_class'];
+                    continue;
+                }
                 $tool = new $class();
+                if (!$tool instanceof base_tool) {
+                    self::$builtinfailures[] = ['tool' => $name, 'reason' => 'invalid_tool'];
+                    continue;
+                }
+                if ($tool->get_name() !== $name || isset(self::$tools[$name])) {
+                    self::$builtinfailures[] = ['tool' => $name, 'reason' => 'invalid_name'];
+                    continue;
+                }
+                $tool->get_description();
+                $tool->get_input_schema();
             } catch (Throwable $e) {
+                self::$builtinfailures[] = ['tool' => $name, 'reason' => 'initialization_failed'];
                 continue;
             }
-            if (!$tool instanceof base_tool || isset(self::$tools[$tool->get_name()])) {
-                continue;
-            }
-            $name = $tool->get_name();
             self::$tools[$name] = $tool;
             self::$metadata[$name] = [
                 'external' => false,

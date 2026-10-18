@@ -282,7 +282,7 @@ final class resource_registry {
                         'text' => json_encode([
                             'cmid' => $cmid,
                             'activity_name' => $cm->name,
-                            'method' => $controller->get_method_name(),
+                                'method' => $gradingmanager->get_active_method(),
                             'rubric_title' => $definition ? $definition->name : '',
                             'rubric_description' => $definition ? $definition->description : '',
                         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),

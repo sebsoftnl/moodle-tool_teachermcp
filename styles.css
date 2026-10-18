@@ -1,0 +1,41 @@
+.tool_teachermcp_dashboard .d-flex {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tool_teachermcp_dashboard .d-flex > code,
+.tool_teachermcp_dashboard .form-control {
+    min-width: 0;
+}
+
+.tool_teachermcp_dashboard code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.tool_teachermcp_dashboard pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.tool_teachermcp_dashboard pre code {
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.tool_teachermcp_dashboard .btn,
+.tool_teachermcp_dashboard .form-control {
+    max-width: 100%;
+}
+
+.tool_teachermcp_dashboard .btn {
+    white-space: normal;
+}
+
+@media (max-width: 767.98px) {
+    .tool_teachermcp_dashboard #agentTabs .nav-link.active {
+        background-color: var(--bs-nav-tabs-link-active-bg, var(--blue));
+    }
+}

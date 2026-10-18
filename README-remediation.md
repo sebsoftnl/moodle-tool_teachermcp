@@ -1,5 +1,7 @@
 # Teacher MCP remediation copy
 
+**Historical material, retained below.** This describes an earlier remediation snapshot, not the current repository, release or verification status. Use the [README](README.md) and [testing guide](docs/developer/testing.md) for current instructions. The original observations below have not been rewritten as current results.
+
 This directory is a standalone fixed copy of the reviewed source. It is not a Git repository and has not been deployed.
 
 Changes implemented
