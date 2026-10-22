@@ -221,6 +221,67 @@ final class content_workflows_test extends \advanced_testcase {
         $this->assertStringContainsString('Folder source text', $markdown['content']);
     }
 
+    public function test_export_preserves_page_and_summary_block_boundaries(): void {
+        global $DB;
+        [$course] = $this->fixture();
+        $DB->set_field('course', 'summary', '<p>Course first.</p><p>Course second.</p>', ['id' => $course->id]);
+        $DB->set_field('course_sections', 'summary', '<div>Section first.</div><div>Section second.</div>',
+            ['course' => $course->id, 'section' => 1]);
+        $page = (new manage_content_activity())->execute(['action' => 'create_page', 'course_id' => (int)$course->id,
+            'section_number' => 1, 'title' => 'Readable page', 'visible' => true,
+            'content' => '<p>Evapora<span>tion</span> changes liquid water into vapour.</p>'
+                . '<p>QA page revision 2.<br>Next line.</p>']);
+        rebuild_course_cache($course->id, true);
+        $tool = new export_course_learning_material();
+        $args = ['course_id' => (int)$course->id, 'section_number' => 1];
+        $json = $tool->execute($args + ['format' => 'json']);
+        $markdown = $tool->execute($args);
+        $materials = array_column($json['sections'][0]['materials'], null, 'cmid');
+
+        foreach ([$materials[$page['cmid']]['content'], $markdown['content']] as $text) {
+            $this->assertMatchesRegularExpression(
+                '/Evaporation changes liquid water into vapour\.\s+QA page revision 2\.\s+Next line\./u', $text,
+                'Export must preserve paragraph and line-break boundaries without splitting inline text.');
+        }
+        foreach ([$json['sections'][0]['summary'], $markdown['content']] as $text) {
+            $this->assertMatchesRegularExpression('/Section first\.\s+Section second\./u', $text,
+                'Section summary blocks must remain separate in both output formats.');
+        }
+        $this->assertMatchesRegularExpression('/Course first\.\s+Course second\./u', $markdown['content']);
+        $this->assertStringNotContainsString('<span>', $materials[$page['cmid']]['content']);
+        $this->assertFalse($markdown['truncated']);
+    }
+
+    public function test_export_preserves_book_and_assignment_paragraphs(): void {
+        global $DB;
+        [$course] = $this->fixture();
+        $book = (new manage_content_activity())->execute(['action' => 'create_book', 'course_id' => (int)$course->id,
+            'section_number' => 1, 'title' => 'Readable book', 'chapter_title' => 'Chapter one', 'visible' => true,
+            'content' => '<p>Book first.</p><p>Book second.</p>']);
+        $instructions = '<p>Instruction first.</p><p>Instruction second.</p>';
+        $assignment = $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'section' => 1,
+            'intro' => '<p>Brief first.</p><p>Brief second.</p>', 'introformat' => FORMAT_HTML,
+            'activityeditor' => ['text' => $instructions, 'format' => FORMAT_HTML]]);
+        $this->assertSame($instructions, $DB->get_field('assign', 'activity', ['id' => $assignment->id], MUST_EXIST),
+            'The native assignment fixture must contain the instructions being exported.');
+        $tool = new export_course_learning_material();
+        $args = ['course_id' => (int)$course->id, 'section_number' => 1];
+        $json = $tool->execute($args + ['format' => 'json']);
+        $markdown = $tool->execute($args);
+        $materials = array_column($json['sections'][0]['materials'], null, 'cmid');
+
+        foreach ([$materials[$book['cmid']]['content'], $markdown['content']] as $text) {
+            $this->assertMatchesRegularExpression('/Book first\.\s+Book second\./u', $text,
+                'Book paragraphs must not be joined during export.');
+        }
+        foreach ([$materials[$assignment->cmid]['content'], $markdown['content']] as $text) {
+            $this->assertMatchesRegularExpression('/Brief first\.\s+Brief second\./u', $text,
+                'Assignment introduction paragraphs must remain separate.');
+            $this->assertMatchesRegularExpression('/Instruction first\.\s+Instruction second\./u', $text,
+                'Assignment instruction paragraphs must remain separate.');
+        }
+    }
+
     public function test_settings_updates_preserve_page_body_and_attached_file_bytes(): void {
         global $DB;
         [$course] = $this->fixture();

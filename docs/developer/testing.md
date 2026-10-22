@@ -30,7 +30,7 @@ The stabilization matrix uses these exact development checkouts:
 | Moodle 4.5.0 minimum compatibility boundary | `52c0da7c647bd6ba8c5f61882d88959821a1fb41` | 8.1.33 |
 | Moodle 5.3 development snapshot | `42622298fe06f9626d988d60b2bf589bd8f850e8` | 8.4.11 |
 
-Both use MariaDB 11.4.13. The local matrix runs isolated fixtures and native teacher/student browser, HTTP and stdio workflows. Its fixed catalog contains 24 built-ins, 24 advertised actions, 15 prompts, one static resource and three resource templates. Actions require positive and relevant negative assertions. Full PHPUnit currently executes 263 methods on each target with no errors, failures or skips; the pinned 5.3 runner still reports 10 inherited PHPUnit deprecations and one notice. Preserve those diagnostics rather than suppressing them.
+Both use MariaDB 11.4.13. The local matrix runs isolated fixtures and native teacher/student browser, HTTP and stdio workflows. Its fixed catalog contains 24 built-ins, 24 advertised actions, 15 prompts, one static resource and three resource templates. Actions require positive and relevant negative assertions. Full PHPUnit currently executes 272 methods on each target with no errors, failures or skips; the pinned 5.3 runner still reports 10 inherited PHPUnit deprecations and one notice. Preserve those diagnostics rather than suppressing them.
 
 The plugin checkout's standalone verifier does not contain the maintainer's complete Docker/browser orchestration. A successful verifier or doctor command alone is not that matrix. Qualification applies only to the tested source and environment; changes require fresh relevant evidence.
 

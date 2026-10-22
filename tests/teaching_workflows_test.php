@@ -299,6 +299,42 @@ final class teaching_workflows_test extends \advanced_testcase {
         $this->assertSame((int)$students['alpha']->id, (int)$sent[0]->get_data()['relateduserid']);
     }
 
+    public function test_long_messages_preserve_complete_native_chat_text(): void {
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/message/lib.php');
+        [$course, , $students] = $this->fixture();
+        $CFG->noemailever = true;
+        fixtures::local_messages([$students['alpha']]);
+        $texts = [
+            'Please review the water-cycle guide and handbook before attempting the practice quiz. '
+                . 'After the quiz, submit your explanation and check the feedback carefully.',
+            'Review **evaporation** and **condensation**. '
+                . str_repeat('Explain how liquid water and water vapour are related. ', 4)
+                . 'Final feedback sentence.',
+        ];
+        $sink = $this->redirectMessages();
+        try {
+            foreach ($texts as $text) {
+                $result = (new \tool_teachermcp\tools\send_student_message())->execute([
+                    'course_id' => (int)$course->id, 'student_user_id' => (int)$students['alpha']->id,
+                    'message_text' => $text,
+                ]);
+                $message = $DB->get_record('messages', ['id' => $result['message_id']], '*', MUST_EXIST);
+                $this->assertSame($text, $message->fullmessage);
+                $this->assertSame($text, $message->smallmessage,
+                    'The field used by native chat must preserve the complete accepted message.');
+                $rendered = \message_format_message_text($message);
+                $this->assertStringContainsString(substr($text, -25), strip_tags($rendered),
+                    'Native chat must render the final sentence, not a shortened preview.');
+                if (str_contains($text, '**evaporation**')) {
+                    $this->assertStringContainsString('<strong>evaporation</strong>', $rendered);
+                }
+            }
+        } finally {
+            $sink->close();
+        }
+    }
+
     public function test_calendar_round_trip_preserves_native_course_event_fields(): void {
         global $DB;
         [$course] = $this->fixture();

@@ -164,7 +164,7 @@ class send_student_message extends base_tool {
         $msg->fullmessage = $messagetext;
         $msg->fullmessageformat = FORMAT_MARKDOWN;
         $msg->fullmessagehtml = markdown_to_html($messagetext);
-        $msg->smallmessage = shorten_text(strip_tags($messagetext), 64);
+        $msg->smallmessage = $messagetext;
         $msg->notification = 0;
 
         $messageid = message_send($msg);

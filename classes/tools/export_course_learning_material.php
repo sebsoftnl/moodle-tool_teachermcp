@@ -91,7 +91,7 @@ class export_course_learning_material extends base_tool {
 
         $markdownlines[] = "# Course Knowledge Base: {$course->fullname} ({$course->shortname})";
         if (!empty($course->summary)) {
-            $markdownlines[] = "\n## Course Summary\n" . trim(strip_tags($course->summary));
+            $markdownlines[] = "\n## Course Summary\n" . trim(html_to_text($course->summary, 0, false));
         }
 
         foreach ($modinfo->get_section_info_all() as $sectionnum => $secinfo) {
@@ -106,7 +106,7 @@ class export_course_learning_material extends base_tool {
             $secdata = [
                 'section_number' => $sectionnum,
                 'name' => $secname,
-                'summary' => trim(strip_tags($secinfo->summary ?? '')),
+                'summary' => trim(html_to_text($secinfo->summary ?? '', 0, false)),
                 'materials' => [],
             ];
 
@@ -150,7 +150,7 @@ class export_course_learning_material extends base_tool {
                 if (!empty($entries)) {
                     $hasglossary = true;
                     foreach ($entries as $entry) {
-                        $def = trim(strip_tags($entry->definition));
+                        $def = trim(html_to_text($entry->definition, 0, false));
                         $glossaryitems[] = [
                             'concept' => $entry->concept,
                             'definition' => $def,
@@ -210,7 +210,7 @@ class export_course_learning_material extends base_tool {
                 if (!$page) {
                     return null;
                 }
-                $clean = trim(strip_tags($page->content));
+                $clean = trim(html_to_text($page->content, 0, false));
                 return [
                     'cmid' => (int)$cm->id,
                     'type' => 'Page',
@@ -226,7 +226,7 @@ class export_course_learning_material extends base_tool {
                 $chapters = $DB->get_records('book_chapters', ['bookid' => $book->id, 'hidden' => 0], 'pagenum ASC');
                 $chaptexts = [];
                 foreach ($chapters as $chap) {
-                    $chaptexts[] = "#### Chapter: " . $chap->title . "\n" . trim(strip_tags($chap->content));
+                    $chaptexts[] = "#### Chapter: " . $chap->title . "\n" . trim(html_to_text($chap->content, 0, false));
                 }
                 return [
                     'cmid' => (int)$cm->id,
@@ -268,7 +268,7 @@ class export_course_learning_material extends base_tool {
 
                 $lessontexts = [];
                 foreach ($orderedpages as $lp) {
-                    $lessontexts[] = "#### " . $lp->title . "\n" . trim(strip_tags($lp->contents));
+                    $lessontexts[] = "#### " . $lp->title . "\n" . trim(html_to_text($lp->contents, 0, false));
                 }
                 return [
                     'cmid' => (int)$cm->id,
@@ -282,9 +282,9 @@ class export_course_learning_material extends base_tool {
                 if (!$assign) {
                     return null;
                 }
-                $text = trim(strip_tags($assign->intro ?? ''));
+                $text = trim(html_to_text($assign->intro ?? '', 0, false));
                 if (!empty($assign->activity)) {
-                    $text .= "\n\nInstructions:\n" . trim(strip_tags($assign->activity));
+                    $text .= "\n\nInstructions:\n" . trim(html_to_text($assign->activity, 0, false));
                 }
 
                 // Check for attached case studies, rubrics, or assignment files.
@@ -324,7 +324,7 @@ class export_course_learning_material extends base_tool {
                     'cmid' => (int)$cm->id,
                     'type' => 'Quiz',
                     'title' => $quiz->name,
-                    'content' => trim(strip_tags($quiz->intro ?? '')),
+                    'content' => trim(html_to_text($quiz->intro ?? '', 0, false)),
                 ];
 
             case 'h5pactivity':
@@ -342,7 +342,7 @@ class export_course_learning_material extends base_tool {
                     'cmid' => (int)$cm->id,
                     'type' => 'Forum',
                     'title' => $forum->name,
-                    'content' => trim(strip_tags($forum->intro ?? '')),
+                    'content' => trim(html_to_text($forum->intro ?? '', 0, false)),
                 ];
 
             case 'resource':
@@ -350,7 +350,7 @@ class export_course_learning_material extends base_tool {
                 if (!$resource) {
                     return null;
                 }
-                $desc = trim(strip_tags($resource->intro ?? ''));
+                $desc = trim(html_to_text($resource->intro ?? '', 0, false));
                 $rescontent = !empty($desc) ? $desc : '';
 
                 $resfiles = \tool_teachermcp\file_extractor::get_module_files($cm->id);
@@ -385,7 +385,7 @@ class export_course_learning_material extends base_tool {
                 if (!$folder) {
                     return null;
                 }
-                $folderdesc = trim(strip_tags($folder->intro ?? ''));
+                $folderdesc = trim(html_to_text($folder->intro ?? '', 0, false));
                 $folderfiles = \tool_teachermcp\file_extractor::get_module_files($cm->id);
                 $filelines = [];
                 foreach ($folderfiles as $ff) {
@@ -423,7 +423,7 @@ class export_course_learning_material extends base_tool {
                     'cmid' => (int)$cm->id,
                     'type' => 'External Link',
                     'title' => $url->name,
-                    'content' => "URL: {$url->externalurl}\n" . trim(strip_tags($url->intro ?? '')),
+                    'content' => "URL: {$url->externalurl}\n" . trim(html_to_text($url->intro ?? '', 0, false)),
                 ];
 
             default:
@@ -432,7 +432,7 @@ class export_course_learning_material extends base_tool {
                         'cmid' => (int)$cm->id,
                         'type' => ucfirst($cm->modname),
                         'title' => $cm->name,
-                        'content' => trim(strip_tags($cm->content)),
+                        'content' => trim(html_to_text($cm->content, 0, false)),
                     ];
                 }
                 return null;
@@ -468,7 +468,7 @@ class export_course_learning_material extends base_tool {
 
         $contentlines = [];
         if (!empty($h5pact->intro)) {
-            $contentlines[] = "Description: " . trim(strip_tags($h5pact->intro));
+            $contentlines[] = "Description: " . trim(html_to_text($h5pact->intro, 0, false));
         }
 
         if ($h5precord) {
@@ -525,7 +525,7 @@ class export_course_learning_material extends base_tool {
 
         $contentlines = [];
         if (!empty($hvp->intro)) {
-            $contentlines[] = "Description: " . trim(strip_tags($hvp->intro));
+            $contentlines[] = "Description: " . trim(html_to_text($hvp->intro, 0, false));
         }
 
         if (!empty($hvp->json_content)) {
@@ -553,7 +553,7 @@ class export_course_learning_material extends base_tool {
      */
     protected function extract_text_from_h5p_json($node, array &$collected): void {
         if (is_string($node)) {
-            $trimmed = trim(strip_tags($node));
+            $trimmed = trim(html_to_text($node, 0, false));
             if (strlen($trimmed) >= 4 && !preg_match('/^(true|false|null|[0-9\.\-\_\s]+)$/i', $trimmed)) {
                 $collected[] = $trimmed;
             }
