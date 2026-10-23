@@ -1,62 +1,64 @@
 # Teacher AI Assistant (Model Context Protocol - MCP) for Moodle
 
 Moodle Admin Tool exposing an authenticated **Model Context Protocol (MCP)** JSON-RPC 2.0 endpoint and self-service dashboard for teachers.
-Allows educators to connect compatible personal AI clients to permitted course-content, assessment, grading and student-support workflows. Client configuration examples are not commercial-client certification. Start with the teacher-facing [agent usage guide](AGENTS.md), which is also supplied by the dashboard's copy/download controls.
+Allows educators to connect personal AI agents (**Claude Desktop**, **Codex**, **Cursor**, **ChatGPT**) through compatible MCP connections to carry out teaching workflows, bring course materials into LLM context, assemble assessments, identify students who may need support, analyze quiz performance, build interactive H5P modules, and streamline grading.
+
+See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples, also available through the dashboard's copy/download controls.
 
 ---
 
 ## 🚀 Key Highlights & Capabilities
 
 ### 1. High-Level Didactic Workflows
-- **`export_course_learning_material`**: Extracts permitted course material into bounded Markdown, including implemented Page, Book, Lesson, H5P, Glossary, assignment and attached-document paths. Unsupported or truncated extraction is reported explicitly; this is not OCR or a general PDF engine.
+- **`export_course_learning_material`**: Extracts substantive course material from Pages, Book chapters, Lessons, **H5P activities**, Glossaries, assignment briefs, and supported attached documents into clean, structured Markdown for LLM context.
 - **`scaffold_assessment_unit`**: End-to-end quiz builder using core `create_module()`. Creates question bank entries, instantiates the quiz in a course section, links questions to slots, and verifies fractional weights in a delegated transaction.
-- **`detect_at_risk_students`**: A heuristic early-warning score using access, missed work, grades, completion and existing stored Moodle Analytics predictions. A positive stored prediction contributes the existing 25-point signal and `analytics_risk` flag. It does not train a model or establish predictive accuracy.
-- **`analyze_class_understanding`**: Reports implemented attempt/score metrics, answer counts, facility percentages and unassessed responses (`needs_grading`). AI prompts can request interpretation; server-computed discrimination and misconception-clustering algorithms are currently unsupported.
+- **`detect_at_risk_students`**: Early-warning analytics. Combines course access, missed assignment deadlines (accounting for extensions and overrides), low grades, incomplete activities, and stored Moodle Analytics predictions into an actionable risk index.
+- **`analyze_class_understanding`**: Post-assessment diagnostics. Analyzes finished quiz attempts, question difficulty (facility index), correct/partial/wrong answer counts, and unassessed responses (`needs_grading`) to highlight areas for review.
 - **`prepare_grading_session`**: Batch grading assistant. Bundles ungraded submissions, submitted student texts, file attachment metadata, rubric criteria, and student context into a single payload for rapid AI-assisted grading.
 
 ### 2. Complete Suite of 24 MCP Tools
 1. `get_my_profile`: Teacher identity, system permissions, and environment info.
 2. `get_teacher_courses`: Courses where teacher is actively enrolled with teaching/grading rights.
-3. `get_course_contents`: Section tree, activity names, optional descriptions and completion-enabled flags.
-4. `export_course_learning_material`: Extract permitted course content as bounded Markdown, with explicit limitations and truncation outcomes.
-5. `read_activity_file`: Inspect permitted activity files and bounded text extraction from implemented text/Office formats and simple text PDFs; scanned or unsupported files are not reported as complete extraction.
-6. `upload_course_asset`: Upload supplied base64 PNG, JPEG, GIF or WebP images. Remote image fetching, SVG and general document upload are not supported by this tool.
+3. `get_course_contents`: Section tree, activity names, optional descriptions, and completion-tracking flags.
+4. `export_course_learning_material`: Export course learning material as structured Markdown for LLM ingestion.
+5. `read_activity_file`: Inspect attached source documents, get download links, and extract text (PDF, Word DOCX, PPTX, ODT, TXT, CSV).
+6. `upload_course_asset`: Upload PNG, JPEG, GIF or WebP images into course, Page or Book file areas for embedding.
 7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
-8. `manage_activity`: Inspect module settings; current settings updates target Page names, descriptions, content or visibility.
+8. `manage_activity`: Inspect module settings; update Page names, descriptions, or visibility.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
 10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
-11. `get_h5p_libraries`: Inspect enabled runnable libraries in a permitted course; selected popular types include parameter examples, not a universal schema.
-12. `create_h5p_activity`: Package valid content for an already installed H5P library into a hidden activity and/or Content Bank entry. Local end-to-end qualification uses H5P.Blanks 1.12.
-13. `scaffold_assessment_unit`: Scaffold quizzes using multichoice, shortanswer, essay or truefalse questions. Numerical creation is currently unsupported.
-14. `create_assignment`: Create `mod_assign` activities with due dates, submission settings and optional rubric descriptors in the introduction, not new native advanced rubrics.
-15. `manage_question_bank`: Manage permitted questions/categories using the native bank contexts appropriate to the Moodle version.
+11. `get_h5p_libraries`: Inspect installed H5P content types, versions, and example parameters for selected types.
+12. `create_h5p_activity`: Build interactive H5P activities and Content Bank entries using installed content libraries.
+13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay or truefalse questions and course-section placement.
+14. `create_assignment`: Create `mod_assign` activities with due dates, submission settings, and optional rubric descriptions in the assignment instructions.
+15. `manage_question_bank`: Browse and manage permitted questions and categories in Moodle's Question Bank.
 16. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
 17. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
 18. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
 19. `manage_grades`: Inspect gradebook items and update individual student grade entries.
 20. `get_group_students`: List students belonging to course groups where teacher has access.
 21. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
-22. `detect_at_risk_students`: Compute the existing heuristic risk index and expose stored prediction signals where available.
+22. `detect_at_risk_students`: Compute an early-warning risk index from activity, grades, completion, and Moodle Analytics signals.
 23. `send_student_message`: Dispatch direct Moodle messages to enrolled students with contact checks and rate limiting.
 24. `manage_course_calendar`: Schedule course deadlines, office hours, and review sessions on the calendar.
 
 ### 3. MCP Protocol Primitives: Prompts & Resources
 - **Native Prompts (`prompts/list`, `prompts/get`)**:
-  - Exposes 15 pre-built pedagogical prompt workflows for ingestion, content/H5P creation, assessment, grading preparation, calendar scheduling and student support. Retrieval returns instructions; it does not itself execute the suggested actions or prove that an external AI client can perform them.
+  - Exposes 15 pre-built pedagogical prompt workflows for course ingestion, H5P creation, quiz scaffolding, grading preparation, calendar scheduling, and student support. Use them through MCP prompt discovery in clients that support it.
 - **Native Read-Only Resources (`resources/list`, `resources/read`)**:
   - `moodle://courses`: Real-time JSON listing of the teacher's active teaching courses.
   - `moodle://course/{course_id}/syllabus`: Dynamic Markdown course syllabus and structural outline.
   - `moodle://course/{course_id}/announcements`: Latest announcements extracted directly from the course news forum.
-  - `moodle://activity/{cmid}/rubric`: Existing active grading method/title/description metadata, or the simple-grading outcome. Full native rubric criteria and levels are returned by `prepare_grading_session`, not this resource.
+  - `moodle://activity/{cmid}/rubric`: Active grading method and rubric title/description. Full native criteria and scoring levels are available through `prepare_grading_session`.
 
 ### 4. Admin CLI Diagnostics & Maintenance
 - **Health Check Doctor (`cli/mcp_doctor.php`)**:
   ```bash
   php admin/tool/teachermcp/cli/mcp_doctor.php
   ```
-  Runs eight diagnostic groups covering prerequisites, tables, token/OAuth statistics, built-in catalog integrity, protocol metadata, HTTPS and in-process initialization/discovery. Missing built-ins or failed prerequisites produce a nonzero exit without contradictory OK output. It does not qualify HTTP/stdio transports, teaching workflows or external clients. MCP initialization reports the installed plugin release; the protocol remains `2024-11-05`.
+  Runs eight diagnostic groups covering PHP runtime, required extensions, database tables, token/OAuth statistics, tool catalog integrity, protocol metadata, HTTPS, and in-process JSON-RPC checks.
 - **Scheduled Maintenance Task (`cli/cleanup.php` / Moodle Cron)**:
-   The default schedule is daily at 03:15, configurable in Moodle. Cleanup purges expired authorization codes and updates expired tokens; it is not a database-index optimization command.
+  Runs daily at 03:15 by default (configurable in Moodle), or on demand via CLI, to purge expired OAuth codes and mark expired agent tokens as revoked.
 
 ---
 
@@ -83,9 +85,9 @@ Allows educators to connect compatible personal AI clients to permitted course-c
 ## 📦 Installation & Configuration
 
 ### 1. Requirements
-- Plugin minimum: Moodle 4.5 and PHP 8.1. Use the PHP version and extensions supported by the chosen Moodle release; the local PHP8.1 compatibility boundary is not a production recommendation.
+- Moodle 4.5 or later, with the PHP version supported by that Moodle release (plugin minimum: PHP 8.1).
 - Enable the extensions required by Moodle and the used features, including cURL and ZIP/XML support for transport/content packaging.
-- Node.js >= 22.11.0 for the optional stdio bridge. The PHP HTTP endpoint does not require a commercial AI service.
+- Node.js >= 22.11.0 for the optional local stdio bridge.
 
 ### 2. Installation
 1. Place the plugin code into `admin/tool/teachermcp`:
@@ -126,8 +128,8 @@ Provider contract, security obligations, and enablement requirements are documen
 
 ## 🛠️ Connecting AI Clients
 
-### Option 1: Local stdio bridge with OAuth 2.0 PKCE
-Download or install `mcp-bridge.mjs` locally and replace the example path with its actual absolute path. OAuth requires site-enabled client registration, browser consent and the local callback. A compatible stdio client can use this configuration shape (for example, `claude_desktop_config.json`):
+### Option 1: Claude Desktop (OAuth 2.0 PKCE via the local bridge)
+Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add the following to `claude_desktop_config.json`. Replace the example script path with its actual absolute path. An administrator must enable OAuth client registration; the bridge opens Moodle's consent page in your browser.
 ```json
 {
   "mcpServers": {
@@ -143,14 +145,17 @@ Download or install `mcp-bridge.mjs` locally and replace the example path with i
 }
 ```
 
-### Option 2: Manual Bearer Token
+### Option 2: Codex / Cursor / HTTP Clients (Bearer Token)
 1. Go to **User Profile > AI Agent (MCP)** (`/admin/tool/teachermcp/my_agent.php`).
 2. Generate a new agent connection and copy the secret token.
-3. Configure your client to send:
+3. In a client that supports manual bearer authentication, configure:
    - Endpoint: `https://your-moodle.example.com/admin/tool/teachermcp/endpoint.php`
    - Header: `Authorization: Bearer <your_token>`
 
 For a stdio-only client, pass that token as the bridge's final argument instead of `--oauth`. Keep the client configuration private. Manual mode never switches silently to OAuth.
+
+### Option 3: ChatGPT (Remote MCP)
+ChatGPT uses a remote MCP connection rather than the desktop configuration above. Follow [OpenAI's MCP connection guide](https://developers.openai.com/api/docs/mcp) for the required transport, endpoint reachability, and OAuth setup. A hosted endpoint or supported private tunnel is needed; the manual bearer-header instructions above are not a ChatGPT setup procedure.
 
 ### Recovery and result handling
 
@@ -158,10 +163,10 @@ Explicit invalid/expired credentials return401; valid-user capability denial ret
 
 In OAuth mode, an explicit invalid/expired credential rejection removes only that endpoint's cached credential and closes the bridge with a correlated error and nonzero exit. Restart once for fresh authorization. Requests are not replayed automatically. Permission/throttle/server errors and ambiguous legacy401 responses do not automatically erase valid cache entries. After an uncertain write outcome, inspect Moodle before issuing another write.
 
-## Verification and Current Limits
+## Compatibility and Current Limits
 
-Local verification covers pinned Moodle4.5.0/PHP8.1 and a Moodle5.3/PHP8.4 checkout, with native teacher/student browser flows, HTTP and local stdio clients. It does not certify commercial clients, native Windows execution, untested Moodle/PHP combinations or production readiness. See [testing and qualification](docs/developer/testing.md).
+Local verification covers pinned Moodle 4.5.0/PHP 8.1 and Moodle 5.3/PHP 8.4 checkouts, with teacher/student browser, HTTP, and local stdio workflows. These local results do not yet verify end-to-end operation in each named AI client. See [testing and qualification](docs/developer/testing.md) for the tested configurations and coverage.
 
-Creation is hidden by default; explicit publication requires permission. Read-only completion inspection does not weaken course/group/report checks. Provider API v1 and exact qualified grants remain unchanged.
+Activities are created hidden by default for teacher review. H5P authoring requires an installed library and valid parameters for that content type. File extraction has size and format limits and reports partial or unsupported results; it does not provide OCR. Asset uploads support the listed raster image formats, not remote URL fetching or general document uploads.
 
-Numerical-question creation and server-computed discrimination/misconception clustering remain currently unsupported. Implementing or permanently retiring them requires a separate owner decision; this stabilization makes neither decision nor a delivery promise. Assignment rubric descriptors are distinct from reading an already configured native rubric. Stored Moodle prediction inputs are distinct from new or validated predictive models.
+Numerical-question creation, server-side question-discrimination/misconception-clustering algorithms, and native advanced-rubric creation are not currently available. Existing native rubric reading and stored Moodle Analytics prediction inputs are supported; the risk score is heuristic rather than a validated predictive model.
