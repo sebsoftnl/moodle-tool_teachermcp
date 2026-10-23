@@ -23,6 +23,7 @@ use stdClass;
 use context_course;
 use core_question\local\bank\question_version_status;
 use tool_teachermcp\local\question_category_resolver;
+use tool_teachermcp\local\numerical_question;
 
 /**
  * MCP tool for interacting with the Moodle Question Bank (Moodle 4.0+ schema).
@@ -77,7 +78,7 @@ class manage_question_bank extends base_tool {
                 ],
                 'qtype' => [
                     'type' => 'string',
-                    'enum' => ['multichoice', 'truefalse', 'shortanswer', 'essay'],
+                    'enum' => ['multichoice', 'truefalse', 'shortanswer', 'essay', 'numerical'],
                     'description' => 'Question type (for create_question).',
                 ],
                 'name' => [
@@ -110,13 +111,14 @@ class manage_question_bank extends base_tool {
                 ],
                 'options' => [
                     'type' => 'array',
-                    'description' => 'Answer choices for multichoice or shortanswer questions. Each item: {answer: string, fraction: float, feedback?: string}.',
+                    'description' => 'Answer options for multichoice, shortanswer or numerical questions. For numerical questions, supplied options replace the answer list; omit them on update to preserve existing answers.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
-                            'answer' => ['type' => 'string'],
-                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0.'],
+                            'answer' => ['type' => 'string', 'description' => 'Numerical answers use dot-decimal or scientific notation without units.'],
+                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0; numerical answers use Moodle-supported fractions from 0.0 to 1.0.'],
                             'feedback' => ['type' => 'string'],
+                            'tolerance' => ['type' => 'number', 'description' => 'Numerical answers: nonnegative absolute tolerance (default: 0).'],
                         ],
                         'required' => ['answer', 'fraction'],
                     ],
@@ -320,18 +322,27 @@ class manage_question_bank extends base_tool {
 
         require_capability('moodle/question:viewall', $qcontext);
 
-        $answers = $DB->get_records('question_answers', ['question' => $questionid], 'id ASC');
+        if ($question->qtype === 'numerical') {
+            \question_bank::get_qtype('numerical')->get_question_options($question);
+            $answers = $question->options->answers;
+        } else {
+            $answers = $DB->get_records('question_answers', ['question' => $questionid], 'id ASC');
+        }
         $answerslist = [];
         foreach ($answers as $ans) {
-            $answerslist[] = [
+            $answer = [
                 'answer_id' => (int)$ans->id,
                 'answer' => strip_tags($ans->answer),
                 'fraction' => (float)$ans->fraction,
                 'feedback' => strip_tags($ans->feedback ?? ''),
             ];
+            if ($question->qtype === 'numerical') {
+                $answer['tolerance'] = (float)$ans->tolerance;
+            }
+            $answerslist[] = $answer;
         }
 
-        return [
+        $result = [
             'question_id' => (int)$question->id,
             'category_id' => (int)$question->questioncategoryid,
             'name' => $question->name,
@@ -344,6 +355,10 @@ class manage_question_bank extends base_tool {
             'generalfeedback' => strip_tags($question->generalfeedback ?? ''),
             'answers' => $answerslist,
         ];
+        if ($question->qtype === 'numerical') {
+            $result['numerical_options'] = numerical_question::describe_options($question->options);
+        }
+        return $result;
     }
 
     /**
@@ -353,7 +368,7 @@ class manage_question_bank extends base_tool {
         global $DB, $USER;
 
         $qtype = trim($params['qtype'] ?? '');
-        $supportedtypes = ['multichoice', 'truefalse', 'shortanswer', 'essay'];
+        $supportedtypes = ['multichoice', 'truefalse', 'shortanswer', 'essay', 'numerical'];
         if (!in_array($qtype, $supportedtypes, true)) {
             throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
                 "Unsupported qtype '{$qtype}'. Must be one of: " . implode(', ', $supportedtypes));
@@ -440,6 +455,10 @@ class manage_question_bank extends base_tool {
                     $form->fraction[$idx] = (string)(float)$opt['fraction'];
                     $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
                 }
+            }
+
+            if ($qtype === 'numerical') {
+                numerical_question::prepare_form($form, $params);
             }
 
             $basequestion = new stdClass();
@@ -541,6 +560,9 @@ class manage_question_bank extends base_tool {
         if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
             $this->validate_question_options($existing->qtype, $params);
         }
+        if ($existing->qtype === 'numerical' && array_key_exists('options', $params)) {
+            numerical_question::validate_options($params['options']);
+        }
         if ($newcat !== null) {
             question_move_questions_to_category([$existing->id], $newcat->id);
             $existing->questioncategoryid = $newcat->id;
@@ -610,6 +632,10 @@ class manage_question_bank extends base_tool {
 
         if ($existing->qtype === 'truefalse' && array_key_exists('correct_truefalse', $params)) {
             $form->correctanswer = !empty($params['correct_truefalse']) ? 1 : 0;
+        }
+
+        if ($existing->qtype === 'numerical') {
+            numerical_question::prepare_form($form, $params, $existing);
         }
 
         $existing->modifiedby = $USER->id;
@@ -766,7 +792,9 @@ class manage_question_bank extends base_tool {
      * Validate question options and answer fractions according to Moodle rules.
      */
     protected function validate_question_options(string $qtype, array $params): void {
-        if ($qtype === 'multichoice') {
+        if ($qtype === 'numerical') {
+            numerical_question::validate_options($params['options'] ?? []);
+        } else if ($qtype === 'multichoice') {
             $options = $params['options'] ?? [];
             if (count($options) < 2) {
                 throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,

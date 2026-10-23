@@ -46,11 +46,29 @@ Prefer native JSON booleans. Built-in boolean fields also accept integers `0`/`1
 
 ### C. Assessment & Question Bank
 - **`scaffold_assessment_unit`**:
-  - Generates Moodle quizzes with `multichoice`, `shortanswer`, `essay` and `truefalse` questions. Numerical-question creation is currently unsupported. Adding or permanently dropping it requires a separate owner decision; neither outcome is promised here.
+  - Generates Moodle quizzes with `multichoice`, `shortanswer`, `essay`, `truefalse` and `numerical` questions. Numerical answers use Moodle's native tolerance grading; quizzes remain hidden by default.
 - **`create_assignment`**:
   - Creates a Moodle assignment with submission settings, due/cutoff dates and optional rubric descriptors embedded in its introduction. It does not create a native advanced-grading rubric. Existing native rubric reading remains available through grading preparation and the rubric resource.
 - **`manage_question_bank`**:
   - Directly adds, updates, or lists categorized questions in the course Question Bank.
+
+#### Numerical Questions
+
+Use `qtype: "numerical"` with a nonempty `options` list. Each answer is a finite numeric string using a decimal point or scientific notation, without units. `fraction` must be a Moodle-supported value from 0 to 1, with at least one full-credit answer (`1`). Optional `tolerance` is a finite, nonnegative absolute amount and defaults to zero. Optional `feedback` is a string. For example:
+
+```json
+{
+  "qtype": "numerical",
+  "options": [
+    {"answer": "9.81", "fraction": 1, "tolerance": 0.01, "feedback": "Within tolerance."},
+    {"answer": "9.7", "fraction": 0.5, "tolerance": 0.01, "feedback": "Partial credit."}
+  ]
+}
+```
+
+This is a question fragment, not a complete tool call. For scaffolding, add `name` and `text` inside a `questions` item. For question-bank creation, supply `course_id`, `action: "create_question"`, `name` and `questiontext`. Confirm the course and quiz IDs through discovery before using them.
+
+`get_question` returns each numerical answer's `tolerance` and read-only `numerical_options` with native unit settings. On `update_question`, omit `options` to preserve the existing answers, tolerances and feedback; supplying `options` replaces the complete answer list. Updates create native question versions and return a new `question_id`. Existing unit settings, hints, attached files for retained content, and the bank-entry idnumber are preserved. New questions do not use units; unit authoring, new wildcard answers and calculated questions are outside this contract. Review the native question before publication, and verify grading with a student attempt in a test course.
 
 ### D. Learning Analytics & Student Support
 - **`detect_at_risk_students`**:

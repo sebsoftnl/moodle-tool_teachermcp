@@ -29,7 +29,7 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
 11. `get_h5p_libraries`: Inspect installed H5P content types, versions, and example parameters for selected types.
 12. `create_h5p_activity`: Build interactive H5P activities and Content Bank entries using installed content libraries.
-13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay or truefalse questions and course-section placement.
+13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay, truefalse or numerical questions and course-section placement. Numerical answers support absolute tolerance and partial credit through Moodle's native grading.
 14. `create_assignment`: Create `mod_assign` activities with due dates, submission settings, and optional rubric descriptions in the assignment instructions.
 15. `manage_question_bank`: Browse and manage permitted questions and categories in Moodle's Question Bank.
 16. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
@@ -169,4 +169,6 @@ Local verification covers pinned Moodle 4.5.0/PHP 8.1 and Moodle 5.3/PHP 8.4 che
 
 Activities are created hidden by default for teacher review. H5P authoring requires an installed library and valid parameters for that content type. File extraction has size and format limits and reports partial or unsupported results; it does not provide OCR. Asset uploads support the listed raster image formats, not remote URL fetching or general document uploads.
 
-Numerical-question creation, server-side question-discrimination/misconception-clustering algorithms, and native advanced-rubric creation are not currently available. Existing native rubric reading and stored Moodle Analytics prediction inputs are supported; the risk score is heuristic rather than a validated predictive model.
+Numerical questions support finite numeric answers, nonnegative absolute tolerances, native credit fractions and feedback in quiz scaffolding and question-bank creation/read/update. Omitted tolerance defaults to zero; updates preserve omitted numerical answers and existing native units, hints and files. Unit authoring and calculated questions are not included. See the [numerical authoring contract](AGENTS.md#numerical-questions).
+
+Server-side question-discrimination/misconception-clustering algorithms and native advanced-rubric creation are not currently available. Existing native rubric reading and stored Moodle Analytics prediction inputs are supported; the risk score is heuristic rather than a validated predictive model.

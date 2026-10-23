@@ -23,6 +23,7 @@ use stdClass;
 use Throwable;
 use core_question\local\bank\question_version_status;
 use tool_teachermcp\local\question_category_resolver;
+use tool_teachermcp\local\numerical_question;
 
 /**
  * MCP tool to scaffold an assessment unit (Quiz + question pool) via official Moodle APIs.
@@ -83,20 +84,21 @@ class scaffold_assessment_unit extends base_tool {
                             'text' => ['type' => 'string', 'description' => 'The question body text.'],
                             'qtype' => [
                                 'type' => 'string',
-                                'enum' => ['multichoice', 'truefalse', 'essay', 'shortanswer'],
+                                'enum' => ['multichoice', 'truefalse', 'essay', 'shortanswer', 'numerical'],
                                 'description' => 'Question type.',
                             ],
                             'defaultmark' => ['type' => 'number', 'description' => 'Points for this question (default 1.0).'],
                             'generalfeedback' => ['type' => 'string', 'description' => 'General feedback shown after attempt.'],
                             'options' => [
                                 'type' => 'array',
-                                'description' => 'Options for multichoice or shortanswer questions.',
+                                'description' => 'Answer options for multichoice, shortanswer or numerical questions.',
                                 'items' => [
                                     'type' => 'object',
                                     'properties' => [
-                                        'answer' => ['type' => 'string', 'description' => 'Option text.'],
+                                        'answer' => ['type' => 'string', 'description' => 'Option text; numerical answers use dot-decimal or scientific notation without units.'],
                                         'fraction' => ['type' => 'number', 'description' => 'Score fraction (1.0 = correct, 0.0 = wrong).'],
                                         'feedback' => ['type' => 'string', 'description' => 'Specific feedback if this option is chosen.'],
+                                        'tolerance' => ['type' => 'number', 'description' => 'Numerical answers: nonnegative absolute tolerance (default: 0).'],
                                     ],
                                     'required' => ['answer', 'fraction'],
                                 ],
@@ -389,6 +391,8 @@ class scaffold_assessment_unit extends base_tool {
                 throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
                     "Shortanswer question '{$name}' must have at least one answer with fraction 1.0.");
             }
+        } else if ($qtype === 'numerical') {
+            numerical_question::validate_options($qdef['options'] ?? []);
         } else if ($qtype === 'truefalse') {
             if (!isset($qdef['correct_truefalse'])) {
                 throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
@@ -480,6 +484,10 @@ class scaffold_assessment_unit extends base_tool {
                 $form->fraction[$idx] = (string)(float)$opt['fraction'];
                 $form->feedback[$idx] = ['text' => clean_text($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
             }
+        }
+
+        if ($qtype === 'numerical') {
+            numerical_question::prepare_form($form, $qdef);
         }
 
         $basequestion = new stdClass();
