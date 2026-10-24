@@ -10,10 +10,10 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 ## 🚀 Key Highlights & Capabilities
 
 ### 1. High-Level Didactic Workflows
-- **`export_course_learning_material`**: Extracts substantive course material from Pages, Book chapters, Lessons, **H5P activities**, Glossaries, assignment briefs, and supported attached documents into clean, structured Markdown for LLM context.
+- **`export_course_learning_material`**: Extracts substantive course material (Page texts, Book chapters, Lessons in linked-list order, **H5P activity text**, Glossary terms, assignment briefs, and supported attached documents) into clean, structured Markdown for LLM context.
 - **`scaffold_assessment_unit`**: End-to-end quiz builder using core `create_module()`. Creates question bank entries, instantiates the quiz in a course section, links questions to slots, and verifies fractional weights in a delegated transaction.
-- **`detect_at_risk_students`**: Early-warning analytics. Combines course access, missed assignment deadlines (accounting for extensions and overrides), low grades, incomplete activities, and stored Moodle Analytics predictions into an actionable risk index.
-- **`analyze_class_understanding`**: Post-assessment diagnostics. Analyzes finished quiz attempts, question difficulty (facility index), correct/partial/wrong answer counts, and unassessed responses (`needs_grading`) to highlight areas for review.
+- **`detect_at_risk_students`**: Early-warning analytics. Evaluates active student enrollments, days since last course access, overdue assignments (accounting for individual extensions and user overrides), low aggregate course grades, incomplete activities, and stored Moodle Analytics predictions to produce an actionable risk index.
+- **`analyze_class_understanding`**: Post-assessment diagnostics. Analyzes finished quiz attempts (`\mod_quiz\quiz_attempt::FINISHED`), question details resolved through Moodle's quiz structure, question difficulty (facility index), correct/partial/wrong answer counts, and unassessed responses (`needs_grading`) to highlight areas for review.
 - **`prepare_grading_session`**: Batch grading assistant. Bundles ungraded submissions, submitted student texts, file attachment metadata, rubric criteria, and student context into a single payload for rapid AI-assisted grading.
 
 ### 2. Complete Suite of 24 MCP Tools
@@ -27,12 +27,12 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 8. `manage_activity`: Inspect module settings; update Page names, descriptions, or visibility.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
 10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
-11. `get_h5p_libraries`: Inspect installed H5P content types, versions, and example parameters for selected types.
-12. `create_h5p_activity`: Build interactive H5P activities and Content Bank entries using installed content libraries.
+11. `get_h5p_libraries`: Inspect installed H5P content types (e.g. Flashcards, Multiple Choice, True/False, Accordion), versions, and example parameters for selected types.
+12. `create_h5p_activity`: Build interactive H5P activities (e.g. Flashcards, Multiple Choice, Interactive Video) and Content Bank entries using installed content libraries and valid parameters.
 13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay, truefalse or numerical questions and course-section placement. Numerical answers support absolute tolerance and partial credit through Moodle's native grading.
-14. `create_assignment`: Create `mod_assign` activities with due dates, submission settings, and optional rubric descriptions in the assignment instructions.
+14. `create_assignment`: Create `mod_assign` activities with due/cutoff dates, submission settings (online text, file uploads, maximum file count), and optional rubric descriptions in the assignment instructions.
 15. `manage_question_bank`: Browse and manage permitted questions and categories in Moodle's Question Bank.
-16. `analyze_class_understanding`: Examine cohort performance, facility index, and learning gaps on quizzes.
+16. `analyze_class_understanding`: Examine cohort performance (average, highest and lowest attempt scores), facility index, and question-level learning gaps on quizzes.
 17. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
 18. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
 19. `manage_grades`: Inspect gradebook items and update individual student grade entries.
@@ -44,7 +44,7 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 
 ### 3. MCP Protocol Primitives: Prompts & Resources
 - **Native Prompts (`prompts/list`, `prompts/get`)**:
-  - Exposes 15 pre-built pedagogical prompt workflows for course ingestion, H5P creation, quiz scaffolding, grading preparation, calendar scheduling, and student support. Use them through MCP prompt discovery in clients that support it.
+  - Exposes 15 pre-built pedagogical prompt workflows for course ingestion, Page/Book authoring, H5P creation, quiz scaffolding, grading preparation, calendar scheduling, and student support (at-risk checks and draft check-in messages). Use them through MCP prompt discovery in clients that support it.
 - **Native Read-Only Resources (`resources/list`, `resources/read`)**:
   - `moodle://courses`: Real-time JSON listing of the teacher's active teaching courses.
   - `moodle://course/{course_id}/syllabus`: Dynamic Markdown course syllabus and structural outline.
@@ -75,7 +75,7 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
    - Enforces `is_enrolled()` for student data access.
    - Enforces `SEPARATEGROUPS` mode and `groups_get_activity_allowed_groups()` so teachers cannot access students or submissions from groups they do not manage.
 4. **Audit Trail & Logging**:
-   - Executed tool successes and execution failures emit `\tool_teachermcp\event\tool_executed` metadata without arguments, result payloads or bearer values. The configured Moodle logstore controls persistence.
+   - Executed tool successes and execution failures emit `\tool_teachermcp\event\tool_executed` metadata (tool name, success/failure, token ID, and course ID when available), without arguments, result payloads or bearer values. The configured Moodle logstore controls persistence.
 5. **Rate Limiting & Safety Guardrails**:
    - Direct messaging (`send_student_message`) includes configurable per-hour rate limits and checks recipient contact preferences.
    - Destructive operations (`delete_activity`) require explicit UI confirmation or a short-lived preview `confirm_token`.
