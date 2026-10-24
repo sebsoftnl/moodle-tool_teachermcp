@@ -129,7 +129,7 @@ Provider contract, security obligations, and enablement requirements are documen
 ## 🛠️ Connecting AI Clients
 
 ### Option 1: Claude Desktop (OAuth 2.0 PKCE via the local bridge)
-Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add the following to `claude_desktop_config.json`. Replace the example script path with its actual absolute path. An administrator must enable OAuth client registration; the bridge opens Moodle's consent page in your browser.
+Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add the following to `claude_desktop_config.json`. Replace the example script path with its actual absolute path. The bridge uses the pre-registered `claude-desktop` client and opens Moodle's consent page in your browser. Dynamic OAuth client registration does not need to be enabled for this flow; that setting controls registration of new clients.
 ```json
 {
   "mcpServers": {

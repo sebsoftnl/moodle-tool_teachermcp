@@ -201,7 +201,7 @@ These popular-type examples describe content shapes, not locally certified libra
 
 ## 5. Connection Recovery and Boundaries
 
-Manual mode requires the exact local bridge script path, Node.js 22.11+ and a valid personal bearer token; it never silently switches to OAuth. OAuth mode requires enabled client registration, browser consent and the local callback. Presets restrict tool categories but do not grant missing Moodle capabilities or external tools.
+Manual mode requires the exact local bridge script path, Node.js 22.11+ and a valid personal bearer token; it never silently switches to OAuth. OAuth mode uses the pre-registered `claude-desktop` client, browser consent and the local callback; it does not require enabling dynamic client registration. Presets restrict tool categories but do not grant missing Moodle capabilities or external tools.
 
 On an explicit invalid/expired OAuth credential rejection, the bridge removes only that endpoint's cached credential and exits nonzero. Restart once to authorize again. It does not replay a possibly completed write. Permission denials, throttling, server errors and ambiguous legacy 401 responses do not erase the cache automatically. Check uncertain write outcomes in Moodle before issuing another write.
 
