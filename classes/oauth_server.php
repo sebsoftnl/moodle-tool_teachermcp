@@ -114,13 +114,14 @@ class oauth_server {
     }
 
     /**
-     * Get all OAuth scopes currently supported by this server.
+     * Get combinable OAuth scopes advertised by discovery.
      *
      * @return string[]
      */
     public static function get_supported_scopes(): array {
+        // Discovery clients may request every scope; broad legacy aliases cannot be combined.
         return array_values(array_unique(array_merge(
-            self::SUPPORTED_SCOPES,
+            array_diff(self::SUPPORTED_SCOPES, ['teachermcp', 'all']),
             server::get_grantable_external_tool_names()
         )));
     }

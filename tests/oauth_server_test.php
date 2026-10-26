@@ -35,10 +35,31 @@ final class oauth_server_test extends \advanced_testcase {
         $expected = \tool_teachermcp\oauth_server::get_supported_scopes();
         $metadata = \tool_teachermcp\oauth_server::get_metadata();
 
-        $this->assertContains('read', $expected);
-        $this->assertContains('write', $expected);
-        $this->assertContains('all', $expected);
+        $this->assertSame(['read', 'write', 'grade', 'message', 'delete'], $expected);
         $this->assertSame($expected, $metadata['scopes_supported']);
+
+        $config = \tool_teachermcp\oauth_server::normalise_scope(implode(' ', $metadata['scopes_supported']));
+        $this->assertSame(['scopes' => $expected], $config['permissions']);
+    }
+
+    public function test_unadvertised_legacy_scopes_remain_accepted(): void {
+        $this->resetAfterTest(true);
+
+        foreach (['teachermcp', 'all'] as $scope) {
+            $config = \tool_teachermcp\oauth_server::normalise_scope($scope);
+            $this->assertSame($scope, $config['scope']);
+            $this->assertSame(['all_teacher_tools' => true], $config['permissions']);
+        }
+    }
+
+    public function test_read_scope_remains_restricted(): void {
+        $this->resetAfterTest(true);
+
+        $config = \tool_teachermcp\oauth_server::normalise_scope('read');
+        $this->assertSame(['scopes' => ['read']], $config['permissions']);
+        $token = (object)['permissions' => json_encode($config['permissions'])];
+        $this->assertTrue(server::is_tool_allowed_by_token('get_my_profile', $token));
+        $this->assertFalse(server::is_tool_allowed_by_token('manage_content_activity', $token));
     }
 
     public function test_oauth_rejects_unknown_qualified_external_tool_scope(): void {
