@@ -11,6 +11,8 @@ node --test bridge/*.test.mjs
 
 `verify.sh` checks PHP syntax, XMLDB XML, language-key parity, retained regression-file discovery, existing static policies, bridge syntax/tests and a local bearer smoke exchange. It discovers additional test files instead of requiring an exact file count. These checks do not replace Moodle integration tests or a browser workflow.
 
+The bridge suite includes `chatgpt-package.test.mjs`: explicit MCP declaration, safe rejection of invalid endpoints and existing output, and launching the generated stdio command from a relocated cache-like directory without substituting path placeholders. The fixture uses a synthetic cached OAuth credential; it does not exercise ChatGPT or fresh browser consent. A separate user-operated check on ChatGPT desktop 26.1021.31345/macOS Apple Silicon and Moodle 5.3/PHP 8.4 verified fresh OAuth, native teacher/course reads, one hidden Page creation/read-back and cached reconnection. Independent browser checks confirmed teacher access and student non-visibility. Follow the [desktop guide's real-app checks](../chatgpt-desktop.md#verify-in-the-real-app) for other installations; this is not all-tool or cross-platform certification.
+
 Use a disposable, configured Moodle PHPUnit installation with a dedicated test prefix and data directory. From its checkout root, run the entire plugin suite:
 
 ```sh

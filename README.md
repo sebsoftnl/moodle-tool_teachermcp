@@ -154,8 +154,11 @@ Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add t
 
 For a stdio-only client, pass that token as the bridge's final argument instead of `--oauth`. Keep the client configuration private. Manual mode never switches silently to OAuth.
 
-### Option 3: ChatGPT (Remote MCP)
-ChatGPT uses a remote MCP connection rather than the desktop configuration above. Follow [OpenAI's MCP connection guide](https://developers.openai.com/api/docs/mcp) for the required transport, endpoint reachability, and OAuth setup. A hosted endpoint or supported private tunnel is needed; the manual bearer-header instructions above are not a ChatGPT setup procedure.
+### Option 3: ChatGPT Desktop (Local Plugin)
+Generate a self-contained local plugin and marketplace with `node bridge/build-chatgpt-plugin.mjs --endpoint <Moodle endpoint> --output <new directory>`. It bundles the existing OAuth stdio bridge and does not modify personal client settings. See the [desktop setup guide](docs/chatgpt-desktop.md) for installation and verification limits. A scoped macOS/Moodle 5.3 check verified OAuth, teacher/course reads, hidden Page creation/read-back and cached reconnection in ChatGPT desktop 26.1021.31345.
+
+### Option 4: ChatGPT Web (Remote MCP)
+The remote connection is separate from the local desktop package above. Follow [OpenAI's MCP connection guide](https://developers.openai.com/api/docs/mcp) for the required transport, endpoint reachability, and OAuth setup. A hosted endpoint or supported private tunnel is needed; the manual bearer-header instructions above are not a ChatGPT setup procedure.
 
 ### Recovery and result handling
 
