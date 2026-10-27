@@ -39,12 +39,12 @@
                     </p>
                     <div class="bg-white border rounded p-2 px-3 d-flex flex-wrap align-items-center justify-content-between">
                         <div class="d-flex flex-wrap align-items-center my-1">
-                            <span class="font-weight-bold text-secondary mr-2 me-2">
+                            <span class="font-weight-bold text-body mr-2 me-2">
                                 <i class="fa fa-link mr-1 me-1"></i>{{#str}}endpoint_url, tool_teachermcp{{/str}}:
                             </span>
                             <code class="text-primary font-weight-bold user-select-all" id="endpointDisplay">{{endpoint_url}}</code>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary my-1" data-copy-target="endpointDisplay">
+                        <button type="button" class="btn btn-sm btn-primary my-1" data-copy-target="endpointDisplay">
                             <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy, tool_teachermcp{{/str}}
                         </button>
                     </div>
@@ -65,7 +65,7 @@
                 <div class="input-group">
                     <input type="text" class="form-control font-monospace font-weight-bold bg-white" id="newlyGeneratedToken" value="{{new_token}}" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-dark" type="button" data-copy-target="newlyGeneratedToken">
+                        <button class="btn btn-primary" type="button" data-copy-target="newlyGeneratedToken">
                             <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_token, tool_teachermcp{{/str}}
                         </button>
                     </div>
@@ -81,24 +81,24 @@
         <div class="col-xl-6 mb-4">
             <div class="card h-100 border">
                 <div class="card-header bg-transparent font-weight-bold d-flex justify-content-between align-items-center py-3">
-                    <span class="h6 mb-0 text-dark">
+                    <h2 class="h6 mb-0 font-weight-bold text-body">
                         <i class="fa fa-shield-alt mr-2 me-2 text-secondary"></i>{{#str}}tokens_header, tool_teachermcp{{/str}}
-                    </span>
+                    </h2>
                 </div>
                 <div class="card-body p-0">
                     <!-- Create Form inside subtle well -->
                     <div class="p-3 bg-light border-bottom">
-                        <h6 class="font-weight-bold mb-3 text-secondary">{{#str}}create_token, tool_teachermcp{{/str}}</h6>
+                        <h3 class="h6 font-weight-bold mb-3 text-body">{{#str}}create_token, tool_teachermcp{{/str}}</h3>
                         <form method="post" action="">
                             <input type="hidden" name="sesskey" value="{{sesskey}}">
                             <input type="hidden" name="action" value="create">
                             <div class="form-group mb-2">
-                                <label for="agentname" class="small font-weight-bold text-muted mb-1">{{#str}}agent_name, tool_teachermcp{{/str}}</label>
-                                <input type="text" name="agentname" id="agentname" class="form-control form-control-sm bg-white" placeholder="{{#str}}agent_name_help, tool_teachermcp{{/str}}" required>
+                                <label for="agentname" class="font-weight-bold text-body mb-1">{{#str}}agent_name, tool_teachermcp{{/str}}</label>
+                                <input type="text" name="agentname" id="agentname" class="form-control bg-white" placeholder="{{#str}}agent_name_help, tool_teachermcp{{/str}}" required>
                             </div>
                             <div class="form-group mb-2">
-                                <label for="scope_preset" class="small font-weight-bold text-muted mb-1">{{#str}}scope_preset, tool_teachermcp{{/str}}</label>
-                                <select name="scope_preset" id="scope_preset" class="form-control form-control-sm custom-select bg-white" aria-describedby="scopePresetHelp">
+                                <label for="scope_preset" class="font-weight-bold text-body mb-1">{{#str}}scope_preset, tool_teachermcp{{/str}}</label>
+                                <select name="scope_preset" id="scope_preset" class="form-control custom-select bg-white" aria-describedby="scopePresetHelp">
                                     <option value="full" selected>{{#str}}scope_preset_full, tool_teachermcp{{/str}}</option>
                                     <option value="grading">{{#str}}scope_preset_grading, tool_teachermcp{{/str}}</option>
                                     <option value="curriculum">{{#str}}scope_preset_curriculum, tool_teachermcp{{/str}}</option>
@@ -107,8 +107,8 @@
                                 <p id="scopePresetHelp" class="small text-muted mt-1 mb-0">{{#str}}scope_preset_help, tool_teachermcp{{/str}}</p>
                             </div>
                             <div class="form-group mb-3">
-                                <label for="validity" class="small font-weight-bold text-muted mb-1">{{#str}}validity_period, tool_teachermcp{{/str}}</label>
-                                <select name="validity" id="validity" class="form-control form-control-sm custom-select bg-white">
+                                <label for="validity" class="font-weight-bold text-body mb-1">{{#str}}validity_period, tool_teachermcp{{/str}}</label>
+                                <select name="validity" id="validity" class="form-control custom-select bg-white">
                                     {{#validity_options}}
                                     <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
                                     {{/validity_options}}
@@ -116,7 +116,7 @@
                             </div>
                             {{#has_external_tools}}
                             <fieldset class="form-group mb-3">
-                                <legend class="small font-weight-bold text-muted mb-1">{{#str}}external_tool_grants, tool_teachermcp{{/str}}</legend>
+                                <legend class="h6 font-weight-bold text-body mb-1">{{#str}}external_tool_grants, tool_teachermcp{{/str}}</legend>
                                 <p class="small text-muted mb-2">{{#str}}external_tool_grants_desc, tool_teachermcp{{/str}}</p>
                                 {{#external_tools}}
                                 <div class="custom-control custom-checkbox mb-1">
@@ -128,7 +128,7 @@
                                 {{/external_tools}}
                             </fieldset>
                             {{/has_external_tools}}
-                            <button type="submit" class="btn btn-primary btn-sm">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fa fa-plus-circle mr-1 me-1"></i>{{#str}}create_token, tool_teachermcp{{/str}}
                             </button>
                         </form>
@@ -186,60 +186,69 @@
 
         <!-- Setup Guides Column -->
         <div class="col-xl-6 mb-4">
-            <div class="card h-100 border">
-                <div class="card-header bg-transparent py-2">
-                    <ul class="nav nav-tabs card-header-tabs" id="agentTabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="oauth-tab" data-toggle="tab" data-bs-toggle="tab" href="#oauth" role="tab">
-                                <i class="fa fa-bolt text-warning mr-1 me-1"></i>{{#str}}oauth_tab_title, tool_teachermcp{{/str}}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="claude-tab" data-toggle="tab" data-bs-toggle="tab" href="#claude" role="tab">{{#str}}tab_claude, tool_teachermcp{{/str}}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="codex-tab" data-toggle="tab" data-bs-toggle="tab" href="#codex" role="tab">{{#str}}tab_codex, tool_teachermcp{{/str}}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="chatgpt-tab" data-toggle="tab" data-bs-toggle="tab" href="#chatgpt" role="tab">{{#str}}tab_chatgpt, tool_teachermcp{{/str}}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="resources-tab" data-toggle="tab" data-bs-toggle="tab" href="#resourcestab" role="tab">
-                                <i class="fa fa-database text-info mr-1 me-1"></i>Resources
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link font-weight-bold" id="skill-tab" data-toggle="tab" data-bs-toggle="tab" href="#skilltab" role="tab">
-                                <i class="fa fa-graduation-cap mr-1 me-1 text-primary"></i>{{#str}}tab_agent_instructions, tool_teachermcp{{/str}}
-                            </a>
-                        </li>
-                    </ul>
+            <div class="card h-100 border tool_teachermcp_setup">
+                <div class="card-header bg-transparent py-3">
+                    <h2 class="h6 mb-0 font-weight-bold text-body">{{#str}}how_to_connect, tool_teachermcp{{/str}}</h2>
                 </div>
                 <div class="card-body">
+                    <ul class="nav nav-tabs mb-3" id="agentTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="claude-tab" data-toggle="tab" data-bs-toggle="tab" href="#claude" role="tab" aria-controls="claude" aria-selected="true">{{#str}}tab_claude, tool_teachermcp{{/str}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="chatgpt-tab" data-toggle="tab" data-bs-toggle="tab" href="#chatgpt" role="tab" aria-controls="chatgpt" aria-selected="false">{{#str}}tab_chatgpt, tool_teachermcp{{/str}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="oauth-tab" data-toggle="tab" data-bs-toggle="tab" href="#oauth" role="tab" aria-controls="oauth" aria-selected="false">{{#str}}oauth_tab_title, tool_teachermcp{{/str}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="codex-tab" data-toggle="tab" data-bs-toggle="tab" href="#codex" role="tab" aria-controls="codex" aria-selected="false">{{#str}}tab_codex, tool_teachermcp{{/str}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="resources-tab" data-toggle="tab" data-bs-toggle="tab" href="#resourcestab" role="tab" aria-controls="resourcestab" aria-selected="false">{{#str}}tab_resources, tool_teachermcp{{/str}}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="skill-tab" data-toggle="tab" data-bs-toggle="tab" href="#skilltab" role="tab" aria-controls="skilltab" aria-selected="false">{{#str}}tab_agent_instructions, tool_teachermcp{{/str}}</a>
+                        </li>
+                    </ul>
                     <div class="tab-content" id="agentTabContent">
-                        <!-- OAuth 2.0 Tab (Recommended) -->
-                        <div class="tab-pane fade show active" id="oauth" role="tabpanel">
+                        <!-- Local bridge configuration -->
+                        <div class="tab-pane fade" id="oauth" role="tabpanel" aria-labelledby="oauth-tab">
                             <h6 class="font-weight-bold text-dark">{{#str}}oauth_setup_title, tool_teachermcp{{/str}}</h6>
-                            <p class="small text-muted mb-3">{{#str}}oauth_setup_desc, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-3">{{#str}}oauth_setup_desc, tool_teachermcp{{/str}}</p>
 
                             <!-- Step 1: Download Bridge -->
                             <div class="p-3 bg-light rounded border mb-3">
-                                <h6 class="font-weight-bold small text-dark mb-1">
+                                <h6 class="font-weight-bold text-dark mb-1">
                                     <i class="fa fa-download text-primary mr-1 me-1"></i>{{#str}}download_bridge_title, tool_teachermcp{{/str}}
                                 </h6>
-                                <p class="small text-muted mb-2">{{#str}}download_bridge_desc, tool_teachermcp{{/str}}</p>
-                                <a href="{{download_bridge_url}}" class="btn btn-sm btn-outline-primary">
+                                <p class="text-body mb-2">{{#str}}download_bridge_desc, tool_teachermcp{{/str}}</p>
+                                <a href="{{download_bridge_url}}" class="btn btn-sm btn-primary">
                                     <i class="fa fa-download mr-1 me-1"></i>{{#str}}download_bridge_btn, tool_teachermcp{{/str}}
                                 </a>
                             </div>
 
                             <!-- Step 2: Configure Claude Desktop -->
-                            <p class="small font-weight-bold text-secondary mb-1">2. {{#str}}claude_oauth_bridge_desc, tool_teachermcp{{/str}}</p>
+                            <p class="font-weight-bold text-dark mb-1">2. {{#str}}claude_oauth_bridge_desc, tool_teachermcp{{/str}}</p>
                             <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="claudeOAuthConfigBlock"><code>{{config_claude_oauth}}</code></pre>
                             <button type="button" class="btn btn-sm btn-primary mb-3" data-copy-target="claudeOAuthConfigBlock">
-                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_claude_config, tool_teachermcp{{/str}}
+                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_config, tool_teachermcp{{/str}}
                             </button>
 
+                            <h6 class="font-weight-bold text-dark mt-3">{{#str}}claude_desktop_title, tool_teachermcp{{/str}}</h6>
+                            <p class="text-body mb-3">{{#str}}claude_desktop_desc, tool_teachermcp{{/str}}</p>
+                            <p class="font-weight-bold text-dark mb-1">{{#str}}claude_manual_bridge_desc, tool_teachermcp{{/str}}</p>
+                            <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="claudeConfigBlock"><code>{{config_claude}}</code></pre>
+                            <button type="button" class="btn btn-sm btn-primary mb-3" data-copy-target="claudeConfigBlock">
+                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_config, tool_teachermcp{{/str}}
+                            </button>
+
+                            <h6 class="font-weight-bold text-dark mt-3">{{#str}}cli_setup_title, tool_teachermcp{{/str}}</h6>
+                            <p class="text-body mb-2">{{#str}}cli_setup_desc, tool_teachermcp{{/str}}</p>
+                            <div class="d-flex flex-wrap tool_teachermcp_actions mb-3">
+                                <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{#str}}claude_cli_docs, tool_teachermcp{{/str}}</a>
+                                <a href="https://learn.chatgpt.com/docs/extend/mcp" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{#str}}codex_cli_docs, tool_teachermcp{{/str}}</a>
+                            </div>
                             <div class="border-top pt-2 mt-2">
                                 <h6 class="small font-weight-bold text-muted mb-2">{{#str}}oauth_endpoints_title, tool_teachermcp{{/str}}</h6>
                                 <div class="small text-muted mb-1">
@@ -257,54 +266,73 @@
                             </div>
                         </div>
 
-                        <!-- Claude Desktop Tab -->
-                        <div class="tab-pane fade" id="claude" role="tabpanel">
-                            <h6 class="font-weight-bold">{{#str}}claude_desktop_title, tool_teachermcp{{/str}}</h6>
-                            <p class="small text-muted mb-3">{{#str}}claude_desktop_desc, tool_teachermcp{{/str}}</p>
-
-                            <!-- Download Bridge -->
-                            <div class="p-3 bg-light rounded border mb-3">
-                                <h6 class="font-weight-bold small text-dark mb-1">
-                                    <i class="fa fa-download text-primary mr-1 me-1"></i>{{#str}}download_bridge_title, tool_teachermcp{{/str}}
-                                </h6>
-                                <p class="small text-muted mb-2">{{#str}}download_bridge_desc, tool_teachermcp{{/str}}</p>
-                                <a href="{{download_bridge_url}}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fa fa-download mr-1 me-1"></i>{{#str}}download_bridge_btn, tool_teachermcp{{/str}}
-                                </a>
+                        <!-- Claude remote app connection -->
+                        <div class="tab-pane fade show active" id="claude" role="tabpanel" aria-labelledby="claude-tab">
+                            <h6 class="font-weight-bold text-dark">{{#str}}claude_app_title, tool_teachermcp{{/str}}</h6>
+                            <p class="text-body mb-3">{{#str}}remote_app_intro, tool_teachermcp{{/str}}</p>
+                            <div class="d-flex flex-wrap tool_teachermcp_actions mb-2">
+                                <a href="https://claude.ai/customize/connectors" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{#str}}open_claude_connectors, tool_teachermcp{{/str}}</a>
+                                <a href="claude://claude.ai/new" class="btn btn-sm btn-primary" aria-describedby="claudeAppHelp">{{#str}}open_claude_app, tool_teachermcp{{/str}}</a>
                             </div>
-
-                            <p class="small font-weight-bold text-secondary mb-1">2. {{#str}}claude_manual_bridge_desc, tool_teachermcp{{/str}}</p>
-                            <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="claudeConfigBlock"><code>{{config_claude}}</code></pre>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="claudeConfigBlock">
-                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_claude_config, tool_teachermcp{{/str}}
-                            </button>
+                            <p id="claudeAppHelp" class="text-body mb-3">{{#str}}claude_app_link_help, tool_teachermcp{{/str}}</p>
+                            <div class="p-3 bg-light rounded border mb-3">
+                                <p class="small font-weight-bold text-dark mb-1">{{#str}}endpoint_url, tool_teachermcp{{/str}}</p>
+                                <code id="claudeRemoteEndpoint" class="d-block text-primary mb-2">{{endpoint_url}}</code>
+                                <button type="button" class="btn btn-sm btn-primary" data-copy-target="claudeRemoteEndpoint"><i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_endpoint, tool_teachermcp{{/str}}</button>
+                            </div>
+                            <ol class="text-body pl-3 ps-3">
+                                <li class="mb-2">{{#str}}claude_app_step1, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}claude_app_step2, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}claude_app_step3, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}claude_app_step4, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}claude_app_step5, tool_teachermcp{{/str}}</li>
+                            </ol>
+                            <p class="text-body">{{#str}}claude_app_workspace, tool_teachermcp{{/str}}</p>
+                            <p class="text-body">{{#str}}remote_app_requirements, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-0">{{#str}}remote_app_cached, tool_teachermcp{{/str}}</p>
                         </div>
 
-                        <!-- Codex / Cursor Tab -->
-                        <div class="tab-pane fade" id="codex" role="tabpanel">
-                            <h6 class="font-weight-bold">{{#str}}codex_cursor_title, tool_teachermcp{{/str}}</h6>
-                            <p class="small text-muted mb-2">{{#str}}codex_cursor_desc, tool_teachermcp{{/str}}</p>
+                        <!-- HTTP clients Tab -->
+                        <div class="tab-pane fade" id="codex" role="tabpanel" aria-labelledby="codex-tab">
+                            <h6 class="font-weight-bold text-dark">{{#str}}codex_cursor_title, tool_teachermcp{{/str}}</h6>
+                            <p class="text-body mb-2">{{#str}}codex_cursor_desc, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-3">{{#str}}http_config_cli_note, tool_teachermcp{{/str}}</p>
                             <pre class="bg-light border rounded p-3 text-break small font-monospace mb-2" id="codexConfigBlock"><code>{{config_codex}}</code></pre>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="codexConfigBlock">
-                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_codex_config, tool_teachermcp{{/str}}
+                            <button type="button" class="btn btn-sm btn-primary" data-copy-target="codexConfigBlock">
+                                <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_config, tool_teachermcp{{/str}}
                             </button>
                         </div>
 
                         <!-- ChatGPT Tab -->
-                        <div class="tab-pane fade" id="chatgpt" role="tabpanel">
-                            <h6 class="font-weight-bold">{{#str}}chatgpt_title, tool_teachermcp{{/str}}</h6>
-                            <ol class="small text-muted pl-3 ps-3">
-                                <li class="mb-1">{{#str}}chatgpt_step1, tool_teachermcp{{/str}}</li>
-                                <li class="mb-1">{{#str}}chatgpt_step2, tool_teachermcp{{/str}}</li>
-                                <li class="mb-1">{{chatgpt_step3_text}}</li>
-                                <li class="mb-1">{{#str}}chatgpt_step4, tool_teachermcp{{/str}}</li>
+                        <div class="tab-pane fade" id="chatgpt" role="tabpanel" aria-labelledby="chatgpt-tab">
+                            <h6 class="font-weight-bold text-dark">{{#str}}chatgpt_title, tool_teachermcp{{/str}}</h6>
+                            <p class="text-body mb-3">{{#str}}remote_app_intro, tool_teachermcp{{/str}}</p>
+                            <div class="d-flex flex-wrap tool_teachermcp_actions mb-2">
+                                <a href="https://chatgpt.com/plugins" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{#str}}open_chatgpt_plugins, tool_teachermcp{{/str}}</a>
+                                <a href="codex://threads/new" class="btn btn-sm btn-primary" aria-describedby="chatgptAppHelp">{{#str}}open_chatgpt_app, tool_teachermcp{{/str}}</a>
+                            </div>
+                            <p id="chatgptAppHelp" class="text-body mb-3">{{#str}}chatgpt_app_link_help, tool_teachermcp{{/str}}</p>
+                            <div class="p-3 bg-light rounded border mb-3">
+                                <p class="small font-weight-bold text-dark mb-1">{{#str}}endpoint_url, tool_teachermcp{{/str}}</p>
+                                <code id="chatgptRemoteEndpoint" class="d-block text-primary mb-2">{{endpoint_url}}</code>
+                                <button type="button" class="btn btn-sm btn-primary" data-copy-target="chatgptRemoteEndpoint"><i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy_endpoint, tool_teachermcp{{/str}}</button>
+                            </div>
+                            <ol class="text-body pl-3 ps-3">
+                                <li class="mb-2">{{#str}}chatgpt_step1, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}chatgpt_step2, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}chatgpt_step3, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}chatgpt_step4, tool_teachermcp{{/str}}</li>
+                                <li class="mb-2">{{#str}}chatgpt_step5, tool_teachermcp{{/str}}</li>
                             </ol>
+                            <p class="text-body">{{#str}}chatgpt_remote_access, tool_teachermcp{{/str}}</p>
+                            <p class="text-body">{{#str}}remote_app_requirements, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-0">{{#str}}remote_app_cached, tool_teachermcp{{/str}}</p>
                         </div>
 
                         <!-- MCP Dynamic Resources Tab -->
-                        <div class="tab-pane fade" id="resourcestab" role="tabpanel">
+                        <div class="tab-pane fade" id="resourcestab" role="tabpanel" aria-labelledby="resources-tab">
                             <h6 class="font-weight-bold text-dark">{{#str}}mcp_resources_title, tool_teachermcp{{/str}}</h6>
-                            <p class="small text-muted mb-3">{{#str}}mcp_resources_desc, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-3">{{#str}}mcp_resources_desc, tool_teachermcp{{/str}}</p>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover border small mb-0">
                                     <thead class="bg-light">
@@ -324,7 +352,7 @@
                                         {{/mcp_resources}}
                                         {{#mcp_resource_templates}}
                                         <tr>
-                                            <td><code class="user-select-all text-info">{{uriTemplate}}</code></td>
+                                            <td><code class="user-select-all text-primary">{{uriTemplate}}</code></td>
                                             <td class="font-weight-bold">{{name}}</td>
                                             <td class="text-muted">{{description}}</td>
                                         </tr>
@@ -335,12 +363,12 @@
                         </div>
 
                         <!-- AI Agent Skill & Instructions Tab -->
-                        <div class="tab-pane fade" id="skilltab" role="tabpanel">
+                        <div class="tab-pane fade" id="skilltab" role="tabpanel" aria-labelledby="skill-tab">
                             <h6 class="font-weight-bold text-dark">{{#str}}agent_skill_title, tool_teachermcp{{/str}}</h6>
-                            <p class="small text-muted mb-3">{{#str}}agent_skill_subtitle, tool_teachermcp{{/str}}</p>
+                            <p class="text-body mb-3">{{#str}}agent_skill_subtitle, tool_teachermcp{{/str}}</p>
 
                             <div class="mb-3 d-flex flex-wrap gap-2">
-                                <a href="{{download_skill_url}}" class="btn btn-sm btn-outline-primary mr-2 me-2">
+                                <a href="{{download_skill_url}}" class="btn btn-sm btn-primary mr-2 me-2">
                                     <i class="fa fa-download mr-1 me-1"></i>{{#str}}download_skill_file, tool_teachermcp{{/str}}
                                 </a>
                                 <button type="button" class="btn btn-sm btn-primary" data-copy-target="agentSystemPromptBlock">
@@ -361,12 +389,12 @@
         <div class="col-12">
             <div class="card border">
                 <div class="card-header bg-transparent d-flex flex-wrap justify-content-between align-items-center py-3">
-                    <h5 class="h6 mb-0 font-weight-bold text-dark">
+                    <h2 class="h6 mb-0 font-weight-bold text-body">
                         <i class="fa fa-lightbulb mr-2 me-2 text-warning"></i>{{#str}}prompt_library_title, tool_teachermcp{{/str}}
-                    </h5>
+                    </h2>
                     {{#has_courses}}
                     <div class="d-flex flex-wrap align-items-center mt-2 mt-sm-0">
-                        <label for="promptCourseFilter" class="small font-weight-bold text-muted mr-2 me-2 mb-0">
+                        <label for="promptCourseFilter" class="small font-weight-bold text-body mr-2 me-2 mb-0">
                             {{#str}}course_filter_label, tool_teachermcp{{/str}}
                         </label>
                         <select id="promptCourseFilter" class="custom-select custom-select-sm form-control form-control-sm bg-white" onchange="window.location.href='?courseid='+this.value;">
@@ -378,7 +406,7 @@
                     {{/has_courses}}
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-4">
+                    <p class="text-body mb-4">
                         {{#str}}prompt_library_desc, tool_teachermcp{{/str}}
                     </p>
 
@@ -394,13 +422,13 @@
                                     {{#items}}
                                     <div class="mb-3 p-3 bg-white rounded border">
                                         <div class="d-flex justify-content-between align-items-start mb-1">
-                                            <strong class="text-dark small">{{title}}</strong>
-                                            <button class="btn btn-sm btn-outline-secondary py-0 px-2 ml-2 ms-2" type="button" data-prompt="{{prompt}}">
+                                            <strong class="text-body">{{title}}</strong>
+                                            <button class="btn btn-sm btn-primary py-0 px-2 ml-2 ms-2" type="button" data-prompt="{{prompt}}">
                                                 <i class="fa fa-copy mr-1 me-1"></i>{{#str}}copy, tool_teachermcp{{/str}}
                                             </button>
                                         </div>
                                         <p class="text-muted small mb-2">{{description}}</p>
-                                        <div class="bg-light p-2 rounded small text-monospace text-secondary font-italic border" style="font-size: 0.8rem; line-height: 1.35;">
+                                        <div class="tool_teachermcp_prompt_text bg-light p-3 rounded text-body border">
                                             "{{prompt}}"
                                         </div>
                                     </div>
@@ -419,7 +447,7 @@
     {{#return_url}}
     <div class="row mt-2 mb-4">
         <div class="col-12">
-            <a href="{{return_url}}" class="btn btn-outline-secondary">
+            <a href="{{return_url}}" class="btn btn-primary">
                 <i class="fa fa-arrow-left mr-1 me-1"></i>{{#str}}back_to_course, tool_teachermcp{{/str}}
             </a>
         </div>

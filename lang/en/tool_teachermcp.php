@@ -50,9 +50,10 @@ $string['revoke'] = 'Revoke Access';
 $string['copy_token'] = 'Copy Token';
 $string['token_warning'] = 'Keep this bearer token secret! It allows your agent to perform teacher actions on your behalf according to your Moodle permissions.';
 
-$string['tab_claude'] = 'Claude Desktop';
-$string['tab_codex'] = 'Codex / Cursor';
-$string['tab_chatgpt'] = 'ChatGPT / Custom GPT';
+$string['tab_claude'] = 'Claude';
+$string['tab_codex'] = 'HTTP clients';
+$string['tab_chatgpt'] = 'ChatGPT';
+$string['tab_resources'] = 'Resources';
 $string['tab_bridge'] = 'Stdio Bridge (Node.js)';
 
 $string['config_instructions'] = 'Paste the configuration below into your agent settings file:';
@@ -81,16 +82,40 @@ $string['course_filter_label'] = 'Personalize prompts for course:';
 $string['course_filter_all'] = 'Select a course to personalize example prompts';
 
 // Guides
-$string['how_to_connect'] = 'How to Connect Your AI Agent';
-$string['claude_desktop_title'] = 'Claude Desktop: manual bearer token';
+$string['how_to_connect'] = 'Connect your AI assistant';
+$string['claude_desktop_title'] = 'Local bridge: manual bearer token';
 $string['claude_desktop_desc'] = 'Create a token with the required permission preset, then use this configuration. Replace YOUR_BEARER_TOKEN_HERE if no new token is shown. Keep the token private; this mode does not use OAuth.';
-$string['codex_cursor_title'] = 'Codex / Cursor / HTTP Client Configuration';
-$string['codex_cursor_desc'] = 'For agents with native HTTP/SSE MCP support:';
-$string['chatgpt_title'] = 'ChatGPT / Custom GPT Custom Actions';
-$string['chatgpt_step1'] = 'Create a Custom GPT in OpenAI.';
-$string['chatgpt_step2'] = 'Configure a Custom Action.';
-$string['chatgpt_step3'] = 'Set the MCP endpoint URL: {$a}';
-$string['chatgpt_step4'] = 'Choose Authentication: Bearer and paste your generated token.';
+$string['codex_cursor_title'] = 'HTTP client configuration';
+$string['codex_cursor_desc'] = 'For clients that support this HTTP MCP endpoint and a manually configured bearer header:';
+$string['remote_app_intro'] = 'Use a remote MCP connection with browser sign-in. No local installation, bridge script or manually generated token is needed.';
+$string['remote_app_requirements'] = 'This Moodle site must be reachable by the app over public HTTPS. Ask your administrator to enable OAuth client registration if needed. Enter your Moodle password only on the Moodle sign-in page, never in chat or a client-secret field.';
+$string['remote_app_cached'] = 'An existing authorization may skip sign-in or consent. Verify access with an actual get_my_profile call; a tool list alone is not proof of a working connection.';
+$string['copy_endpoint'] = 'Copy server URL';
+$string['open_claude_connectors'] = 'Open Claude connectors';
+$string['open_chatgpt_plugins'] = 'Open ChatGPT plugins';
+$string['open_claude_app'] = 'Open Claude app';
+$string['open_chatgpt_app'] = 'Open ChatGPT app';
+$string['claude_app_link_help'] = 'The desktop button opens a new chat in the installed app, not the connector settings. Then go to Customize > Connectors. If the app does not open, use the web button.';
+$string['chatgpt_app_link_help'] = 'The desktop button opens a new local chat in the installed app, not the plugin directory. Then choose Work or Codex > Plugins. If the app does not open, use the web button.';
+$string['cli_setup_title'] = 'Claude Code and Codex CLI';
+$string['cli_setup_desc'] = 'Both CLIs can launch local stdio MCP servers. Register the downloaded bridge as the server command, using the Node command and arguments shown above. These JSON examples are for desktop clients, not CLI syntax; follow the CLI documentation for registration. CLI-specific end-to-end setup has not been verified here.';
+$string['claude_cli_docs'] = 'Claude Code CLI setup';
+$string['codex_cli_docs'] = 'Codex CLI setup';
+$string['http_config_cli_note'] = 'This JSON example is for compatible HTTP clients such as Cursor. Codex CLI uses config.toml or codex mcp add instead. See Local bridge for CLI documentation.';
+$string['claude_app_title'] = 'Connect the Claude app';
+$string['claude_app_step1'] = 'Open Customize > Connectors. Choose Add > Custom > Web, or Add custom connector.';
+$string['claude_app_step2'] = 'Name the connector and paste the server URL shown above.';
+$string['claude_app_step3'] = 'Choose OAuth / Sign in now and Register automatically. Leave request headers empty. Do not choose Claude\'s published identity for this server.';
+$string['claude_app_step4'] = 'Select Add, then Connect if shown. If prompted, sign in to Moodle with your teacher account and review the requested permissions.';
+$string['claude_app_step5'] = 'Start a new chat. Under + > Connectors, enable this Moodle connector and ask it to call get_my_profile and get_teacher_courses.';
+$string['claude_app_workspace'] = 'In a managed workspace, an administrator may need to add the connector before teachers can connect their own Moodle accounts.';
+$string['chatgpt_title'] = 'Connect ChatGPT with a remote MCP server';
+$string['chatgpt_step1'] = 'Open Plugins in ChatGPT web. Select + > Add custom MCP server.';
+$string['chatgpt_step2'] = 'Enter a name and paste the server URL shown above under Connection.';
+$string['chatgpt_step3'] = 'Choose OAuth and dynamic client registration (DCR) if offered. Do not select CIMD, enter a Moodle token as a client secret, or disable authentication.';
+$string['chatgpt_step4'] = 'Review the warning and select Create as a plugin. Complete Moodle sign-in and consent if prompted, then review the discovered tools and install the plugin.';
+$string['chatgpt_step5'] = 'Start a new chat, type @ and select the plugin. Select it again when a follow-up needs another tool call.';
+$string['chatgpt_remote_access'] = 'Availability depends on your plan and workspace permissions. Full remote read/write access is currently documented for Business and Enterprise/Edu; Pro may be limited to reads. Set up on the web and use the connection in desktop only if the app exposes it.';
 
 // MCP Tool descriptions.
 $string['tool_get_my_profile_desc'] = 'Get current teacher user profile, capabilities, and system preferences.';
@@ -207,9 +232,9 @@ $string['oauth_security_footer'] = 'You can revoke this connection at any time f
 $string['label_unverified_client'] = 'Unverified Application';
 $string['desc_unverified_client'] = 'This application has not been verified by the site administrator. Ensure you trust this software before authorizing access.';
 $string['oauth_redirect_destination'] = 'Tokens will be returned to: {$a}';
-$string['oauth_tab_title'] = '1-Click OAuth 2.0 (Recommended)';
-$string['oauth_setup_title'] = 'OAuth 2.0 connection through the bridge';
-$string['oauth_setup_desc'] = 'For a new connection, an administrator must enable OAuth client registration. Start the downloaded bridge with --oauth to open Moodle consent in your browser using PKCE. This mode does not need a manually created bearer token.';
+$string['oauth_tab_title'] = 'Local bridge';
+$string['oauth_setup_title'] = 'Local bridge: OAuth sign-in';
+$string['oauth_setup_desc'] = 'For desktop or stdio clients that run a local program. Start the downloaded bridge with --oauth to open Moodle sign-in and consent when needed. It uses the pre-registered local client; dynamic registration and a manually generated bearer token are not required.';
 $string['oauth_endpoints_title'] = 'OAuth 2.0 Server Endpoints';
 $string['oauth_auth_endpoint'] = 'Authorization Endpoint';
 $string['oauth_token_endpoint'] = 'Token Endpoint';
@@ -272,7 +297,7 @@ $string['agent_skill_title'] = 'AI Agent System Prompt & Skills';
 $string['agent_skill_subtitle'] = 'Copy this prompt or download the skill specification into Claude Desktop, Custom GPT, or Cursor to instruct your AI agent on how to use all tools effectively.';
 $string['copy_skill_prompt'] = 'Copy Agent Instructions';
 $string['download_skill_file'] = 'Download Skill (.md)';
-$string['tab_agent_instructions'] = 'AI Agent Skill & Prompts';
+$string['tab_agent_instructions'] = 'Agent instructions';
 
 // Admin settings and security messages.
 $string['manage_tokens'] = 'Manage Agent Connections';

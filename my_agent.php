@@ -389,7 +389,6 @@ $templatedata = [
     'external_tools' => $externaltooloptions,
     'tools_count_badge' => get_string('active_tools_count', 'tool_teachermcp', $activetoolscount),
     'selected_course_id' => $courseid,
-    'chatgpt_step3_text' => get_string('chatgpt_step3', 'tool_teachermcp', $endpointurl),
     'mcp_resources' => \tool_teachermcp\local\resource_registry::get_resources(),
     'mcp_resource_templates' => \tool_teachermcp\local\resource_registry::get_templates(),
 ];

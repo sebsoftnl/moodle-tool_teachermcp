@@ -50,9 +50,10 @@ $string['revoke'] = 'Toegang Intrekken';
 $string['copy_token'] = 'Kopieer Token';
 $string['token_warning'] = 'Houd dit token geheim! Hiermee kan jouw agent docenthandelingen namens jou uitvoeren conform jouw Moodle-rechten.';
 
-$string['tab_claude'] = 'Claude Desktop';
-$string['tab_codex'] = 'Codex / Cursor';
-$string['tab_chatgpt'] = 'ChatGPT / Custom GPT';
+$string['tab_claude'] = 'Claude';
+$string['tab_codex'] = 'HTTP-clients';
+$string['tab_chatgpt'] = 'ChatGPT';
+$string['tab_resources'] = 'Bronnen';
 $string['tab_bridge'] = 'Stdio Bridge (Node.js)';
 
 $string['config_instructions'] = 'Plak onderstaande configuratie in het configuratiebestand van je agent:';
@@ -81,16 +82,40 @@ $string['course_filter_label'] = 'Personaliseer voorbeeldprompts voor cursus:';
 $string['course_filter_all'] = 'Selecteer een cursus om voorbeeldprompts te personaliseren';
 
 // Guides
-$string['how_to_connect'] = 'Hoe verbind je jouw AI-agent?';
-$string['claude_desktop_title'] = 'Claude Desktop: handmatig bearer-token';
+$string['how_to_connect'] = 'Verbind je AI-assistent';
+$string['claude_desktop_title'] = 'Lokale bridge: handmatig bearer-token';
 $string['claude_desktop_desc'] = 'Maak een token met het gewenste rechtenprofiel en gebruik daarna deze configuratie. Vervang YOUR_BEARER_TOKEN_HERE als er geen nieuw token wordt getoond. Houd het token geheim; deze methode gebruikt geen OAuth.';
-$string['codex_cursor_title'] = 'Codex / Cursor / HTTP Client Configuratie';
-$string['codex_cursor_desc'] = 'Voor clients met native HTTP/SSE MCP ondersteuning:';
-$string['chatgpt_title'] = 'ChatGPT / Custom GPT Custom Actions';
-$string['chatgpt_step1'] = 'Maak een Custom GPT aan in OpenAI.';
-$string['chatgpt_step2'] = 'Configureer een Custom Action.';
-$string['chatgpt_step3'] = 'Voer het MCP endpoint in: {$a}';
-$string['chatgpt_step4'] = 'Selecteer Authenticatie: Bearer en vul je gegenereerde token in.';
+$string['codex_cursor_title'] = 'Configuratie voor HTTP-clients';
+$string['codex_cursor_desc'] = 'Voor clients die dit HTTP MCP-endpoint en een handmatig ingestelde bearer-header ondersteunen:';
+$string['remote_app_intro'] = 'Gebruik een externe MCP-verbinding met aanmelden via de browser. Een lokale installatie, bridge-script of handmatig aangemaakt token is niet nodig.';
+$string['remote_app_requirements'] = 'Deze Moodle-site moet voor de app bereikbaar zijn via openbaar HTTPS. Vraag de beheerder zo nodig OAuth-clientregistratie in te schakelen. Voer je Moodle-wachtwoord alleen in op de Moodle-aanmeldpagina, nooit in de chat of een client-secretveld.';
+$string['remote_app_cached'] = 'Bij een bestaande autorisatie kan aanmelden of toestemming worden overgeslagen. Controleer de toegang met een echte get_my_profile-aanroep; alleen een lijst met tools bewijst niet dat de verbinding werkt.';
+$string['copy_endpoint'] = 'Kopieer server-URL';
+$string['open_claude_connectors'] = 'Open Claude-connectors';
+$string['open_chatgpt_plugins'] = 'Open ChatGPT-plugins';
+$string['open_claude_app'] = 'Open Claude-app';
+$string['open_chatgpt_app'] = 'Open ChatGPT-app';
+$string['claude_app_link_help'] = 'De desktopknop opent een nieuwe chat in de geïnstalleerde app, niet de connectorinstellingen. Ga daarna naar Customize > Connectors. Gebruik de webknop als de app niet opent.';
+$string['chatgpt_app_link_help'] = 'De desktopknop opent een nieuwe lokale chat in de geïnstalleerde app, niet de plugincatalogus. Kies daarna Work of Codex > Plugins. Gebruik de webknop als de app niet opent.';
+$string['cli_setup_title'] = 'Claude Code en Codex CLI';
+$string['cli_setup_desc'] = 'Beide CLI\'s kunnen lokale stdio MCP-servers starten. Registreer de gedownloade bridge als servercommando met het hierboven getoonde Node-commando en de argumenten. Deze JSON-voorbeelden zijn voor desktopclients, niet voor CLI-syntaxis; volg de CLI-documentatie voor registratie. De volledige CLI-configuratie is hier nog niet geverifieerd.';
+$string['claude_cli_docs'] = 'Claude Code CLI instellen';
+$string['codex_cli_docs'] = 'Codex CLI instellen';
+$string['http_config_cli_note'] = 'Dit JSON-voorbeeld is voor compatibele HTTP-clients zoals Cursor. Codex CLI gebruikt config.toml of codex mcp add. Zie Lokale bridge voor CLI-documentatie.';
+$string['claude_app_title'] = 'Verbind de Claude-app';
+$string['claude_app_step1'] = 'Open Customize > Connectors. Kies Add > Custom > Web of Add custom connector.';
+$string['claude_app_step2'] = 'Geef de connector een naam en plak de hierboven getoonde server-URL.';
+$string['claude_app_step3'] = 'Kies OAuth / Sign in now en Register automatically. Laat request headers leeg. Kies voor deze server niet de gepubliceerde identiteit van Claude.';
+$string['claude_app_step4'] = 'Kies Add en daarna Connect als die knop verschijnt. Meld je zo nodig met je docentenaccount aan bij Moodle en controleer de gevraagde rechten.';
+$string['claude_app_step5'] = 'Start een nieuwe chat. Schakel deze Moodle-connector in via + > Connectors en vraag om get_my_profile en get_teacher_courses aan te roepen.';
+$string['claude_app_workspace'] = 'In een beheerde werkruimte moet een beheerder de connector mogelijk eerst toevoegen voordat docenten hun eigen Moodle-account kunnen koppelen.';
+$string['chatgpt_title'] = 'Verbind ChatGPT met een externe MCP-server';
+$string['chatgpt_step1'] = 'Open Plugins in ChatGPT op het web. Kies + > Add custom MCP server.';
+$string['chatgpt_step2'] = 'Voer een naam in en plak de hierboven getoonde server-URL onder Connection.';
+$string['chatgpt_step3'] = 'Kies OAuth en dynamische clientregistratie (DCR) als die optie beschikbaar is. Kies geen CIMD, gebruik geen Moodle-token als client secret en schakel authenticatie niet uit.';
+$string['chatgpt_step4'] = 'Lees de waarschuwing en kies Create as a plugin. Meld je zo nodig aan bij Moodle en geef toestemming. Controleer daarna de gevonden tools en installeer de plugin.';
+$string['chatgpt_step5'] = 'Start een nieuwe chat, typ @ en selecteer de plugin. Selecteer deze opnieuw wanneer een vervolgbericht een nieuwe toolaanroep nodig heeft.';
+$string['chatgpt_remote_access'] = 'Beschikbaarheid hangt af van je abonnement en werkruimterechten. Volledige externe lees- en schrijftoegang is momenteel gedocumenteerd voor Business en Enterprise/Edu; Pro kan beperkt zijn tot lezen. Stel de verbinding in op het web. Gebruik deze alleen in de desktopapp als de verbinding daar beschikbaar is.';
 
 // MCP Tool omschrijvingen.
 $string['tool_get_my_profile_desc'] = 'Eigen docentenprofiel, systeemrechten en voorkeuren opvragen.';
@@ -207,9 +232,9 @@ $string['oauth_security_footer'] = 'Je kunt deze koppeling op ieder moment intre
 $string['label_unverified_client'] = 'Niet-geverifieerde applicatie';
 $string['desc_unverified_client'] = 'Deze applicatie is niet geverifieerd door de beheerder van deze Moodle site. Autoriseer alleen als je deze software vertrouwt.';
 $string['oauth_redirect_destination'] = 'Tokens worden teruggestuurd naar: {$a}';
-$string['oauth_tab_title'] = '1-Klik OAuth 2.0 (Aanbevolen)';
-$string['oauth_setup_title'] = 'OAuth 2.0-verbinding via de bridge';
-$string['oauth_setup_desc'] = 'Voor een nieuwe verbinding moet een beheerder OAuth-clientregistratie inschakelen. Start de gedownloade bridge met --oauth om de Moodle-toestemmingspagina met PKCE in je browser te openen. Hiervoor is geen handmatig aangemaakt bearer-token nodig.';
+$string['oauth_tab_title'] = 'Lokale bridge';
+$string['oauth_setup_title'] = 'Lokale bridge: aanmelden met OAuth';
+$string['oauth_setup_desc'] = 'Voor desktop- of stdio-clients die een lokaal programma starten. Start de gedownloade bridge met --oauth om zo nodig bij Moodle aan te melden en toestemming te geven. De bridge gebruikt de vooraf geregistreerde lokale client; dynamische registratie en een handmatig aangemaakt bearer-token zijn niet nodig.';
 $string['oauth_endpoints_title'] = 'OAuth 2.0 Server Endpoints';
 $string['oauth_auth_endpoint'] = 'Autorisatie-endpoint';
 $string['oauth_token_endpoint'] = 'Token-endpoint';
@@ -272,7 +297,7 @@ $string['agent_skill_title'] = 'AI Agent Systeemprompt & Vaardigheden (Skill)';
 $string['agent_skill_subtitle'] = 'Kopieer deze systeemprompt of download de skill-specificatie in Claude Desktop, Custom GPT of Cursor zodat jouw AI-agent exact weet hoe alle tools optimaal gebruikt moeten worden.';
 $string['copy_skill_prompt'] = 'Kopieer Agent Instructies';
 $string['download_skill_file'] = 'Download Skill (.md)';
-$string['tab_agent_instructions'] = 'AI Agent Skill & Prompts';
+$string['tab_agent_instructions'] = 'Agentinstructies';
 
 // Admin settings and security messages.
 $string['manage_tokens'] = 'Agent-verbindingen Beheren';

@@ -58,6 +58,17 @@
     gap: 0.5rem;
 }
 
+.tool_teachermcp_setup .tab-pane > p,
+.tool_teachermcp_setup .tab-pane > ol,
+.tool_teachermcp_prompt_text {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.tool_teachermcp_prompt_text {
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 767.98px) {
     .tool_teachermcp_dashboard #agentTabs .nav-link.active {
         background-color: var(--bs-nav-tabs-link-active-bg, var(--blue));
