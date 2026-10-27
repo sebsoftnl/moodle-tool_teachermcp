@@ -68,9 +68,9 @@ echo $OUTPUT->header();
 $recyclebinenabled = class_exists('\tool_recyclebin\course_bin') && \tool_recyclebin\course_bin::is_enabled();
 
 // Boost UI rendering.
-echo html_writer::start_div('container-fluid my-4');
-echo html_writer::start_div('row justify-content-center');
-echo html_writer::start_div('col-md-8');
+echo html_writer::start_div('tool_teachermcp_confirmation container-fluid my-4');
+echo html_writer::start_div('row');
+echo html_writer::start_div('col-12');
 
 echo html_writer::start_div('card border-danger shadow-sm');
 echo html_writer::start_div('card-header bg-danger text-white');
@@ -122,7 +122,8 @@ echo html_writer::tag(
 echo html_writer::end_tag('dl');
 
 // Confirmation Form.
-echo html_writer::start_tag('form', ['action' => $pageurl->out(false), 'method' => 'post', 'class' => 'd-flex justify-content-between']);
+echo html_writer::start_tag('form', ['action' => $pageurl->out(false), 'method' => 'post',
+    'class' => 'tool_teachermcp_actions d-flex flex-wrap justify-content-between']);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'cmid', 'value' => (int)$cm->id]);
 echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'confirm', 'value' => '1']);
@@ -143,7 +144,7 @@ echo html_writer::end_tag('form');
 
 echo html_writer::end_div(); // card-body.
 echo html_writer::end_div(); // card.
-echo html_writer::end_div(); // col-md-8.
+echo html_writer::end_div(); // col-12.
 echo html_writer::end_div(); // row.
 echo html_writer::end_div(); // container-fluid.
 

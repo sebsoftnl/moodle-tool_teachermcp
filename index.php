@@ -45,6 +45,7 @@ if ($action === 'revoke' && confirm_sesskey() && $tokenid) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('pluginname', 'tool_teachermcp'));
+echo html_writer::start_div('tool_teachermcp_admin container-fluid');
 
 // Summary metrics.
 $totaltokens = $DB->count_records('tool_teachermcp_tokens');
@@ -121,7 +122,7 @@ if ($alltokens) {
         $table->data[] = [
             $userlink,
             s($t->name),
-            '<code>...' . s($t->tokenlastchars) . '</code>',
+            '<code class="tool_teachermcp_token_suffix">...' . s($t->tokenlastchars) . '</code>',
             userdate($t->timecreated),
             $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
             $statusbadge,
@@ -129,9 +130,12 @@ if ($alltokens) {
         ];
     }
 
+    echo html_writer::start_div('table-responsive', ['tabindex' => 0]);
     echo html_writer::table($table);
+    echo html_writer::end_div();
 } else {
     echo $OUTPUT->notification(get_string('no_tokens_site', 'tool_teachermcp'), 'info');
 }
 
+echo html_writer::end_div(); // tool_teachermcp_admin.
 echo $OUTPUT->footer();

@@ -46,7 +46,7 @@ if ($courseid) {
 
 $PAGE->set_url($pageurl);
 $PAGE->set_context($systemcontext);
-$PAGE->set_pagelayout('standard');
+$PAGE->set_pagelayout('report');
 $PAGE->set_title(get_string('dashboard_title', 'tool_teachermcp'));
 $PAGE->set_heading(get_string('dashboard_title', 'tool_teachermcp'));
 

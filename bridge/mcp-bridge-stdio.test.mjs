@@ -108,6 +108,11 @@ test('injected launcher completes local OAuth without opening a real browser or 
             callback.search = new URLSearchParams({code: 'synthetic-auth-code', state: url.searchParams.get('state')}).toString();
             const response = await fetch(callback);
             assert.equal(response.status, 200);
+            const html = await response.text();
+            assert.doesNotMatch(html, /Claude|ChatGPT|Codex|Cursor/,
+                'The shared bridge callback must not claim a particular AI client connected.');
+            assert.match(html, /Your AI assistant/);
+            assert.match(html, /return to your AI app/);
             authorized = true;
         }});
         assert.equal(result.code, 0, result.stderr);
