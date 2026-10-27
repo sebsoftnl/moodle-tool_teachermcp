@@ -40,7 +40,7 @@ class manage_question_bank extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Manage Question Bank: list/create categories, list/get/create/update/delete questions, and attach questions to quizzes (Moodle 4.0+ schema).';
+        return 'Manage Question Bank: list/create categories, list/get/create/update/delete questions, and attach questions to quizzes (Moodle 4.0+ schema). Updates create a new version and return its new question_id; use that ID for subsequent edits.';
     }
 
     public function get_input_schema(): array {
@@ -103,7 +103,7 @@ class manage_question_bank extends base_tool {
                 ],
                 'single' => [
                     'type' => 'boolean',
-                    'description' => 'For multichoice: true for single correct answer, false for multiple correct answers (default: true).',
+                    'description' => 'For multichoice: true for single correct answer, false for multiple correct answers (default on creation: true; omitted on update: preserve existing setting).',
                 ],
                 'correct_truefalse' => [
                     'type' => 'boolean',
@@ -111,7 +111,7 @@ class manage_question_bank extends base_tool {
                 ],
                 'options' => [
                     'type' => 'array',
-                    'description' => 'Answer options for multichoice, shortanswer or numerical questions. For numerical questions, supplied options replace the answer list; omit them on update to preserve existing answers.',
+                    'description' => 'Answer options for multichoice, shortanswer or numerical questions. For multichoice and numerical questions, supplied options replace the answer list; omit them on update to preserve existing answers.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -585,6 +585,10 @@ class manage_question_bank extends base_tool {
         $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : (float)$existing->penalty;
         $form->status = question_version_status::QUESTION_STATUS_READY;
 
+        if (in_array($existing->qtype, ['multichoice', 'essay'], true)) {
+            $this->prepare_existing_type_form($form, $existing, $params);
+        }
+
         if ($existing->qtype === 'truefalse') {
             $existingoptions = $DB->get_record('question_truefalse', ['question' => $existing->id], '*', MUST_EXIST);
             $trueanswer = $DB->get_record('question_answers', ['id' => $existingoptions->trueanswer], '*', MUST_EXIST);
@@ -622,11 +626,6 @@ class manage_question_bank extends base_tool {
                     $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
                 }
 
-                $issingle = !isset($params['single']) || !empty($params['single']);
-                $form->single = $issingle ? 1 : 0;
-                $form->shuffleanswers = 1;
-                $form->answernumbering = 'abc';
-                $form->showstandardinstruction = 0;
             }
         }
 
@@ -648,6 +647,86 @@ class manage_question_bank extends base_tool {
             'qtype' => $updated->qtype,
             'defaultmark' => (float)$updated->defaultmark,
         ];
+    }
+
+    /**
+     * Rebuild the native editor fields required when versioning multichoice and essay questions.
+     *
+     * @param stdClass $form Common fields for the new version.
+     * @param stdClass $existing Question being versioned.
+     * @param array $params Requested changes.
+     */
+    private function prepare_existing_type_form(stdClass $form, stdClass $existing, array $params): void {
+        global $CFG, $DB;
+        require_once($CFG->libdir . '/filelib.php');
+        \question_bank::get_qtype($existing->qtype)->get_question_options($existing);
+        $options = $existing->options;
+        $contextid = (int)$DB->get_field('question_categories', 'contextid', ['id' => $form->category], MUST_EXIST);
+        $form->idnumber = get_question_bank_entry($existing->id)->idnumber;
+        $form->parent = $existing->parent;
+        $form->status = $DB->get_field('question_versions', 'status', ['questionid' => $existing->id], MUST_EXIST);
+        foreach (['questiontext', 'generalfeedback'] as $area) {
+            $format = isset($params[$area]) ? FORMAT_HTML : (int)$existing->{$area . 'format'};
+            $form->{$area} = $this->existing_editor($form->{$area}['text'], $format,
+                $contextid, 'question', $area, (int)$existing->id);
+        }
+
+        if ($existing->qtype === 'multichoice') {
+            foreach (['single', 'shuffleanswers', 'answernumbering', 'layout', 'shownumcorrect',
+                    'showstandardinstruction'] as $field) {
+                $form->{$field} = $options->{$field};
+            }
+            if (array_key_exists('single', $params)) {
+                $form->single = !empty($params['single']) ? 1 : 0;
+            }
+            foreach (['correctfeedback', 'partiallycorrectfeedback', 'incorrectfeedback'] as $area) {
+                $form->{$area} = $this->existing_editor($options->{$area}, (int)$options->{$area . 'format'},
+                    $contextid, 'question', $area, (int)$existing->id);
+            }
+            if (!isset($params['options'])) {
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+                foreach ($options->answers as $answer) {
+                    $form->answer[] = $this->existing_editor($answer->answer, (int)$answer->answerformat,
+                        $contextid, 'question', 'answer', (int)$answer->id);
+                    $form->fraction[] = (string)$answer->fraction;
+                    $form->feedback[] = $this->existing_editor($answer->feedback, (int)$answer->feedbackformat,
+                        $contextid, 'question', 'answerfeedback', (int)$answer->id);
+                }
+                $form->noanswers = count($form->answer);
+            }
+            $form->hint = [];
+            foreach ($existing->hints as $hint) {
+                $form->hint[] = $this->existing_editor($hint->hint, (int)$hint->hintformat,
+                    $contextid, 'question', 'hint', (int)$hint->id);
+                $form->hintclearwrong[] = $hint->clearwrong;
+                $form->hintshownumcorrect[] = $hint->shownumcorrect;
+            }
+        } else {
+            foreach (['responseformat', 'responserequired', 'responsefieldlines', 'attachments',
+                    'attachmentsrequired', 'filetypeslist', 'maxbytes'] as $field) {
+                $form->{$field} = $options->{$field};
+            }
+            foreach (['minword', 'maxword'] as $limit) {
+                if ($options->{$limit . 'limit'} !== null) {
+                    $form->{$limit . 'enabled'} = 1;
+                    $form->{$limit . 'limit'} = $options->{$limit . 'limit'};
+                }
+            }
+            $form->graderinfo = $this->existing_editor((string)$options->graderinfo, (int)$options->graderinfoformat,
+                $contextid, 'qtype_essay', 'graderinfo', (int)$existing->id);
+            $form->responsetemplate = ['text' => (string)$options->responsetemplate,
+                'format' => (int)$options->responsetemplateformat];
+        }
+    }
+
+    /** Prepare a native draft so the new version retains the existing embedded files. */
+    private function existing_editor(string $text, int $format, int $contextid, string $component,
+            string $area, int $itemid): array {
+        $draftid = 0;
+        $text = file_prepare_draft_area($draftid, $contextid, $component, $area, $itemid, ['subdirs' => true], $text);
+        return ['text' => $text, 'format' => $format, 'itemid' => $draftid];
     }
 
     /**

@@ -31,6 +31,162 @@ use tool_teachermcp\tools\scaffold_assessment_unit;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class question_actions_test extends \advanced_testcase {
+    public function test_multichoice_rename_preserves_answers_and_native_options(): void {
+        global $DB;
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        $created = $this->create_question($course, ['qtype' => 'multichoice', 'options' => [
+            ['answer' => 'Paris', 'fraction' => 1, 'feedback' => 'Correct.'],
+            ['answer' => 'Lyon', 'fraction' => 0],
+        ]]);
+        $id = $created['question_id'];
+        $options = $DB->get_record('qtype_multichoice_options', ['questionid' => $id], '*', MUST_EXIST);
+        $options->single = 0;
+        $options->shuffleanswers = 0;
+        $options->answernumbering = 'ABCD';
+        $options->correctfeedback = '<p>Well done.</p>';
+        $options->showstandardinstruction = 1;
+        $DB->update_record('qtype_multichoice_options', $options);
+        $before = $this->call($course, 'get_question', ['question_id' => $id]);
+        $updated = $this->call($course, 'update_question', ['question_id' => $id, 'name' => 'Renamed choice']);
+        $this->assertTrue($updated['success']);
+        $this->assertNotSame($id, $updated['question_id']);
+        $after = $this->call($course, 'get_question', ['question_id' => $updated['question_id']]);
+        $this->assertSame(2, $after['version']);
+        $this->assertSame('Renamed choice', $after['name']);
+        foreach (['answer', 'fraction', 'feedback'] as $field) {
+            $this->assertSame(array_column($before['answers'], $field), array_column($after['answers'], $field));
+        }
+        $saved = $DB->get_record('qtype_multichoice_options', ['questionid' => $updated['question_id']], '*', MUST_EXIST);
+        foreach (['single', 'shuffleanswers', 'answernumbering', 'correctfeedback', 'correctfeedbackformat',
+                'partiallycorrectfeedback', 'incorrectfeedback', 'shownumcorrect', 'showstandardinstruction'] as $field) {
+            $this->assertEquals($options->{$field}, $saved->{$field}, 'Preserve multichoice option ' . $field);
+        }
+        $this->assertSame($before, $this->call($course, 'get_question', ['question_id' => $id]));
+    }
+
+    public function test_multichoice_update_replaces_supplied_answers(): void {
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        $created = $this->create_question($course, ['qtype' => 'multichoice', 'options' => [
+            ['answer' => 'Paris', 'fraction' => 1], ['answer' => 'Lyon', 'fraction' => 0],
+            ['answer' => 'Marseille', 'fraction' => 0],
+        ]]);
+        $updated = $this->call($course, 'update_question', ['question_id' => $created['question_id'],
+            'single' => true, 'options' => [
+                ['answer' => 'Berlin', 'fraction' => 1, 'feedback' => 'New feedback'],
+                ['answer' => 'Bonn', 'fraction' => 0],
+            ]]);
+        $question = \question_bank::load_question($updated['question_id']);
+        $this->assertSame(['Berlin', 'Bonn'], array_values(array_column($question->answers, 'answer')));
+        $answerid = array_key_first($question->answers);
+        $question->start_attempt(new \question_attempt_step(), 1);
+        [$fraction] = $question->grade_response($question->get_correct_response());
+        $this->assertEquals(1.0, $fraction);
+        $this->assertSame('New feedback', $question->answers[$answerid]->feedback);
+    }
+
+    public function test_essay_update_preserves_response_and_grader_settings(): void {
+        global $DB;
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        $created = $this->create_question($course, ['qtype' => 'essay']);
+        $options = $DB->get_record('qtype_essay_options', ['questionid' => $created['question_id']], '*', MUST_EXIST);
+        $options->responseformat = 'editorfilepicker';
+        $options->responsefieldlines = 20;
+        $options->attachments = 2;
+        $options->attachmentsrequired = 1;
+        $options->filetypeslist = '.pdf';
+        $options->maxbytes = 102400;
+        $options->minwordlimit = 10;
+        $options->maxwordlimit = 200;
+        $options->graderinfo = '<p>Check the explanation.</p>';
+        $options->responsetemplate = '<p>My explanation:</p>';
+        $DB->update_record('qtype_essay_options', $options);
+        $updated = $this->call($course, 'update_question', ['question_id' => $created['question_id'],
+            'name' => 'Renamed essay', 'questiontext' => '<p>Explain photosynthesis.</p>']);
+        $this->assertTrue($updated['success']);
+        $saved = $DB->get_record('qtype_essay_options', ['questionid' => $updated['question_id']], '*', MUST_EXIST);
+        unset($options->id, $options->questionid, $saved->id, $saved->questionid);
+        $this->assertEquals($options, $saved, 'Essay versioning must preserve all native response and grader settings');
+        $read = $this->call($course, 'get_question', ['question_id' => $updated['question_id']]);
+        $this->assertSame('Explain photosynthesis.', $read['questiontext']);
+        $this->assertSame(2, $read['version']);
+    }
+
+    public function test_scaffolded_multichoice_and_essay_can_be_updated(): void {
+        global $DB;
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        (new scaffold_assessment_unit())->execute(['course_id' => (int)$course->id,
+            'quiz_title' => 'Versioning regression', 'questions' => [
+                ['qtype' => 'multichoice', 'name' => 'Scaffold choice update', 'text' => 'Choose Paris.',
+                    'options' => [['answer' => 'Paris', 'fraction' => 1], ['answer' => 'Lyon', 'fraction' => 0]]],
+                ['qtype' => 'essay', 'name' => 'Scaffold essay update', 'text' => 'Explain photosynthesis.'],
+            ]]);
+        foreach (['Scaffold choice update', 'Scaffold essay update'] as $name) {
+            $id = (int)$DB->get_field('question', 'id', ['name' => $name], MUST_EXIST);
+            $result = $this->call($course, 'update_question', ['question_id' => $id, 'name' => $name . ' renamed']);
+            $this->assertTrue($result['success']);
+            $this->assertNotSame($id, $result['question_id']);
+        }
+    }
+
+    public function test_multichoice_and_essay_versions_preserve_embedded_files_and_identity(): void {
+        global $DB;
+        [$course, $teacher] = $this->create_fixture();
+        $category = $this->create_bank_category($course, 'Preserved files');
+        $this->setUser($teacher);
+        foreach (['multichoice', 'essay'] as $type) {
+            $created = $this->create_question($course, ['qtype' => $type, 'category_id' => (int)$category->id,
+                'options' => [['answer' => 'Yes', 'fraction' => 1], ['answer' => 'No', 'fraction' => 0]]]);
+            $id = $created['question_id'];
+            $entry = get_question_bank_entry($id);
+            $DB->set_field('question_bank_entries', 'idnumber', 'preserved-' . $type, ['id' => $entry->id]);
+            $DB->set_field('question_versions', 'status', question_version_status::QUESTION_STATUS_HIDDEN,
+                ['questionid' => $id]);
+            $areas = [['question', 'questiontext', $id, 'question', 'id']];
+            if ($type === 'multichoice') {
+                $answerid = $DB->get_field('question_answers', 'id', ['question' => $id, 'fraction' => 1], MUST_EXIST);
+                $hintid = $DB->insert_record('question_hints', (object)['questionid' => $id,
+                    'hint' => '', 'hintformat' => FORMAT_HTML, 'clearwrong' => 1, 'shownumcorrect' => 1]);
+                $areas[] = ['question', 'answer', $answerid, 'question_answers', 'id'];
+                $areas[] = ['question', 'answerfeedback', $answerid, 'question_answers', 'id'];
+                $areas[] = ['question', 'hint', $hintid, 'question_hints', 'id'];
+                $areas[] = ['question', 'correctfeedback', $id, 'qtype_multichoice_options', 'questionid'];
+            } else {
+                $areas[] = ['qtype_essay', 'graderinfo', $id, 'qtype_essay_options', 'questionid'];
+            }
+            foreach ($areas as [$component, $area, $itemid, $table, $key]) {
+                $field = $area === 'answerfeedback' ? 'feedback' : $area;
+                $DB->set_field($table, $field, '<p><a href="@@PLUGINFILE@@/keep.txt">Keep</a></p>', [$key => $itemid]);
+                get_file_storage()->create_file_from_string(['contextid' => $category->contextid,
+                    'component' => $component, 'filearea' => $area, 'itemid' => $itemid,
+                    'filepath' => '/', 'filename' => 'keep.txt'], 'Preserved file');
+            }
+            $result = $this->call($course, 'update_question', ['question_id' => $id, 'name' => 'Files retained']);
+            $newid = $result['question_id'];
+            $this->assertEquals($entry->id, get_question_bank_entry($newid)->id);
+            $this->assertSame('preserved-' . $type, get_question_bank_entry($newid)->idnumber);
+            $this->assertSame(question_version_status::QUESTION_STATUS_HIDDEN,
+                $DB->get_field('question_versions', 'status', ['questionid' => $newid], MUST_EXIST));
+            foreach ($areas as [$component, $area]) {
+                $itemid = $newid;
+                if (in_array($area, ['answer', 'answerfeedback'])) {
+                    $itemid = $DB->get_field('question_answers', 'id', ['question' => $newid, 'fraction' => 1], MUST_EXIST);
+                } else if ($area === 'hint') {
+                    $hint = $DB->get_record('question_hints', ['questionid' => $newid], '*', MUST_EXIST);
+                    $itemid = $hint->id;
+                    $this->assertEquals(1, $hint->clearwrong);
+                    $this->assertEquals(1, $hint->shownumcorrect);
+                }
+                $file = get_file_storage()->get_file($category->contextid, $component, $area, $itemid, '/', 'keep.txt');
+                $this->assertNotFalse($file, 'New ' . $type . ' version must retain files in ' . $area);
+                $this->assertSame('Preserved file', $file->get_content());
+            }
+        }
+    }
+
     public function test_supported_question_types_create_get_and_list(): void {
         [$course, $teacher] = $this->create_fixture();
         $this->setUser($teacher);
