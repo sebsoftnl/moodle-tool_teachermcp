@@ -116,7 +116,7 @@ class manage_question_bank extends base_tool {
                         'type' => 'object',
                         'properties' => [
                             'answer' => ['type' => 'string', 'description' => 'Numerical answers use dot-decimal or scientific notation without units.'],
-                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0; numerical answers use Moodle-supported fractions from 0.0 to 1.0.'],
+                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0 (0.5 means 50%, not 50). Multichoice accepts numbers or numeric strings. Single-answer multichoice requires an answer with fraction 1.0. Multi-answer multichoice requires positive fractions to sum to 1.0 (rounded to two decimals); zero and negative distractors do not contribute to that sum. Numerical answers use Moodle-supported fractions from 0.0 to 1.0.'],
                             'feedback' => ['type' => 'string'],
                             'tolerance' => ['type' => 'number', 'description' => 'Numerical answers: nonnegative absolute tolerance (default: 0).'],
                         ],
@@ -558,7 +558,12 @@ class manage_question_bank extends base_tool {
         }
 
         if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
-            $this->validate_question_options($existing->qtype, $params);
+            $validationparams = $params;
+            if ($existing->qtype === 'multichoice' && !isset($params['single'])) {
+                $validationparams['single'] = (bool)$DB->get_field('qtype_multichoice_options', 'single',
+                    ['questionid' => $existing->id], MUST_EXIST);
+            }
+            $this->validate_question_options($existing->qtype, $validationparams);
         }
         if ($existing->qtype === 'numerical' && array_key_exists('options', $params)) {
             numerical_question::validate_options($params['options']);
@@ -876,19 +881,29 @@ class manage_question_bank extends base_tool {
         } else if ($qtype === 'multichoice') {
             $options = $params['options'] ?? [];
             if (count($options) < 2) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
                     'Multichoice questions require at least 2 answer options.');
             }
-            $hasfullmark = false;
+            $maxfraction = -1.0;
+            $positivefraction = 0.0;
             foreach ($options as $opt) {
                 $frac = (float)($opt['fraction'] ?? 0.0);
-                if (abs($frac - 1.0) < 0.001) {
-                    $hasfullmark = true;
+                if (!is_finite($frac) || $frac < -1.0 || $frac > 1.0) {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                        'Multichoice answer fractions must be finite numbers between -1.0 and 1.0, not percentages.');
                 }
+                $maxfraction = max($maxfraction, $frac);
+                $positivefraction += max(0.0, $frac);
             }
-            if (!$hasfullmark) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    'At least one answer option must have a grade fraction of 1.0 (100% correct).');
+            $single = !isset($params['single']) || !empty($params['single']);
+            if ($single && $maxfraction != 1.0) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                    'Single-answer multichoice requires at least one answer with a grade fraction of 1.0 (100% correct).');
+            }
+            // Match the native multichoice form and save API, including rounded thirds.
+            if (!$single && round($positivefraction, 2) != 1.0) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                    'Multi-answer multichoice requires positive answer fractions to sum to 1.0 (100%) when rounded to two decimals.');
             }
         } else if ($qtype === 'shortanswer') {
             $options = $params['options'] ?? [];

@@ -31,6 +31,73 @@ use tool_teachermcp\tools\scaffold_assessment_unit;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class question_actions_test extends \advanced_testcase {
+    public function test_multianswer_creation_accepts_weighted_fractions_and_grades_natively(): void {
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        foreach ([[0.5, 0.5], [0.5, 0.5, 0], [0.5, 0.5, -1], [0.75, 0.25],
+                [0.333333, 0.333333, 0.333333], [1, 0], ['0.5', '0.5']] as $fractions) {
+            $options = [];
+            foreach ($fractions as $index => $fraction) {
+                $options[] = ['answer' => 'Choice ' . $index, 'fraction' => $fraction];
+            }
+            $created = $this->create_question($course, ['qtype' => 'multichoice', 'single' => false, 'options' => $options]);
+            $this->assertTrue($created['success']);
+            $question = \question_bank::load_question($created['question_id']);
+            $this->assertInstanceOf(\qtype_multichoice_multi_question::class, $question);
+            $question->start_attempt(new \question_attempt_step(), 1);
+            [$full] = $question->grade_response($question->get_correct_response());
+            $this->assertEqualsWithDelta(1.0, $full, 0.00001, 'All correct choices must earn full credit');
+            [$partial] = $question->grade_response($question->prepare_simulated_post_data(['Choice 0' => 1]));
+            $this->assertEqualsWithDelta((float)$fractions[0], $partial, 0.000001, 'One choice must earn its assigned weight');
+            if (in_array(-1, $fractions, true)) {
+                [$penalised] = $question->grade_response($question->prepare_simulated_post_data([
+                    'Choice 0' => 1, 'Choice 1' => 1, 'Choice 2' => 1,
+                ]));
+                $this->assertEquals(0.0, $penalised, 'Incorrect choices must apply their negative credit');
+            }
+        }
+    }
+
+    public function test_multichoice_validation_explains_rejection_without_writes(): void {
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        foreach ([[false, [1], 'at least 2'], [false, [0.5, 0.25], 'sum to 1.0'],
+                [false, [1, 0.5], 'sum to 1.0'], [false, [0, -1], 'sum to 1.0'],
+                [false, [50, 50], 'between -1.0 and 1.0'], [false, [1, -1.1], 'between -1.0 and 1.0'],
+                [true, [0.5, 0.5], 'fraction of 1.0'], [true, [0.9999, 0], 'fraction of 1.0']] as [$single, $fractions, $reason]) {
+            $options = array_map(static fn($fraction) => ['answer' => 'Choice', 'fraction' => $fraction], $fractions);
+            $before = $this->snapshot();
+            try {
+                $this->create_question($course, ['qtype' => 'multichoice', 'single' => $single, 'options' => $options]);
+                $this->fail('Invalid multichoice fractions must be rejected before creating any records');
+            } catch (\moodle_exception $error) {
+                $this->assertSame('error_invalid_params', $error->errorcode);
+                $this->assertStringNotContainsString('{$a}', $error->getMessage());
+                $this->assertStringContainsString($reason, $error->getMessage());
+            }
+            $this->assertSame($before, $this->snapshot(), 'Invalid fractions must not create a question or bank');
+        }
+    }
+
+    public function test_weighted_answer_updates_use_the_existing_multichoice_mode(): void {
+        [$course, $teacher] = $this->create_fixture();
+        $this->setUser($teacher);
+        $created = $this->create_question($course, ['qtype' => 'multichoice', 'single' => false,
+            'options' => [['answer' => 'First', 'fraction' => 1], ['answer' => 'Second', 'fraction' => 0]]]);
+        $weighted = [['answer' => 'First', 'fraction' => 0.75], ['answer' => 'Second', 'fraction' => 0.25]];
+        $updated = $this->call($course, 'update_question', ['question_id' => $created['question_id'], 'options' => $weighted]);
+        $question = \question_bank::load_question($updated['question_id']);
+        $this->assertInstanceOf(\qtype_multichoice_multi_question::class, $question);
+        $read = $this->call($course, 'get_question', ['question_id' => $updated['question_id']]);
+        $this->assertSame([0.75, 0.25], array_column($read['answers'], 'fraction'));
+        $this->assert_unchanged_denial(fn() => $this->call($course, 'update_question', [
+            'question_id' => $updated['question_id'], 'single' => true, 'options' => $weighted,
+        ]), 'error_invalid_params');
+        $single = $this->call($course, 'update_question', ['question_id' => $updated['question_id'], 'single' => true,
+            'options' => [['answer' => 'First', 'fraction' => 1], ['answer' => 'Second', 'fraction' => 0]]]);
+        $this->assertInstanceOf(\qtype_multichoice_single_question::class, \question_bank::load_question($single['question_id']));
+    }
+
     public function test_multichoice_rename_preserves_answers_and_native_options(): void {
         global $DB;
         [$course, $teacher] = $this->create_fixture();
