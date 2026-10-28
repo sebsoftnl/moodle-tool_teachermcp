@@ -167,6 +167,7 @@ class manage_grades extends base_tool {
                             'finalgrade' => ($g->finalgrade !== null) ? (float)$g->finalgrade : null,
                             'feedback' => $g->feedback,
                             'locked' => (bool)$g->is_locked(),
+                            'overridden' => (bool)$g->is_overridden(),
                             'timemodified' => $g->timemodified ? (int)$g->timemodified : null,
                             'timemodified_iso' => $g->timemodified ? date('c', (int)$g->timemodified) : null,
                         ];

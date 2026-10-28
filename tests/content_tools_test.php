@@ -545,6 +545,33 @@ final class content_tools_test extends \advanced_testcase {
         }
     }
 
+    public function test_offline_assignment_rejection_explains_required_submission_type(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+        $tables = ['assign', 'course_modules', 'grade_items', 'event'];
+        $before = array_map(static fn($table) => $DB->get_records($table, [], 'id ASC'), $tables);
+        try {
+            (new \tool_teachermcp\tools\create_assignment())->execute([
+                'course_id' => (int)$course->id, 'title' => 'Unsupported oral assessment',
+                'allow_online_text' => false, 'allow_file_submissions' => false,
+            ]);
+            $this->fail('Offline assignments must remain restricted');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('error_invalid_params', $error->errorcode);
+            $this->assertStringNotContainsString('{$a}', $error->getMessage());
+            $this->assertStringContainsString('At least one submission type must be enabled', $error->getMessage());
+            $this->assertStringContainsString('online text or file uploads', $error->getMessage());
+            $this->assertStringContainsString('Offline/oral assignments are not currently supported', $error->getMessage());
+        }
+        $this->assertEquals($before, array_map(static fn($table) => $DB->get_records($table, [], 'id ASC'), $tables),
+            'Rejected offline creation must not change activities, assignments, grades or events');
+    }
+
     public function test_create_assignment_tool(): void {
         global $DB;
         $this->resetAfterTest(true);

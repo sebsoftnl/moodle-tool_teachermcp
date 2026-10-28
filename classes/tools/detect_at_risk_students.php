@@ -58,7 +58,7 @@ class detect_at_risk_students extends base_tool {
                 ],
                 'grade_warning_percent' => [
                     'type' => 'number',
-                    'description' => 'Grade percentage threshold below which a student is flagged (default: 55.0).',
+                    'description' => 'Percentage of each student\'s native course-grade range below which to flag their grade (default: 55.0). Uses Moodle aggregation, including its empty-grade policy; not the maximum of all planned work.',
                     'default' => 55.0,
                 ],
                 'grade_warning_threshold' => [
@@ -90,15 +90,17 @@ class detect_at_risk_students extends base_tool {
         $course = $this->require_course_access($courseid, 'moodle/grade:viewall');
         $context = context_course::instance($course->id);
 
-        // Fetch course grade item and calculate threshold.
         $courseitem = \grade_item::fetch_course_item($course->id);
-        if (isset($params['grade_warning_threshold'])) {
-            $gradethreshold = (float)$params['grade_warning_threshold'];
-        } else if ($courseitem && (float)$courseitem->grademax > 0) {
-            $gradethreshold = (float)$courseitem->grademax * ($gradewarningpercent / 100.0);
-        } else {
-            $gradethreshold = 5.5;
-        }
+        $absolutethreshold = isset($params['grade_warning_threshold']) ? (float)$params['grade_warning_threshold'] : null;
+        $category = $courseitem ? \grade_category::fetch(['id' => $courseitem->iteminstance]) : false;
+        $thresholds = [
+            'inactivity_days' => $inactthreshold,
+            'grade_warning_percent' => $gradewarningpercent,
+            'effective_grade_warning' => $absolutethreshold,
+            'grade_warning_basis' => $absolutethreshold !== null ? 'absolute' : 'student_native_grade_range',
+            'aggregation_method' => $category ? (int)$category->aggregation : null,
+            'exclude_empty_grades' => $category ? (bool)$category->aggregateonlygraded : null,
+        ];
 
         // M2 & L4: Enforce group isolation for separate groups.
         $targetgroupids = null;
@@ -120,11 +122,7 @@ class detect_at_risk_students extends base_tool {
                     'course_id' => $courseid,
                     'total_students_evaluated' => 0,
                     'total_at_risk' => 0,
-                    'thresholds' => [
-                        'inactivity_days' => $inactthreshold,
-                        'grade_warning_percent' => $gradewarningpercent,
-                        'effective_grade_warning' => $gradethreshold,
-                    ],
+                    'thresholds' => $thresholds,
                     'at_risk_students' => [],
                 ];
             }
@@ -161,11 +159,7 @@ class detect_at_risk_students extends base_tool {
                 'course_id' => $courseid,
                 'total_students_evaluated' => 0,
                 'total_at_risk' => 0,
-                'thresholds' => [
-                    'inactivity_days' => $inactthreshold,
-                    'grade_warning_percent' => $gradewarningpercent,
-                    'effective_grade_warning' => $gradethreshold,
-                ],
+                'thresholds' => $thresholds,
                 'at_risk_students' => [],
             ];
         }
@@ -211,10 +205,14 @@ class detect_at_risk_students extends base_tool {
         // Batch grades for students.
         $gradesmap = [];
         if ($courseitem) {
-            $gradesql = "SELECT userid, finalgrade
-                           FROM {grade_grades}
-                          WHERE itemid = :itemid AND userid $stduidsql AND finalgrade IS NOT NULL";
-            $gradesmap = $DB->get_records_sql_menu($gradesql, array_merge(['itemid' => $courseitem->id], $stduidparams));
+            $records = $DB->get_records_select('grade_grades',
+                "itemid = :itemid AND userid $stduidsql AND finalgrade IS NOT NULL",
+                array_merge(['itemid' => $courseitem->id], $stduidparams));
+            foreach ($records as $record) {
+                $grade = new \grade_grade($record, false);
+                $grade->grade_item = $courseitem;
+                $gradesmap[$record->userid] = $grade;
+            }
         }
 
         $hasanalyticstable = $DB->get_manager()->table_exists('analytics_predictions');
@@ -272,14 +270,30 @@ class detect_at_risk_students extends base_tool {
 
             // 3. Low or failing grades.
             $currentgrade = null;
+            $gradeassessment = null;
             if (isset($gradesmap[$student->id])) {
-                $currentgrade = round((float)$gradesmap[$student->id], 1);
-                if ($currentgrade < $gradethreshold) {
+                $nativegrade = $gradesmap[$student->id];
+                $currentgrade = (float)$nativegrade->finalgrade;
+                $minimum = (float)$nativegrade->get_grade_min();
+                $maximum = (float)$nativegrade->get_grade_max();
+                $range = $maximum - $minimum;
+                $percentage = $range > 0 ? 100 * ($currentgrade - $minimum) / $range : null;
+                $gradethreshold = $absolutethreshold ?? ($range > 0 ? $minimum + $range * $gradewarningpercent / 100 : null);
+                $gradeassessment = [
+                    'minimum' => $minimum,
+                    'maximum' => $maximum,
+                    'percentage' => $percentage !== null ? round($percentage, 2) : null,
+                    'warning_threshold' => $gradethreshold,
+                    'basis' => $thresholds['grade_warning_basis'],
+                ];
+                if ($gradethreshold !== null && $currentgrade < $gradethreshold) {
                     $riskpoints += 30;
                     $flags[] = [
                         'code' => 'low_grade',
-                        'message' => get_string('flag_low_grade', 'tool_teachermcp', $currentgrade),
+                        'message' => get_string('flag_low_grade_threshold', 'tool_teachermcp',
+                            (object)['grade' => $currentgrade, 'threshold' => $gradethreshold]),
                         'grade' => $currentgrade,
+                        'grade_assessment' => $gradeassessment,
                     ];
                 }
             }
@@ -329,6 +343,7 @@ class detect_at_risk_students extends base_tool {
                     'risk_level' => ($riskpoints >= 60) ? 'HIGH' : (($riskpoints >= 40) ? 'MEDIUM' : 'LOW'),
                     'days_inactive' => $daysinactive,
                     'current_course_grade' => $currentgrade,
+                    'grade_assessment' => $gradeassessment,
                     'risk_flags' => $flags,
                     'risk_factors' => $flagmessages,
                 ];
@@ -346,11 +361,7 @@ class detect_at_risk_students extends base_tool {
             'course_id' => $courseid,
             'total_students_evaluated' => count($students),
             'total_at_risk' => count($atrisk),
-            'thresholds' => [
-                'inactivity_days' => $inactthreshold,
-                'grade_warning_percent' => $gradewarningpercent,
-                'effective_grade_warning' => $gradethreshold,
-            ],
+            'thresholds' => $thresholds,
             'at_risk_students' => $trimmed,
         ];
     }

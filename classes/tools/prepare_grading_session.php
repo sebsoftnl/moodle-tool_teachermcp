@@ -129,7 +129,7 @@ class prepare_grading_session extends base_tool {
                 continue;
             }
 
-            $currentgrade = $assign->get_user_grade($student->id, false);
+            $currentgrade = \tool_teachermcp\local\assignment_grading::read_grade($assign, (int)$student->id);
             $isgraded = ($currentgrade && $currentgrade->grade !== null && (float)$currentgrade->grade >= 0);
 
             if ($onlyungraded && $isgraded) {
