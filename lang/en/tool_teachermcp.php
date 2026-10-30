@@ -126,7 +126,7 @@ $string['tool_scaffold_assessment_unit_desc'] = 'Assemble end-to-end quiz includ
 $string['tool_detect_at_risk_students_desc'] = 'Compute early-warning risk index based on days inactive, overdue assignments, failing grades, and missing completions.';
 $string['tool_analyze_class_understanding_desc'] = 'Analyze class performance, question difficulty (facility index), error patterns, and learning gaps on a completed quiz.';
 $string['tool_prepare_grading_session_desc'] = 'Prepare batch grading session with submitted texts, file attachments metadata, rubric criteria, and student context.';
-$string['tool_manage_activity_desc'] = 'Create or update settings, descriptions, or parameters of a course module (quiz, assign, page, etc.).';
+$string['tool_manage_activity_desc'] = 'Inspect basic activity settings; edit Page names/descriptions or change visibility for Page, Assignment, Quiz, H5P and Book. Other settings require Moodle.';
 $string['tool_grade_submission_desc'] = 'Review student submissions, submit numeric or scale grades, and provide feedback comments.';
 $string['tool_manage_grades_desc'] = 'View course gradebook items and update individual student grade entries.';
 $string['tool_get_group_students_desc'] = 'List students belonging to course groups and groupings where the teacher has access.';
@@ -189,7 +189,7 @@ $string['prompt_scaffold_desc'] = 'Creates a ready-to-use quiz with 5 multiple-c
 $string['prompt_scaffold_text'] = 'Use "scaffold_assessment_unit" to create a formative quiz of 5 multiple-choice questions in course ID {$a->courseid}, section 2. Base questions on the course material, include didactic feedback for distractors, and keep the quiz hidden for teacher review.';
 
 $string['prompt_assignment_title'] = 'Scaffold Assignment with Evaluation Rubric';
-$string['prompt_assignment_desc'] = 'Creates a rich assignment (mod_assign) with instructions, due date, submission rules, and rubric criteria.';
+$string['prompt_assignment_desc'] = 'Creates an assignment with instructions, due date, submission rules, and rubric descriptors in its introduction, not a native advanced-grading rubric.';
 $string['prompt_assignment_text'] = 'Use "create_assignment" to create an assignment in course ID {$a->courseid}, section 3 titled "Critical Essay on AI Ethics". Include comprehensive instructions, set the due date 14 days from now, allow online text and PDF submissions, and embed rubric evaluation criteria for Argumentation (50%) and Clarity (50%).';
 
 
@@ -326,10 +326,17 @@ $string['error_rate_limited'] = 'Rate limit exceeded. Please try again later.';
 $string['error_invalid_request'] = 'Invalid request parameters.';
 $string['error_invalid_user'] = 'Invalid target user.';
 $string['error_invalid_action'] = 'Unsupported action: {$a}';
+$string['error_activity_settings_restricted'] = 'Cannot apply these settings to module {$a}. Pages support name, description and visibility changes. Assignment, Quiz, H5P and Book support visibility-only updates: send only cmid, action and visible. Use Moodle for other settings.';
+$string['h5p_no_matching_libraries'] = 'No enabled, runnable H5P libraries match this filter. Remove or change library_filter to inspect available content types.';
+$string['h5p_no_available_libraries'] = 'No enabled, runnable H5P libraries are available on this site. Visit Site Administration > H5P > Manage H5P content types to install or enable content types.';
 $string['error_item_not_found'] = 'Item not found.';
 $string['error_invalid_params'] = 'Invalid parameters: {$a}';
 $string['error_assignment_submission_required'] = 'At least one submission type must be enabled: online text or file uploads. Offline/oral assignments are not currently supported by this tool.';
 $string['error_grade_locked'] = 'Grade item is locked.';
+$string['error_feedback_files_disabled'] = 'Feedback files are disabled or unavailable for this assignment. Enable Feedback files in Moodle before attaching files. No grade, feedback or files were changed.';
+$string['error_feedback_files_invalid'] = 'Feedback files must be a list of unique, safe filenames and valid base64 content. Do not use paths, duplicate names or missing fields. The entire grading request was rejected.';
+$string['error_feedback_file_too_large'] = 'A feedback file exceeds the applicable upload limit of {$a} bytes. The entire grading request was rejected.';
+$string['error_feedback_files_not_saved'] = 'Moodle did not persist every requested feedback file in the expected grade file area. The grading operation was rolled back; verify that this assignment supports ordinary feedback files.';
 $string['error_grade_overridden'] = 'The gradebook grade is overridden. No assignment grade or feedback was changed. Review the override in Moodle before regrading.';
 $string['error_grade_not_saved'] = 'Moodle did not persist the requested assignment grade for every affected student. The grading operation was rolled back. Check grading workflow and marker permissions.';
 $string['warning_gradebook_differs'] = 'The assignment grade and effective gradebook grade differ, or a gradebook override is active. Inspect the returned gradebook values; do not assume the student-facing grade changed.';

@@ -35,7 +35,7 @@ class export_course_learning_material extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Extract the complete substantive learning material (Page bodies, Book chapters, Lesson texts, Glossary terms, Assignment briefs) of a course formatted as clean Markdown for LLM context ingestion.';
+        return 'Export permitted course learning material as teacher-view Markdown or JSON, including visible-to-teacher drafts. Visibility flags and availability restrictions are identified; access is not evaluated for individual students. Unsupported extraction and size limits still apply.';
     }
 
     public function get_input_schema(): array {
@@ -48,7 +48,7 @@ class export_course_learning_material extends base_tool {
                 ],
                 'section_number' => [
                     'type' => 'integer',
-                    'description' => 'Optional section number (e.g. 2 for Week 2). If omitted, extracts all visible course sections.',
+                    'description' => 'Optional section number (e.g. 2 for Week 2). If omitted, extracts all sections accessible to the calling teacher, including permitted hidden sections.',
                 ],
                 'include_glossary' => [
                     'type' => 'boolean',
@@ -90,6 +90,8 @@ class export_course_learning_material extends base_tool {
         $markdownlines = [];
 
         $markdownlines[] = "# Course Knowledge Base: {$course->fullname} ({$course->shortname})";
+        $markdownlines[] = '> Teacher view: may include unpublished drafts. Student access has not been evaluated; enrolment, groups, dates and availability restrictions still apply.';
+        $markdownlines[] = $course->visible ? '> Course visibility: shown.' : '> Hidden course.';
         if (!empty($course->summary)) {
             $markdownlines[] = "\n## Course Summary\n" . trim(html_to_text($course->summary, 0, false));
         }
@@ -107,10 +109,16 @@ class export_course_learning_material extends base_tool {
                 'section_number' => $sectionnum,
                 'name' => $secname,
                 'summary' => trim(html_to_text($secinfo->summary ?? '', 0, false)),
+                'visible' => (bool)$secinfo->visible,
+                'availability' => $secinfo->availability ? json_decode($secinfo->availability, true, 512, JSON_THROW_ON_ERROR) : null,
                 'materials' => [],
             ];
 
             $markdownlines[] = "\n---\n## Section {$sectionnum}: {$secname}";
+            $markdownlines[] = $secinfo->visible ? '> Section visibility: shown.' : '> Hidden section.';
+            if ($secinfo->availability) {
+                $markdownlines[] = '> Access restrictions configured for this section.';
+            }
             if (!empty($secdata['summary'])) {
                 $markdownlines[] = "> " . $secdata['summary'];
             }
@@ -124,8 +132,18 @@ class export_course_learning_material extends base_tool {
 
                     $mat = $this->extract_module_content($cm);
                     if ($mat) {
+                        $mat['visible'] = (bool)$cm->visible;
+                        $mat['visible_on_course_page'] = (bool)$cm->visibleoncoursepage;
+                        $mat['availability'] = $cm->availability ? json_decode($cm->availability, true, 512, JSON_THROW_ON_ERROR) : null;
                         $secdata['materials'][] = $mat;
                         $markdownlines[] = "\n### [{$mat['type']}] {$mat['title']}";
+                        $markdownlines[] = $cm->visible ? '> Activity visibility: shown.' : '> Hidden activity.';
+                        if (!$cm->visibleoncoursepage) {
+                            $markdownlines[] = '> Not listed on the course page.';
+                        }
+                        if ($cm->availability) {
+                            $markdownlines[] = '> Access restrictions configured for this activity.';
+                        }
                         if (!empty($mat['content'])) {
                             $markdownlines[] = $mat['content'];
                         }
@@ -154,6 +172,12 @@ class export_course_learning_material extends base_tool {
                         $glossaryitems[] = [
                             'concept' => $entry->concept,
                             'definition' => $def,
+                            'source_cmid' => (int)$cm->id,
+                            'source_title' => $cm->name,
+                            'source_visible' => (bool)$cm->visible,
+                            'source_section_visible' => (bool)$modinfo->get_section_info($cm->sectionnum)->visible,
+                            'source_restricted' => !empty($cm->availability)
+                                || !empty($modinfo->get_section_info($cm->sectionnum)->availability),
                         ];
                     }
                 }
@@ -161,7 +185,19 @@ class export_course_learning_material extends base_tool {
 
             if ($hasglossary) {
                 $markdownlines[] = "\n---\n## Glossary & Core Concepts";
+                $lastsource = null;
                 foreach ($glossaryitems as $gi) {
+                    if ($lastsource !== $gi['source_cmid']) {
+                        $markdownlines[] = "\n### {$gi['source_title']}";
+                        $markdownlines[] = $gi['source_visible'] ? '> Activity visibility: shown.' : '> Hidden activity.';
+                        if (!$gi['source_section_visible']) {
+                            $markdownlines[] = '> Hidden section.';
+                        }
+                        if ($gi['source_restricted']) {
+                            $markdownlines[] = '> Access restrictions configured for this glossary or its section.';
+                        }
+                        $lastsource = $gi['source_cmid'];
+                    }
                     $markdownlines[] = "- **{$gi['concept']}**: {$gi['definition']}";
                 }
             }
@@ -173,6 +209,9 @@ class export_course_learning_material extends base_tool {
                 'course_id' => $course->id,
                 'fullname' => $course->fullname,
                 'shortname' => $course->shortname,
+                'audience' => 'teacher',
+                'student_access_evaluated' => false,
+                'visible' => (bool)$course->visible,
                 'sections' => $outsections,
             ];
             $jsonstr = json_encode($result);
@@ -193,6 +232,8 @@ class export_course_learning_material extends base_tool {
             'course_id' => $course->id,
             'title' => $course->fullname,
             'format' => 'markdown',
+            'audience' => 'teacher',
+            'student_access_evaluated' => false,
             'content' => $fulltext,
             'truncated' => $truncated,
         ];

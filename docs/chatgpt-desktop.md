@@ -99,7 +99,9 @@ Review the proposed call/approval, then open the returned Page as the teacher in
 
 ## Updates, cleanup and limits
 
-The host installs a cached copy; editing this repository does not update an installed package. Regenerate into a new directory, update only this marketplace entry/source, and use the client's refresh/reinstall controls and restart. Retain the old source until the replacement is verified.
+The host installs a cached copy of the local bridge/package files. When those files change, regenerate into a new directory, update only this marketplace entry/source, and use the client's refresh/reinstall controls and restart. Retain the old source until the replacement is verified.
+
+Tool descriptions and schemas come from Moodle through MCP discovery; the generated local package contains no PHP tool definitions. For server-only description changes, restart/reconnect the MCP server and start a new conversation, then compare the exposed definitions with a fresh authenticated `tools/list` response. Rebuilding an unchanged bridge is not a tool-catalog refresh. Workspace-managed remote ChatGPT connections have a separate frozen approval snapshot and require the authorized owner's tool refresh/review; see the [catalog-refresh guide](../README.md#refresh-tool-definitions-after-updates). Do not claim the client received updated definitions until that client actually exposes them.
 
 Disconnect/uninstall only this plugin, remove only its marketplace registration, and have the authorized owner revoke the identified test Moodle connection. Delete only the output and isolated cache owned by the test. Shared marketplace files, other plugins and normal browser sessions must remain intact. Removing local files alone does not revoke Moodle access.
 

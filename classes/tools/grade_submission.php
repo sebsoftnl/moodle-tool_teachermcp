@@ -38,7 +38,7 @@ class grade_submission extends base_tool {
     }
 
     public function get_description(): string {
-        return 'View student assignment submissions and submit numeric/scale grades with feedback comments, marking workflow state, allocation, and optional feedback files.';
+        return 'View assignment submissions and stored feedback-file manifests; save numeric/scale grades, feedback and optional files. File requests require enabled feedback-file support and are validated before saving. Returned download URLs require native Moodle authorization.';
     }
 
     public function get_input_schema(): array {
@@ -91,7 +91,7 @@ class grade_submission extends base_tool {
                 ],
                 'feedback_files' => [
                     'type' => 'array',
-                    'description' => 'List of feedback files to attach to this grade submission. Each item: {filename: string, content_base64: string}.',
+                    'description' => 'Nonempty list replaces the feedback-file set for each targeted grade using Moodle\'s native file-manager behavior. Omit or pass [] to retain existing files. Requires enabled feedback files, unique safe filenames and valid base64 content within upload limits. Returns verified native file metadata and authenticated download URLs.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -164,6 +164,7 @@ class grade_submission extends base_tool {
                     'time_submitted' => ($submission && $submission->timemodified) ? (int)$submission->timemodified : null,
                     'time_submitted_iso' => ($submission && $submission->timemodified) ? date('c', $submission->timemodified) : null,
                     'current_grade' => ($grade && $grade->grade !== null && (float)$grade->grade >= 0) ? (float)$grade->grade : null,
+                    'feedback_files' => assignment_grading::feedback_manifest($assign, $grade),
                     'workflowstate' => $flags ? ($flags->workflowstate ?? null) : null,
                     'allocatedmarker' => $flags ? (int)($flags->allocatedmarker ?? 0) : 0,
                 ];
@@ -280,35 +281,20 @@ class grade_submission extends base_tool {
                 $gradedata->allocatedmarker = $allocatedmarker;
             }
 
+            $feedbackfiles = assignment_grading::validate_feedback_files($assign, $params['feedback_files'] ?? []);
+            $draftitemid = null;
             $transaction = $DB->start_delegated_transaction();
             try {
-                if (!empty($params['feedback_files']) && is_array($params['feedback_files'])) {
-                    $fileplugin = $assign->get_feedback_plugin_by_type('file');
-                    if ($fileplugin && $fileplugin->is_enabled() && $fileplugin->is_visible()) {
-                        $draftitemid = file_get_unused_draft_itemid();
-                        $fs = get_file_storage();
-                        $usercontext = context_user::instance($USER->id);
-
-                        foreach ($params['feedback_files'] as $fbfile) {
-                            $filename = clean_param($fbfile['filename'] ?? '', PARAM_FILE);
-                            $contentbase64 = $fbfile['content_base64'] ?? '';
-                            if (!empty($filename) && !empty($contentbase64)) {
-                                $decoded = base64_decode($contentbase64, true);
-                                if ($decoded !== false) {
-                                    $filerecord = [
-                                        'contextid' => $usercontext->id,
-                                        'component' => 'user',
-                                        'filearea' => 'draft',
-                                        'itemid' => $draftitemid,
-                                        'filepath' => '/',
-                                        'filename' => $filename,
-                                    ];
-                                    $fs->create_file_from_string($filerecord, $decoded);
-                                }
-                            }
-                        }
-                        $gradedata->files_filemanager = $draftitemid;
+                if ($feedbackfiles) {
+                    $draftitemid = file_get_unused_draft_itemid();
+                    foreach ($feedbackfiles as $filename => $bytes) {
+                        get_file_storage()->create_file_from_string([
+                            'contextid' => context_user::instance($USER->id)->id,
+                            'component' => 'user', 'filearea' => 'draft', 'itemid' => $draftitemid,
+                            'filepath' => '/', 'filename' => (string)$filename,
+                        ], $bytes);
                     }
+                    $gradedata->files_filemanager = $draftitemid;
                 }
 
                 if (!$assign->save_grade($studentid, $gradedata)) {
@@ -320,11 +306,19 @@ class grade_submission extends base_tool {
                     if (!$saved || (isset($params['grade']) && !grade_floats_equal($saved->grade, $gradeval))) {
                         throw new moodle_exception('error_grade_not_saved', 'tool_teachermcp');
                     }
+                    foreach ($feedbackfiles as $filename => $bytes) {
+                        $stored = get_file_storage()->get_file($context->id, 'assignfeedback_file',
+                            'feedback_files', $saved->id, '/', (string)$filename);
+                        if (!$stored || $stored->get_contenthash() !== sha1($bytes)) {
+                            throw new moodle_exception('error_feedback_files_not_saved', 'tool_teachermcp');
+                        }
+                    }
                     $bookgrade = $gradeitem ? \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $gradeuserid]) : false;
                     $outcomes[$gradeuserid] = [
                         'student_user_id' => $gradeuserid,
                         'attemptnumber' => (int)$saved->attemptnumber,
                         'grade_saved' => $saved->grade !== null && (float)$saved->grade >= 0 ? (float)$saved->grade : null,
+                        'feedback_files' => assignment_grading::feedback_manifest($assign, $saved),
                         'gradebook' => [
                             'grade_item_id' => $gradeitem ? (int)$gradeitem->id : null,
                             'finalgrade' => $bookgrade && $bookgrade->finalgrade !== null ? (float)$bookgrade->finalgrade : null,
@@ -349,6 +343,7 @@ class grade_submission extends base_tool {
                     'workflowstate' => $flags->workflowstate ?? null,
                     'gradebook' => $target['gradebook'],
                     'affected_students' => array_values($outcomes),
+                    'feedback_files' => $target['feedback_files'],
                 ];
                 foreach ($outcomes as $outcome) {
                     if ($outcome['gradebook']['overridden'] ||
@@ -356,6 +351,9 @@ class grade_submission extends base_tool {
                         $result['warning'] = get_string('warning_gradebook_differs', 'tool_teachermcp');
                         break;
                     }
+                }
+                if ($draftitemid !== null) {
+                    get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', $draftitemid);
                 }
                 $transaction->allow_commit();
                 return $result;

@@ -20,21 +20,21 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 1. `get_my_profile`: Teacher identity, system permissions, and environment info.
 2. `get_teacher_courses`: Courses where teacher is actively enrolled with teaching/grading rights.
 3. `get_course_contents`: Section tree, activity names, optional descriptions, and completion-tracking flags.
-4. `export_course_learning_material`: Export course learning material as structured Markdown for LLM ingestion.
+4. `export_course_learning_material`: Export teacher-accessible course material as Markdown or JSON, identifying hidden courses/sections/activities and configured availability restrictions. This is not an individual student's view.
 5. `read_activity_file`: Inspect attached source documents, get download links, and extract text (PDF, Word DOCX, PPTX, ODT, TXT, CSV).
 6. `upload_course_asset`: Upload PNG, JPEG, GIF or WebP images into course, Page or Book file areas for embedding.
 7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
-8. `manage_activity`: Inspect module settings; update Page names, descriptions, or visibility.
+8. `manage_activity`: Inspect basic module settings; update Page names/descriptions/visibility, or publish/unpublish Assignment, Quiz, H5P and Book using visibility-only updates. Other settings remain native Moodle actions.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
 10. `delete_activity`: Safely delete activities only after the required UI confirmation or short-lived preview `confirm_token`.
 11. `get_h5p_libraries`: Inspect installed H5P content types (e.g. Flashcards, Multiple Choice, True/False, Accordion), versions, and example parameters for selected types.
 12. `create_h5p_activity`: Build interactive H5P activities (e.g. Flashcards, Multiple Choice, Interactive Video) and Content Bank entries using installed content libraries and valid parameters.
 13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay, truefalse or numerical questions and course-section placement. Numerical answers support absolute tolerance and partial credit through Moodle's native grading.
 14. `create_assignment`: Create `mod_assign` activities with due/cutoff dates, submission settings (online text, file uploads, maximum file count), and optional rubric descriptions in the assignment instructions.
-15. `manage_question_bank`: Browse and manage permitted questions and categories in Moodle's Question Bank.
+15. `manage_question_bank`: List categories and browse/create/update/delete permitted questions or attach them to quizzes. There is no exposed category-creation action.
 16. `analyze_class_understanding`: Examine cohort performance (average, highest and lowest attempt scores), facility index, and question-level learning gaps on quizzes.
 17. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
-18. `grade_submission`: Submit numeric/scale grades and feedback comments (supporting individual and group grading).
+18. `grade_submission`: Submit numeric/scale grades, comments and validated feedback files for individuals or groups; return persisted grading outcomes and native feedback-file manifests. Disabled file support or invalid attachments reject the request before saving.
 19. `manage_grades`: Inspect gradebook items and update individual student grade entries.
 20. `get_group_students`: List students belonging to course groups where teacher has access.
 21. `manage_course_completion`: Inspect course completion criteria and individual student completion progress.
@@ -165,6 +165,16 @@ The remote connection is separate from the local desktop package above. Follow [
 Explicit invalid/expired credentials return401; valid-user capability denial returns403; throttling returns429 with `Retry-After`. Tool-level denials can be HTTP200 with `result.isError=true`, so inspect the JSON-RPC result rather than HTTP status alone.
 
 In OAuth mode, an explicit invalid/expired credential rejection removes only that endpoint's cached credential and closes the bridge with a correlated error and nonzero exit. Restart once for fresh authorization. Requests are not replayed automatically. Permission/throttle/server errors and ambiguous legacy401 responses do not automatically erase valid cache entries. After an uncertain write outcome, inspect Moodle before issuing another write.
+
+### Refresh tool definitions after updates
+
+Working tool calls do not prove that an existing AI conversation has current descriptions or input schemas. Compare a fresh authenticated MCP `tools/list` response with the definitions exposed to the client.
+
+- For workspace-managed ChatGPT remote connections, an authorized owner/admin must refresh the tool list in the connection's workspace app settings, review the definition changes, and approve/publish the update where required. OpenAI documents a frozen approval snapshot: server changes are not automatically applied. A new conversation alone does not replace that approval step.
+- For a locally configured MCP server, use the client's server restart/reconnect controls and start a new conversation to trigger fresh discovery. Update the local package only if its bridge or manifest changed; a PHP description change on Moodle does not by itself require rebuilding it.
+- Verify that `manage_activity` describes non-Page visibility-only updates, `grade_submission.feedback_files` explains replacement versus omission/empty-list preservation, and `create_h5p_activity` requires caller-supplied valid parameters rather than promising fully functioning generated content.
+
+If the client still shows old definitions while fresh `tools/list` is current, retain both sanitized catalog snapshots and investigate the client/registration layer. Do not clear browser data, delete credential stores, disable authentication or replace unrelated connections. See [OpenAI's tool-refresh and approval guidance](https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt).
 
 ## Compatibility and Current Limits
 

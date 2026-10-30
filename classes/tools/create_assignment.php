@@ -37,7 +37,7 @@ class create_assignment extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Create a Moodle Assignment (mod_assign) in a course section with due dates, submission settings, and optional grading rubric. At least one submission type must be enabled; offline/oral assignments are not currently supported.';
+        return 'Create a Moodle Assignment (mod_assign) with due dates, submission settings, and optional rubric descriptors in its introduction, not a native advanced-grading rubric. At least one submission type must be enabled; offline/oral assignments are not currently supported.';
     }
 
     public function get_input_schema(): array {

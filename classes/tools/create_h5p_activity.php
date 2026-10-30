@@ -38,7 +38,7 @@ class create_h5p_activity extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Builds, packages, and deploys fully functioning H5P interactive learning content (e.g. Multiple Choice, Flashcards, Accordion, True/False, Interactive Questionnaires) into Moodle courses as mod_h5pactivity and stores it in the Moodle Content Bank. Generates compliant h5p.json and content.json automatically based on installed site libraries.';
+        return 'Package caller-supplied H5P content parameters for an installed, enabled library into a Moodle H5P activity and/or Content Bank entry. The library dependencies and valid content parameters are required. Activities are hidden by default; verify playback before publishing. Packaging success does not certify every interaction or content type.';
     }
 
     public function get_input_schema(): array {
@@ -59,7 +59,7 @@ class create_h5p_activity extends base_tool {
                 ],
                 'params' => [
                     'type' => 'object',
-                    'description' => 'The JSON parameters object defining the interactive content (questions, answers, cards, feedback, behaviour).',
+                    'description' => 'Caller-supplied content JSON matching the selected installed H5P library, including its required questions, answers, labels and behaviour. The tool packages these parameters; it does not generate missing content or guarantee correct playback.',
                 ],
                 'section_number' => [
                     'type' => 'integer',

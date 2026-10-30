@@ -24,6 +24,24 @@ use tool_teachermcp\tools\get_h5p_libraries;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class h5p_workflows_test extends \advanced_testcase {
+    public function test_h5p_filter_miss_is_not_reported_as_an_empty_inventory(): void {
+        [$course, $teacher] = $this->fixture(false);
+        $tool = new get_h5p_libraries();
+        $empty = $tool->execute(['course_id' => (int)$course->id]);
+        $this->assertSame(0, $empty['total_installed_types']);
+        $this->assertStringContainsString('H5P libraries', $empty['usage_guide']);
+        $this->setAdminUser();
+        fixtures::install();
+        $this->setUser($teacher);
+        $match = $tool->execute(['course_id' => (int)$course->id, 'library_filter' => 'Blanks']);
+        $this->assertSame(1, $match['total_installed_types']);
+        $miss = $tool->execute(['course_id' => (int)$course->id, 'library_filter' => 'NotInstalled']);
+        $this->assertSame([], $miss['libraries']);
+        $this->assertSame(0, $miss['total_installed_types']);
+        $this->assertStringContainsString('match this filter', $miss['usage_guide']);
+        $this->assertStringNotContainsString('No runnable H5P libraries are installed', $miss['usage_guide']);
+    }
+
     public function test_empty_and_seeded_inventory_use_native_local_libraries(): void {
         [$course, $teacher] = $this->fixture(false);
         $tool = new get_h5p_libraries();

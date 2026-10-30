@@ -40,7 +40,7 @@ class manage_question_bank extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Manage Question Bank: list/create categories, list/get/create/update/delete questions, and attach questions to quizzes (Moodle 4.0+ schema). Updates create a new version and return its new question_id; use that ID for subsequent edits.';
+        return 'Manage Question Bank: list categories; list/get/create/update/delete questions; and attach questions to quizzes (Moodle 4.0+ schema). Category creation is not an exposed action. Updates create a new version and return its new question_id; use that ID for subsequent edits.';
     }
 
     public function get_input_schema(): array {

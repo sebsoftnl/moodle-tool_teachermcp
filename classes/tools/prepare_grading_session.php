@@ -35,7 +35,7 @@ class prepare_grading_session extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Prepare a grading session for an assignment: extracts submitted student texts, file manifests, assignment criteria, and prior course standing for AI-assisted rubric evaluation.';
+        return 'Prepare a grading session for an assignment: retrieve submitted student text, submission-file metadata, assignment instructions, existing grades, and configured native rubric criteria. This does not create rubrics or retrieve overall course standing.';
     }
 
     public function get_input_schema(): array {
