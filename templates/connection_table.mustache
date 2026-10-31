@@ -1,0 +1,40 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+
+    @template tool_teachermcp/connection_table
+    Shared teacher connection rows for active access and inactive history.
+}}
+<div class="table-responsive" tabindex="0">
+    <table class="table table-hover table-striped mb-0 small tool_teachermcp_connections">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}}agent_name, tool_teachermcp{{/str}}</th>
+                <th scope="col">{{#str}}lastaccess, tool_teachermcp{{/str}}</th>
+                <th scope="col">{{#str}}status, tool_teachermcp{{/str}}</th>
+                {{#show_actions}}<th scope="col" class="text-right text-end">{{#str}}actions, tool_teachermcp{{/str}}</th>{{/show_actions}}
+            </tr>
+        </thead>
+        <tbody>
+            {{#tokens}}
+            <tr data-token-id="{{id}}">
+                <td class="align-middle">
+                    <div class="font-weight-bold">{{name}}</div>
+                    <code class="tool_teachermcp_token_suffix">...{{lastchars}}</code>
+                </td>
+                <td class="align-middle text-muted">{{lastaccess}}</td>
+                <td class="align-middle">
+                    <span class="badge {{#status_active}}badge-success{{/status_active}}{{^status_active}}badge-secondary{{/status_active}}">{{status_label}}</span>
+                </td>
+                {{#show_actions}}<td class="align-middle text-right text-end">
+                    {{#status_active}}
+                    <a href="{{revokelink}}" class="btn btn-outline-danger btn-sm" aria-label="{{#str}}revoke, tool_teachermcp{{/str}}: {{name}}" onclick="return confirm('{{#str}}confirm_revoke, tool_teachermcp{{/str}}');">
+                        <i class="fa fa-ban" aria-hidden="true"></i> {{#str}}btn_revoke, tool_teachermcp{{/str}}
+                    </a>
+                    {{/status_active}}
+                </td>{{/show_actions}}
+            </tr>
+            {{/tokens}}
+        </tbody>
+    </table>
+</div>

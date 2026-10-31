@@ -75,7 +75,7 @@ final class resource_registry {
             [
                 'uriTemplate' => 'moodle://activity/{cmid}/rubric',
                 'name' => 'Activity Grading Rubric',
-                'description' => 'Grading rubric criteria, level definitions, and score allocations.',
+                'description' => 'Existing grading method and rubric title/description. Use prepare_grading_session for full criteria.',
                 'mimeType' => 'application/json',
             ],
         ];

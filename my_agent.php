@@ -35,13 +35,23 @@ if (!\tool_teachermcp\auth::user_can_connect($USER->id)) {
 
 $systemcontext = context_system::instance();
 
-$courseid = optional_param('courseid', 0, PARAM_INT);
+$requestedcourseid = optional_param('courseid', 0, PARAM_INT);
+$coursecontext = \tool_teachermcp\local\dashboard_courses::get($requestedcourseid);
+$selectedcourse = $coursecontext['selected'];
+$courseid = $selectedcourse['id'] ?? 0;
+$client = optional_param('client', 'claude', PARAM_ALPHA);
+if (!in_array($client, ['claude', 'chatgpt'], true)) {
+    $client = 'claude';
+}
 $action = optional_param('action', '', PARAM_ALPHA);
 $tokenid = optional_param('tokenid', 0, PARAM_INT);
 
 $pageurl = new moodle_url('/admin/tool/teachermcp/my_agent.php');
 if ($courseid) {
     $pageurl->param('courseid', $courseid);
+}
+if ($client === 'chatgpt') {
+    $pageurl->param('client', $client);
 }
 
 $PAGE->set_url($pageurl);
@@ -119,23 +129,31 @@ if ($action === 'create' && confirm_sesskey()) {
     redirect($pageurl);
 }
 
-// Fetch active tokens.
 $tokens = \tool_teachermcp\auth::get_user_tokens($USER->id);
 $tokenlist = [];
+$historylist = [];
+$now = time();
 $sampletoken = $newtoken ?: 'YOUR_BEARER_TOKEN_HERE';
 
 foreach ($tokens as $t) {
-    $tokenlist[] = [
+    $active = \tool_teachermcp\local\token_history::is_active($t, $now);
+    $connection = [
         'id' => (int)$t->id,
         'name' => $t->name,
         'lastchars' => $t->tokenlastchars,
-        'status_active' => ($t->status == 1),
+        'status_active' => $active,
+        'status_label' => get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
         'lastaccess' => $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
         'validuntil' => $t->timeexpires ? userdate($t->timeexpires) : get_string('never', 'tool_teachermcp'),
         'revokelink' => (new moodle_url($pageurl, [
             'action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey(),
         ]))->out(false),
     ];
+    if ($active) {
+        $tokenlist[] = $connection;
+    } else {
+        $historylist[] = $connection;
+    }
 }
 
 $endpointurl = $CFG->wwwroot . '/admin/tool/teachermcp/endpoint.php';
@@ -187,27 +205,18 @@ $codexcursorconfig = json_encode([
 
 $oauthmetadata = \tool_teachermcp\oauth_server::get_metadata();
 
-// Teacher courses for contextualized prompt samples.
-$usercourses = enrol_get_all_users_courses($USER->id, true);
 $courseoptions = [];
-$firstcourseid = $courseid ?: 0;
-$firstcoursename = get_string('course');
-
-foreach ($usercourses as $uc) {
-    if (!$firstcourseid) {
-        $firstcourseid = (int)$uc->id;
-        $firstcoursename = $uc->fullname;
-    }
+foreach ($coursecontext['courses'] as $course) {
     $courseoptions[] = [
-        'id' => (int)$uc->id,
-        'fullname' => $uc->fullname,
-        'selected' => ($courseid && (int)$uc->id === (int)$courseid),
+        'id' => $course['id'],
+        'fullname' => $course['fullname'],
+        'selected' => $course['id'] === $courseid,
     ];
 }
 
 $prompta = (object)[
-    'courseid' => $firstcourseid,
-    'coursename' => $firstcoursename,
+    'courseid' => $courseid,
+    'coursename' => $selectedcourse['fullname'] ?? '',
 ];
 
 $server = new \tool_teachermcp\server();
@@ -224,140 +233,33 @@ foreach (\tool_teachermcp\server::get_grantable_external_tool_names() as $extern
     ];
 }
 
-$promptlibrary = [
-    [
-        'category' => get_string('prompt_cat_content', 'tool_teachermcp'),
-        'icon' => 'fa-file-alt',
-        'badge' => get_string('prompt_badge_content', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_page_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_page_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_page_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_book_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_book_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_book_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_image_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_image_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_image_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_h5p', 'tool_teachermcp'),
-        'icon' => 'fa-cubes',
-        'badge' => get_string('prompt_badge_h5p', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_h5p_inspect_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_h5p_inspect_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_h5p_inspect_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_h5p_flashcards_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_h5p_flashcards_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_h5p_flashcards_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_h5p_quiz_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_h5p_quiz_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_h5p_quiz_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_context', 'tool_teachermcp'),
-        'icon' => 'fa-brain',
-        'badge' => get_string('prompt_badge_context', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_ingest_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_ingest_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_ingest_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_files_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_files_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_files_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_assessment', 'tool_teachermcp'),
-        'icon' => 'fa-tasks',
-        'badge' => get_string('prompt_badge_assessment', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_scaffold_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_scaffold_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_scaffold_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_assignment_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_assignment_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_assignment_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-
-    [
-        'category' => get_string('prompt_cat_calendar', 'tool_teachermcp'),
-        'icon' => 'fa-calendar-alt',
-        'badge' => get_string('prompt_badge_calendar', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_calendar_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_calendar_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_calendar_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_analytics', 'tool_teachermcp'),
-        'icon' => 'fa-user-shield',
-        'badge' => get_string('prompt_badge_analytics', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_atrisk_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_atrisk_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_atrisk_text', 'tool_teachermcp', $prompta),
-            ],
-            [
-                'title' => get_string('prompt_analytics_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_analytics_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_analytics_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_grading', 'tool_teachermcp'),
-        'icon' => 'fa-pencil-ruler',
-        'badge' => get_string('prompt_badge_grading', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_grading_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_grading_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_grading_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-    [
-        'category' => get_string('prompt_cat_maintenance', 'tool_teachermcp'),
-        'icon' => 'fa-exclamation-triangle',
-        'badge' => get_string('prompt_badge_maintenance', 'tool_teachermcp'),
-        'items' => [
-            [
-                'title' => get_string('prompt_delete_title', 'tool_teachermcp'),
-                'description' => get_string('prompt_delete_desc', 'tool_teachermcp'),
-                'prompt' => get_string('prompt_delete_text', 'tool_teachermcp', $prompta),
-            ],
-        ],
-    ],
-];
+$promptlibrary = [];
+if ($selectedcourse !== null) {
+    foreach ([
+        'context' => ['ingest', 'files'],
+        'content' => ['page', 'book', 'image'],
+        'assessment' => ['scaffold', 'assignment'],
+        'h5p' => ['h5p_inspect', 'h5p_flashcards', 'h5p_quiz'],
+        'analytics' => ['atrisk', 'analytics'],
+        'grading' => ['grading'],
+        'calendar' => ['calendar'],
+        'maintenance' => ['delete'],
+    ] as $category => $names) {
+        $items = [];
+        foreach ($names as $name) {
+            $items[] = [
+                'id' => 'prompt-' . $name,
+                'title' => get_string('prompt_' . $name . '_title', 'tool_teachermcp'),
+                'description' => get_string('prompt_' . $name . '_desc', 'tool_teachermcp'),
+                'prompt' => get_string('prompt_' . $name . '_text', 'tool_teachermcp', $prompta),
+            ];
+        }
+        $promptlibrary[] = ['category' => get_string('prompt_cat_' . $category, 'tool_teachermcp'),
+            'id' => 'prompts-' . $category, 'items' => $items, 'count' => count($items)];
+    }
+}
+$courseformurl = new moodle_url('/admin/tool/teachermcp/my_agent.php');
+$courseformurl->set_anchor('teacher-prompts');
 
 $downloadskillurl = (new moodle_url('/admin/tool/teachermcp/download.php', ['type' => 'skill']))->out(false);
 $agentsmdpath = __DIR__ . '/AGENTS.md';
@@ -367,12 +269,26 @@ echo $OUTPUT->header();
 
 $templatedata = [
     'validity_options' => array_values($validityoptions),
+    'selected_client' => $client,
+    'client_claude' => $client === 'claude',
+    'client_chatgpt' => $client === 'chatgpt',
+    'manual_open' => $action === 'create',
+    'manual_form_url' => $pageurl->out(false),
+    'agent_name_placeholder' => get_string('agent_name_help', 'tool_teachermcp'),
+    'course_form_url' => $courseformurl->out(false),
+    'selected_course' => $selectedcourse,
+    'invalid_course' => $requestedcourseid !== 0 && $selectedcourse === null,
+    'connection_check_prompt' => get_string('connection_check_prompt', 'tool_teachermcp'),
     'endpoint_url' => $endpointurl,
     'download_bridge_url' => $downloadbridgeurl,
     'download_skill_url' => $downloadskillurl,
     'system_prompt_content' => $systempromptcontent,
     'has_tokens' => !empty($tokenlist),
     'tokens' => $tokenlist,
+    'show_actions' => true,
+    'history' => $historylist ? ['tokens' => $historylist, 'count' => count($historylist), 'show_actions' => false] : null,
+    'clear_history_url' => (new moodle_url('/admin/tool/teachermcp/clear_history.php',
+        $courseid ? ['courseid' => $courseid] : []))->out(false),
     'sesskey' => sesskey(),
     'new_token' => $newtoken,
     'config_claude_oauth' => $claudedesktopoauthconfig,

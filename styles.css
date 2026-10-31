@@ -58,6 +58,29 @@
     gap: 0.5rem;
 }
 
+#page-admin-setting-tool_teachermcp .tool_teachermcp_integer,
+#page-admin-setting-tool_teachermcp_advanced .tool_teachermcp_integer {
+    width: 14ch;
+    max-width: 100%;
+}
+
+#page-admin-setting-tool_teachermcp .form-shortname,
+#page-admin-setting-tool_teachermcp_advanced .form-shortname {
+    overflow-wrap: anywhere;
+}
+
+.tool_teachermcp_history > summary {
+    cursor: pointer;
+}
+
+.tool_teachermcp_dashboard .tool_teachermcp_connections .btn {
+    white-space: nowrap;
+}
+
+.tool_teachermcp_connections td:first-child {
+    overflow-wrap: anywhere;
+}
+
 .tool_teachermcp_setup .tab-pane > p,
 .tool_teachermcp_setup .tab-pane > ol,
 .tool_teachermcp_prompt_text {
@@ -67,6 +90,36 @@
 
 .tool_teachermcp_prompt_text {
     overflow-wrap: anywhere;
+    max-width: 75ch;
+}
+
+.tool_teachermcp_dashboard > section,
+.tool_teachermcp_dashboard > details {
+    scroll-margin-top: 6rem;
+}
+
+.tool_teachermcp_dashboard summary {
+    cursor: pointer;
+}
+
+.tool_teachermcp_dashboard p,
+.tool_teachermcp_setup ol {
+    max-width: 75ch;
+}
+
+.tool_teachermcp_dashboard .tool_teachermcp_course_select {
+    flex: 1 1 20rem;
+    width: auto;
+    max-width: 40rem;
+}
+
+#manual-token form {
+    max-width: 40rem;
+}
+
+.tool_teachermcp_guide_preview {
+    max-height: 24rem;
+    overflow-y: auto;
 }
 
 @media (max-width: 767.98px) {
@@ -74,7 +127,8 @@
         background-color: var(--bs-nav-tabs-link-active-bg, var(--blue));
     }
 
-    #page-admin-setting-tool_teachermcp #adminsettings .row {
+    #page-admin-setting-tool_teachermcp #adminsettings .row,
+    #page-admin-setting-tool_teachermcp_advanced #adminsettings .row {
         margin-inline: 0;
     }
 }

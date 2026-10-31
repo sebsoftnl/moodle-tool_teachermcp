@@ -128,8 +128,10 @@ Provider contract, security obligations, and enablement requirements are documen
 
 ## 🛠️ Connecting AI Clients
 
+For ordinary Claude or ChatGPT remote connections, start with **Connect** on the teacher dashboard (`/admin/tool/teachermcp/my_agent.php`); no manually generated token or local bridge is needed. **Use with a course** supplies course-aware prompt examples, and **Manage connections** provides revocation and inactive-history cleanup. Alternative client configuration is under **Other connection methods**; resource details and the optional usage guide are under **Technical reference**.
+
 ### Option 1: Claude Desktop (OAuth 2.0 PKCE via the local bridge)
-Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add the following to `claude_desktop_config.json`. Replace the example script path with its actual absolute path. The bridge uses the pre-registered `claude-desktop` client and opens Moodle's consent page in your browser. Dynamic OAuth client registration does not need to be enabled for this flow; that setting controls registration of new clients.
+For the local Claude Desktop bridge, download `mcp-bridge.mjs` from **Other connection methods > Local bridge**, save it locally, and add the following to `claude_desktop_config.json`. Replace the example script path with its actual absolute path. The bridge uses the pre-registered `claude-desktop` client and opens Moodle's consent page in your browser. Dynamic OAuth client registration does not need to be enabled for this flow; that setting controls registration of new clients.
 ```json
 {
   "mcpServers": {
@@ -146,8 +148,8 @@ Download `mcp-bridge.mjs` from the teacher dashboard, save it locally, and add t
 ```
 
 ### Option 2: Codex / Cursor / HTTP Clients (Bearer Token)
-1. Go to **User Profile > AI Agent (MCP)** (`/admin/tool/teachermcp/my_agent.php`).
-2. Generate a new agent connection and copy the secret token.
+1. Open the **Teacher AI assistant** dashboard (`/admin/tool/teachermcp/my_agent.php`).
+2. Expand **Other connection methods > Generate New Agent Connection**, choose the required permissions, generate the connection and copy its secret token.
 3. In a client that supports manual bearer authentication, configure:
    - Endpoint: `https://your-moodle.example.com/admin/tool/teachermcp/endpoint.php`
    - Header: `Authorization: Bearer <your_token>`

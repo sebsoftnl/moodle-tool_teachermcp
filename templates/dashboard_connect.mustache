@@ -1,0 +1,73 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+    @template tool_teachermcp/dashboard_connect
+}}
+<section id="teacher-connect" class="tool_teachermcp_setup mb-4">
+    <h2 class="h4">{{#str}}how_to_connect, tool_teachermcp{{/str}}</h2>
+    <p>{{#str}}remote_app_intro, tool_teachermcp{{/str}}</p>
+    <div class="bg-light rounded p-3 mb-3">
+        <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions mb-2">
+            <span class="font-weight-bold">{{#str}}endpoint_url, tool_teachermcp{{/str}}</span>
+            <button type="button" class="btn btn-sm btn-primary" data-copy-target="endpointDisplay" aria-label="{{#str}}copy_endpoint, tool_teachermcp{{/str}}">{{#str}}copy, tool_teachermcp{{/str}}</button>
+        </div>
+        <code id="endpointDisplay" class="d-block text-body">{{endpoint_url}}</code>
+    </div>
+    <ul class="nav nav-tabs mb-3" id="agentTabs" role="tablist">
+        <li class="nav-item"><a class="nav-link {{#client_claude}}active{{/client_claude}}" id="claude-tab" data-client="claude" data-toggle="tab" data-bs-toggle="tab" href="#claude" role="tab" aria-controls="claude" aria-selected="{{#client_claude}}true{{/client_claude}}{{^client_claude}}false{{/client_claude}}">{{#str}}tab_claude, tool_teachermcp{{/str}}</a></li>
+        <li class="nav-item"><a class="nav-link {{#client_chatgpt}}active{{/client_chatgpt}}" id="chatgpt-tab" data-client="chatgpt" data-toggle="tab" data-bs-toggle="tab" href="#chatgpt" role="tab" aria-controls="chatgpt" aria-selected="{{#client_chatgpt}}true{{/client_chatgpt}}{{^client_chatgpt}}false{{/client_chatgpt}}">{{#str}}tab_chatgpt, tool_teachermcp{{/str}}</a></li>
+    </ul>
+    <div class="tab-content" id="agentTabContent">
+        <div class="tab-pane fade {{#client_claude}}show active{{/client_claude}}" id="claude" role="tabpanel" aria-labelledby="claude-tab">
+            <div class="tool_teachermcp_actions d-flex flex-wrap mb-2">
+                <a href="https://claude.ai/customize/connectors" target="_blank" rel="noopener noreferrer" class="btn btn-primary">{{#str}}open_claude_connectors, tool_teachermcp{{/str}}</a>
+                <a href="claude://claude.ai/new" class="btn btn-outline-secondary" aria-describedby="claudeAppHelp">{{#str}}open_claude_app, tool_teachermcp{{/str}}</a>
+            </div>
+            <p id="claudeAppHelp" class="text-muted">{{#str}}claude_app_link_help, tool_teachermcp{{/str}}</p>
+            <ol class="pl-3 ps-3">
+                <li class="mb-2">{{#str}}claude_app_step1, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}claude_app_step2, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}claude_app_step3, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}claude_app_step4, tool_teachermcp{{/str}}</li>
+                <li>{{#str}}claude_app_step5, tool_teachermcp{{/str}}</li>
+            </ol>
+            <details class="mb-3">
+                <summary>{{#str}}workspace_setup, tool_teachermcp{{/str}}</summary>
+                <p class="mt-2">{{#str}}claude_app_workspace, tool_teachermcp{{/str}}</p>
+                <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
+            </details>
+        </div>
+        <div class="tab-pane fade {{#client_chatgpt}}show active{{/client_chatgpt}}" id="chatgpt" role="tabpanel" aria-labelledby="chatgpt-tab">
+            <div class="tool_teachermcp_actions d-flex flex-wrap mb-2">
+                <a href="https://chatgpt.com/plugins" target="_blank" rel="noopener noreferrer" class="btn btn-primary">{{#str}}open_chatgpt_plugins, tool_teachermcp{{/str}}</a>
+                <a href="codex://threads/new" class="btn btn-outline-secondary" aria-describedby="chatgptAppHelp">{{#str}}open_chatgpt_app, tool_teachermcp{{/str}}</a>
+            </div>
+            <p id="chatgptAppHelp" class="text-muted">{{#str}}chatgpt_app_link_help, tool_teachermcp{{/str}}</p>
+            <ol class="pl-3 ps-3">
+                <li class="mb-2">{{#str}}chatgpt_step1, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}chatgpt_step2, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}chatgpt_step3, tool_teachermcp{{/str}}</li>
+                <li class="mb-2">{{#str}}chatgpt_step4, tool_teachermcp{{/str}}</li>
+                <li>{{#str}}chatgpt_step5, tool_teachermcp{{/str}}</li>
+            </ol>
+            <details class="mb-3">
+                <summary>{{#str}}workspace_setup, tool_teachermcp{{/str}}</summary>
+                <p class="mt-2">{{#str}}chatgpt_remote_access, tool_teachermcp{{/str}}</p>
+                <a href="https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
+            </details>
+        </div>
+    </div>
+    <button type="button" class="btn btn-primary mb-2" data-copy-target="connectionCheckPrompt">{{#str}}copy_connection_check, tool_teachermcp{{/str}}</button>
+    <details class="mb-3">
+        <summary>{{#str}}preview_connection_check, tool_teachermcp{{/str}}</summary>
+        <p id="connectionCheckPrompt" class="mt-2 tool_teachermcp_prompt_text">{{connection_check_prompt}}</p>
+    </details>
+    <details id="connection-help">
+        <summary>{{#str}}connection_help, tool_teachermcp{{/str}}</summary>
+        <p class="mt-2">{{#str}}remote_app_requirements, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}remote_app_cached, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}connection_refresh_help, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}connection_expiry_help, tool_teachermcp{{/str}}</p>
+    </details>
+    {{> tool_teachermcp/dashboard_other_methods}}
+</section>
