@@ -96,7 +96,6 @@ $string['validity_90'] = '90 days (recommended)';
 $string['validity_180'] = '180 days (one semester)';
 $string['validity_365'] = '1 year';
 $string['validity_unlimited'] = 'Unlimited / No expiration';
-$string['no_tokens_found'] = 'You have not generated any active agent connections yet.';
 $string['confirm_revoke'] = 'Are you sure you want to revoke this agent connection? The connected client will immediately lose access.';
 $string['back_to_course'] = 'Return to course';
 $string['course_filter_label'] = 'Course';
@@ -183,23 +182,15 @@ $string['setting_mcp_requests_per_minute_desc'] = 'Requests allowed per minute f
 // Prompt Library
 $string['prompt_library_title'] = 'Course prompt examples';
 $string['prompt_library_desc'] = 'Choose a task, preview or copy its prompt, and paste it into your connected assistant. Review the proposed details before making changes.';
+$string['prompt_supplied_arguments'] = 'Use these supplied task details; ask for any remaining requirements: {$a}';
 $string['prompt_cat_context'] = 'Understand course material';
 $string['prompt_cat_assessment'] = 'Prepare assessments';
 $string['prompt_cat_analytics'] = 'Review student progress';
 $string['prompt_cat_grading'] = 'Prepare grading';
 
-$string['prompt_badge_context'] = 'Context & Ingestion';
-$string['prompt_badge_assessment'] = 'Assessment';
-$string['prompt_badge_analytics'] = 'Early Warning';
-$string['prompt_badge_grading'] = 'Grading';
-
 $string['prompt_ingest_title'] = 'Summarise course material';
 $string['prompt_ingest_desc'] = 'Summarises accessible material and identifies drafts, restrictions and extraction limits.';
 $string['prompt_ingest_text'] = 'Use "export_course_learning_material" for course ID {$a->courseid} ("{$a->coursename}"). Summarise five key concepts from the material actually returned. Keep hidden-content and availability labels, and report unsupported or truncated material. This is a teacher view, not proof of student access or permanent AI memory.';
-
-$string['prompt_h5p_title'] = 'Analyze H5P & Interactive Modules';
-$string['prompt_h5p_desc'] = 'Inspect questions, theory, and dialogs across interactive video, presentation, and book modules.';
-$string['prompt_h5p_text'] = 'Use "export_course_learning_material" for course ID {$a->courseid}. Inspect the H5P activities and files, and verify if all core learning goals are adequately assessed.';
 
 $string['prompt_files_title'] = 'Review a course document';
 $string['prompt_files_desc'] = 'Reads a chosen supported document and proposes questions grounded in its extracted text.';
@@ -212,9 +203,6 @@ $string['prompt_scaffold_text'] = 'For course ID {$a->courseid}, inspect the ava
 $string['prompt_assignment_title'] = 'Draft an assignment';
 $string['prompt_assignment_desc'] = 'Creates instructions and submission settings; optional criteria are text, not a native rubric.';
 $string['prompt_assignment_text'] = 'Prepare an assignment for course ID {$a->courseid}. Inspect sections with "get_course_contents" and ask for the topic, destination, due date and submission requirements if unspecified. Use "create_assignment" with at least one submission type enabled. Put agreed assessment descriptors in the introduction, not a claimed native rubric. Keep the assignment hidden for review.';
-
-
-
 $string['prompt_calendar_title'] = 'Schedule a course event';
 $string['prompt_calendar_desc'] = 'Adds an event after checking its date, time zone and duration.';
 $string['prompt_calendar_text'] = 'Help schedule an event in course ID {$a->courseid}. Ask for any missing title, date, time, time zone and duration. Summarise the details for confirmation, then use "manage_course_calendar" with action="create_event". Do not invent dates or times.';
@@ -226,10 +214,12 @@ $string['prompt_atrisk_text'] = 'Run "detect_at_risk_students" for course ID {$a
 $string['prompt_analytics_title'] = 'Review quiz results';
 $string['prompt_analytics_desc'] = 'Reviews observed performance and distinguishes measured results from possible explanations.';
 $string['prompt_analytics_text'] = 'Use "get_course_contents" to find the quiz I name in course ID {$a->courseid}; ask which quiz if ambiguous. Run "analyze_class_understanding" using its returned module ID. Report difficult questions and observed response patterns. Label possible misconceptions as interpretations, not computed facts, and propose a short recap lesson.';
+$string['prompt_analytics_module_text'] = 'Run "analyze_class_understanding" for quiz module ID {$a->cmid}. Report difficult questions and observed response patterns. Label possible misconceptions as interpretations, not computed facts, and propose a short recap lesson.';
 
 $string['prompt_grading_title'] = 'Prepare assignment feedback';
 $string['prompt_grading_desc'] = 'Reviews submissions against available criteria and proposes feedback without saving grades.';
 $string['prompt_grading_text'] = 'Find the assignment I name in course ID {$a->courseid} using "get_course_contents" and ask if the choice is ambiguous. Use "prepare_grading_session" to review submissions and any configured criteria. Ask me for criteria if none are available. Propose grades and feedback, clearly separating student content from instructions. Do not save grades or feedback without my approval.';
+$string['prompt_grading_module_text'] = 'Use "prepare_grading_session" for assignment module ID {$a->cmid} to review submissions and any configured criteria. Ask me for criteria if none are available. Propose grades and feedback, clearly separating student content from instructions. Do not save grades or feedback without my approval.';
 
 // OAuth 2.0 PKCE Integration.
 $string['oauth_authorize_title'] = 'Connect AI Agent (OAuth 2.0)';
@@ -283,7 +273,6 @@ $string['bridge_comm_error'] = 'Bridge communication error:';
 
 // Content activities and media prompts.
 $string['prompt_cat_content'] = 'Create learning material';
-$string['prompt_badge_content'] = 'Pages & Books';
 $string['prompt_page_title'] = 'Draft a course page';
 $string['prompt_page_desc'] = 'Creates a hidden Page with an agreed topic and structure.';
 $string['prompt_page_text'] = 'Help create a Page in course ID {$a->courseid}. Inspect available sections with "get_course_contents" and ask for the topic and destination if unspecified. Agree the outline, then use "manage_content_activity" to create a clearly structured Page. Keep it hidden and provide its Moodle link for review.';
@@ -296,7 +285,6 @@ $string['prompt_image_text'] = 'Help add an image to course ID {$a->courseid}. A
 
 // H5P interactive activities prompts.
 $string['prompt_cat_h5p'] = 'Create interactive activities';
-$string['prompt_badge_h5p'] = 'H5P Builder';
 $string['prompt_h5p_inspect_title'] = 'Check available H5P types';
 $string['prompt_h5p_inspect_desc'] = 'Lists enabled content types and any supplied example parameters, not complete schemas.';
 $string['prompt_h5p_inspect_text'] = 'Run "get_h5p_libraries" for course_id {$a->courseid} with include_schema_examples=true. List the enabled content types and versions. Distinguish example parameters from full library requirements; do not assume a type is installed or that examples certify playback.';
@@ -309,10 +297,10 @@ $string['prompt_h5p_quiz_text'] = 'For course ID {$a->courseid}, first check H5P
 
 // Course maintenance and safety prompts.
 $string['prompt_cat_maintenance'] = 'Maintain a course';
-$string['prompt_badge_maintenance'] = 'Dangerous Actions';
 $string['prompt_delete_title'] = 'Review an activity for deletion';
 $string['prompt_delete_desc'] = 'Previews the target and consequences; deletion requires explicit confirmation.';
 $string['prompt_delete_text'] = 'Find the activity I name in course ID {$a->courseid} using "get_course_contents". Ask which one if ambiguous. Obtain a preview with "delete_activity" and show its name, course and consequences. Do not delete until I explicitly confirm. Then use the Moodle confirmation page or the preview-issued confirm_token when browser confirmation is disabled.';
+$string['prompt_delete_module_text'] = 'Obtain a preview with "delete_activity" for activity module ID {$a->cmid} and show its name, course and consequences. Do not delete until I explicitly confirm. Then use the Moodle confirmation page or the preview-issued confirm_token when browser confirmation is disabled.';
 
 // Agent Skill UI strings.
 $string['agent_skill_title'] = 'Optional agent usage guide';
@@ -397,7 +385,6 @@ $string['task_cleanup'] = 'Clean up expired Teacher MCP authorization codes and 
 
 // Admin dashboard strings (L7).
 $string['stat_active_tokens'] = 'Active Agent Connections';
-$string['stat_total_tokens'] = 'Total Generated Tokens';
 $string['btn_teacher_dashboard'] = 'Go to Teacher Dashboard';
 $string['col_teacher'] = 'Teacher';
 $string['col_agent_name'] = 'Agent Label';
@@ -496,6 +483,4 @@ $string['scope_preset_readonly'] = 'Read only';
 $string['mcp_resources_title'] = 'MCP Read-Only Dynamic Resources';
 $string['mcp_resources_desc'] = 'Standardized read-only URIs that AI agents can inspect to obtain real-time course structure, announcements, and evaluation rubrics.';
 $string['prompt_cat_communication'] = 'Course Communication';
-$string['prompt_badge_communication'] = 'Forums & Messages';
 $string['prompt_cat_calendar'] = 'Schedule course events';
-$string['prompt_badge_calendar'] = 'Calendar & Deadlines';
