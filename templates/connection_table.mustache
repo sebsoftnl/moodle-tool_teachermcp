@@ -34,6 +34,11 @@
                     {{/status_active}}
                 </td>{{/show_actions}}
             </tr>
+            <tr class="tool_teachermcp_details_row">
+                <td colspan="{{#show_actions}}4{{/show_actions}}{{^show_actions}}3{{/show_actions}}">
+                    {{#details}}{{> tool_teachermcp/connection_details}}{{/details}}
+                </td>
+            </tr>
             {{/tokens}}
         </tbody>
     </table>

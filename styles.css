@@ -54,6 +54,25 @@
     white-space: normal;
 }
 
+.tool_teachermcp_consent {
+    max-width: 75ch;
+}
+
+.tool_teachermcp_consent .tool_teachermcp_email {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.tool_teachermcp_connection_details {
+    max-width: min(60ch, calc(100vw - 3rem));
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.tool_teachermcp_connection_details > summary {
+    cursor: pointer;
+}
+
 .tool_teachermcp_actions {
     gap: 0.5rem;
 }

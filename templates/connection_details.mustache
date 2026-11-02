@@ -1,0 +1,21 @@
+{{!
+    @template tool_teachermcp/connection_details
+    Shared display of token expiry and grants; contains no credentials.
+}}
+<details class="tool_teachermcp_connection_details mt-1">
+    <summary>{{#str}}connection_details, tool_teachermcp{{/str}}</summary>
+    <dl class="mt-2 mb-2">
+        <dt>{{#str}}connection_expires, tool_teachermcp{{/str}}</dt>
+        <dd>{{validuntil}}</dd>
+        <dt>{{#str}}connection_granted_actions, tool_teachermcp{{/str}}</dt>
+        <dd>
+            <ul class="pl-3 ps-3 mb-0">
+                {{#permissions}}
+                <li>{{#name}}<code>{{name}}</code>: {{/name}}{{description}}</li>
+                {{/permissions}}
+                {{^permissions}}<li>{{#str}}connection_no_grants, tool_teachermcp{{/str}}</li>{{/permissions}}
+            </ul>
+        </dd>
+    </dl>
+    <p class="text-muted mb-0">{{#str}}connection_grants_help, tool_teachermcp{{/str}}</p>
+</details>

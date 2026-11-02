@@ -145,7 +145,7 @@ foreach ($tokens as $t) {
         'status_active' => $active,
         'status_label' => get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
         'lastaccess' => $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
-        'validuntil' => $t->timeexpires ? userdate($t->timeexpires) : get_string('never', 'tool_teachermcp'),
+        'details' => \tool_teachermcp\local\connection_details::get($t),
         'revokelink' => (new moodle_url($pageurl, [
             'action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey(),
         ]))->out(false),
@@ -269,6 +269,7 @@ $systempromptcontent = file_exists($agentsmdpath) ? file_get_contents($agentsmdp
 echo $OUTPUT->header();
 
 $templatedata = [
+    'registration_disabled' => (int)get_config('tool_teachermcp', 'oauth_registration_enabled') !== 1,
     'validity_options' => array_values($validityoptions),
     'selected_client' => $client,
     'client_claude' => $client === 'claude',

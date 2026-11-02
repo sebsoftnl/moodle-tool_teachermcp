@@ -64,6 +64,7 @@ $alltokens = $DB->get_records_sql("
 ");
 
 $tables = [];
+$counts = ['active' => 0, 'history' => 0];
 foreach (['active', 'history'] as $kind) {
     $table = new html_table();
     $table->head = [
@@ -84,6 +85,8 @@ $now = time();
 
 foreach ($alltokens as $t) {
     $active = \tool_teachermcp\local\token_history::is_active($t, $now);
+    $kind = $active ? 'active' : 'history';
+    $counts[$kind]++;
     $userlink = html_writer::link(new moodle_url('/user/profile.php', ['id' => $t->userid]), fullname($t));
     $statusbadge = html_writer::span(
         get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
@@ -105,10 +108,16 @@ foreach ($alltokens as $t) {
                 'onclick' => "return confirm('" . addslashes_js(get_string('confirm_revoke', 'tool_teachermcp')) . "');",
             ]);
     }
-    $tables[$active ? 'active' : 'history']->data[] = $row;
+    $tables[$kind]->data[] = $row;
+    $detailscell = new html_table_cell($OUTPUT->render_from_template('tool_teachermcp/connection_details',
+        \tool_teachermcp\local\connection_details::get($t)));
+    $detailscell->colspan = $active ? 7 : 6;
+    $detailsrow = new html_table_row([$detailscell]);
+    $detailsrow->attributes['class'] = 'tool_teachermcp_details_row';
+    $tables[$kind]->data[] = $detailsrow;
 }
 
-echo $OUTPUT->heading(get_string('tokens_header', 'tool_teachermcp') . ' (' . count($tables['active']->data) . ')', 3);
+echo $OUTPUT->heading(get_string('tokens_header', 'tool_teachermcp') . ' (' . $counts['active'] . ')', 3);
 if ($tables['active']->data) {
     echo html_writer::div(html_writer::table($tables['active']), 'table-responsive', ['tabindex' => 0]);
 } else {
@@ -117,7 +126,7 @@ if ($tables['active']->data) {
 if ($tables['history']->data) {
     echo html_writer::start_tag('details', ['class' => 'tool_teachermcp_history mt-4']);
     echo html_writer::tag('summary', get_string('connection_history', 'tool_teachermcp') .
-        ' (' . count($tables['history']->data) . ')', ['class' => 'h5']);
+        ' (' . $counts['history'] . ')', ['class' => 'h5']);
     echo html_writer::tag('p', get_string('connection_history_help', 'tool_teachermcp'), ['class' => 'text-muted mt-2']);
     echo html_writer::link(new moodle_url('/admin/tool/teachermcp/clear_history.php', ['allusers' => 1]),
         get_string('clear_history', 'tool_teachermcp'), ['class' => 'btn btn-outline-secondary mb-3']);

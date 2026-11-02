@@ -6,6 +6,9 @@
 <section id="teacher-connect" class="tool_teachermcp_setup mb-4">
     <h2 class="h4">{{#str}}how_to_connect, tool_teachermcp{{/str}}</h2>
     <p>{{#str}}remote_app_intro, tool_teachermcp{{/str}}</p>
+    {{#registration_disabled}}
+    <p id="registration-notice" class="alert alert-warning" role="status">{{#str}}registration_disabled_notice, tool_teachermcp{{/str}}</p>
+    {{/registration_disabled}}
     <div class="bg-light rounded py-2 mb-3">
         <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions mb-1">
             <span class="font-weight-bold">{{#str}}endpoint_url, tool_teachermcp{{/str}}</span>
