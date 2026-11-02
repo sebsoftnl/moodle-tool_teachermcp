@@ -6,8 +6,8 @@
 <section id="teacher-connect" class="tool_teachermcp_setup mb-4">
     <h2 class="h4">{{#str}}how_to_connect, tool_teachermcp{{/str}}</h2>
     <p>{{#str}}remote_app_intro, tool_teachermcp{{/str}}</p>
-    <div class="bg-light rounded p-3 mb-3">
-        <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions mb-2">
+    <div class="bg-light rounded py-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions mb-1">
             <span class="font-weight-bold">{{#str}}endpoint_url, tool_teachermcp{{/str}}</span>
             <button type="button" class="btn btn-sm btn-primary" data-copy-target="endpointDisplay" aria-label="{{#str}}copy_endpoint, tool_teachermcp{{/str}}">{{#str}}copy, tool_teachermcp{{/str}}</button>
         </div>
@@ -62,7 +62,7 @@
         <summary>{{#str}}preview_connection_check, tool_teachermcp{{/str}}</summary>
         <p id="connectionCheckPrompt" class="mt-2 tool_teachermcp_prompt_text">{{connection_check_prompt}}</p>
     </details>
-    <details id="connection-help">
+    <details id="connection-help" class="mb-3">
         <summary>{{#str}}connection_help, tool_teachermcp{{/str}}</summary>
         <p class="mt-2">{{#str}}remote_app_requirements, tool_teachermcp{{/str}}</p>
         <p>{{#str}}remote_app_cached, tool_teachermcp{{/str}}</p>

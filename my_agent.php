@@ -33,8 +33,6 @@ if (!\tool_teachermcp\auth::user_can_connect($USER->id)) {
     throw new moodle_exception('error_no_capability', 'tool_teachermcp');
 }
 
-$systemcontext = context_system::instance();
-
 $requestedcourseid = optional_param('courseid', 0, PARAM_INT);
 $coursecontext = \tool_teachermcp\local\dashboard_courses::get($requestedcourseid);
 $selectedcourse = $coursecontext['selected'];
@@ -55,10 +53,13 @@ if ($client === 'chatgpt') {
 }
 
 $PAGE->set_url($pageurl);
-$PAGE->set_context($systemcontext);
-$PAGE->set_pagelayout('report');
+$PAGE->set_context(context_user::instance($USER->id));
+$PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('dashboard_title', 'tool_teachermcp'));
-$PAGE->set_heading(get_string('dashboard_title', 'tool_teachermcp'));
+$PAGE->set_heading(fullname($USER));
+$PAGE->navbar->ignore_active();
+$PAGE->navbar->add(get_string('preferences'), new moodle_url('/user/preferences.php'));
+$PAGE->navbar->add(get_string('dashboard_title', 'tool_teachermcp'));
 
 $newtoken = null;
 $maxvalidity = (int)get_config('tool_teachermcp', 'max_token_validity');
