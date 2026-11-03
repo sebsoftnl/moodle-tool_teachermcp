@@ -12,7 +12,7 @@
     <div class="bg-light rounded py-2 mb-3">
         <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions mb-1">
             <span class="font-weight-bold">{{#str}}endpoint_url, tool_teachermcp{{/str}}</span>
-            <button type="button" class="btn btn-sm btn-primary" data-copy-target="endpointDisplay" aria-label="{{#str}}copy_endpoint, tool_teachermcp{{/str}}">{{#str}}copy, tool_teachermcp{{/str}}</button>
+            <button type="button" class="btn btn-sm btn-primary" data-copy-target="endpointDisplay" aria-label="{{#str}}copy_endpoint, tool_teachermcp{{/str}}"><i class="fa fa-copy" aria-hidden="true"></i> {{#str}}copy, tool_teachermcp{{/str}}</button>
         </div>
         <code id="endpointDisplay" class="d-block text-body">{{endpoint_url}}</code>
     </div>
@@ -34,11 +34,6 @@
                 <li class="mb-2">{{#str}}claude_app_step4, tool_teachermcp{{/str}}</li>
                 <li>{{#str}}claude_app_step5, tool_teachermcp{{/str}}</li>
             </ol>
-            <details class="mb-3">
-                <summary>{{#str}}workspace_setup, tool_teachermcp{{/str}}</summary>
-                <p class="mt-2">{{#str}}claude_app_workspace, tool_teachermcp{{/str}}</p>
-                <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
-            </details>
         </div>
         <div class="tab-pane fade {{#client_chatgpt}}show active{{/client_chatgpt}}" id="chatgpt" role="tabpanel" aria-labelledby="chatgpt-tab">
             <div class="tool_teachermcp_actions d-flex flex-wrap mb-2">
@@ -53,21 +48,26 @@
                 <li class="mb-2">{{#str}}chatgpt_step4, tool_teachermcp{{/str}}</li>
                 <li>{{#str}}chatgpt_step5, tool_teachermcp{{/str}}</li>
             </ol>
-            <details class="mb-3">
-                <summary>{{#str}}workspace_setup, tool_teachermcp{{/str}}</summary>
-                <p class="mt-2">{{#str}}chatgpt_remote_access, tool_teachermcp{{/str}}</p>
-                <a href="https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
-            </details>
         </div>
     </div>
-    <button type="button" class="btn btn-primary mb-2" data-copy-target="connectionCheckPrompt">{{#str}}copy_connection_check, tool_teachermcp{{/str}}</button>
-    <details class="mb-3">
-        <summary>{{#str}}preview_connection_check, tool_teachermcp{{/str}}</summary>
-        <p id="connectionCheckPrompt" class="mt-2 tool_teachermcp_prompt_text">{{connection_check_prompt}}</p>
+    {{#connection_check}}{{> tool_teachermcp/prompt_item}}{{/connection_check}}
+    <details id="workspace-setup" class="mb-3">
+        <summary>{{#str}}workspace_setup, tool_teachermcp{{/str}}</summary>
+        <div data-workspace-client="claude" {{^client_claude}}hidden{{/client_claude}}>
+            <p class="mt-2">{{#str}}claude_app_workspace, tool_teachermcp{{/str}}</p>
+            <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
+        </div>
+        <div data-workspace-client="chatgpt" {{^client_chatgpt}}hidden{{/client_chatgpt}}>
+            <p class="mt-2">{{#str}}chatgpt_remote_access, tool_teachermcp{{/str}}</p>
+            <a href="https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt" target="_blank" rel="noopener noreferrer">{{#str}}official_setup_guide, tool_teachermcp{{/str}}</a>
+        </div>
     </details>
     <details id="connection-help" class="mb-3">
         <summary>{{#str}}connection_help, tool_teachermcp{{/str}}</summary>
         <p class="mt-2">{{#str}}remote_app_requirements, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}connection_oauth_help, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}chatgpt_connection_status, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}connection_account_help, tool_teachermcp{{/str}}</p>
         <p>{{#str}}remote_app_cached, tool_teachermcp{{/str}}</p>
         <p>{{#str}}connection_refresh_help, tool_teachermcp{{/str}}</p>
         <p>{{#str}}connection_expiry_help, tool_teachermcp{{/str}}</p>

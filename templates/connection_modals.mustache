@@ -1,0 +1,51 @@
+{{!
+    @template tool_teachermcp/connection_modals
+    Initialize the connection dialogs once per teacher or administrator page.
+}}
+{{#js}}
+require(['core/modal', 'core/notification'], function(Modal, Notification) {
+    document.querySelectorAll('[data-connection-details]').forEach(button => {
+        button.disabled = false;
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            try {
+                const title = document.createElement('span');
+                title.textContent = button.dataset.modalTitle;
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'btn btn-secondary';
+                close.dataset.action = 'hide';
+                close.textContent = button.dataset.closeLabel;
+                const modal = await Modal.create({
+                    title: title.outerHTML,
+                    body: document.getElementById(button.dataset.connectionDetails).innerHTML,
+                    footer: close.outerHTML,
+                    returnElement: button,
+                    removeOnClose: true,
+                });
+                modal.getRoot().addClass('tool_teachermcp_connection_modal');
+                const headerClose = modal.getRoot()[0].querySelector('.modal-header [data-action="hide"]');
+                const footerClose = modal.getFooter()[0].querySelector('button');
+                // Moodle 4.5 can tab into browser chrome past the dialog's last control.
+                modal.getRoot().on('keydown', event => {
+                    if (event.key !== 'Tab') {
+                        return;
+                    }
+                    if (!event.shiftKey && event.target === footerClose) {
+                        event.preventDefault();
+                        headerClose.focus();
+                    } else if (event.shiftKey && (event.target === headerClose || event.target === modal.getModal()[0])) {
+                        event.preventDefault();
+                        footerClose.focus();
+                    }
+                });
+                await modal.show();
+            } catch (error) {
+                Notification.exception(error);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+});
+{{/js}}

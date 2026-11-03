@@ -142,6 +142,7 @@ foreach ($tokens as $t) {
         'id' => (int)$t->id,
         'name' => $t->name,
         'lastchars' => $t->tokenlastchars,
+        'created' => userdate($t->timecreated),
         'status_active' => $active,
         'status_label' => get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
         'lastaccess' => $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
@@ -248,9 +249,13 @@ if ($selectedcourse !== null) {
     ] as $category => $names) {
         $items = [];
         foreach ($names as $name) {
+            $title = get_string('prompt_' . $name . '_title', 'tool_teachermcp');
             $items[] = [
                 'id' => 'prompt-' . $name,
-                'title' => get_string('prompt_' . $name . '_title', 'tool_teachermcp'),
+                'textid' => 'prompt-' . $name . '-text',
+                'title' => $title,
+                'copy_label' => get_string('copy', 'tool_teachermcp') . ': ' . $title,
+                'copy_target' => false,
                 'description' => get_string('prompt_' . $name . '_desc', 'tool_teachermcp'),
                 'prompt' => get_string('prompt_' . $name . '_text', 'tool_teachermcp', $prompta),
             ];
@@ -280,15 +285,23 @@ $templatedata = [
     'course_form_url' => $courseformurl->out(false),
     'selected_course' => $selectedcourse,
     'invalid_course' => $requestedcourseid !== 0 && $selectedcourse === null,
-    'connection_check_prompt' => get_string('connection_check_prompt', 'tool_teachermcp'),
+    'connection_check' => [
+        'id' => 'connection-check',
+        'textid' => 'connectionCheckPrompt',
+        'title' => get_string('preview_connection_check', 'tool_teachermcp'),
+        'description' => get_string('connection_check_description', 'tool_teachermcp'),
+        'copy_label' => get_string('copy_connection_check', 'tool_teachermcp'),
+        'copy_target' => 'connectionCheckPrompt',
+        'prompt' => get_string('connection_check_prompt', 'tool_teachermcp'),
+    ],
     'endpoint_url' => $endpointurl,
     'download_bridge_url' => $downloadbridgeurl,
     'download_skill_url' => $downloadskillurl,
     'system_prompt_content' => $systempromptcontent,
     'has_tokens' => !empty($tokenlist),
     'tokens' => $tokenlist,
-    'show_actions' => true,
-    'history' => $historylist ? ['tokens' => $historylist, 'count' => count($historylist), 'show_actions' => false] : null,
+    'confirm_revoke' => get_string('confirm_revoke', 'tool_teachermcp'),
+    'history' => $historylist ? ['tokens' => $historylist, 'count' => count($historylist)] : null,
     'clear_history_url' => (new moodle_url('/admin/tool/teachermcp/clear_history.php',
         $courseid ? ['courseid' => $courseid] : []))->out(false),
     'sesskey' => sesskey(),

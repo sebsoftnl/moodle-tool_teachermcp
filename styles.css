@@ -25,6 +25,11 @@
     word-break: normal;
 }
 
+.tool_teachermcp_dashboard code.tool_teachermcp_prompt_text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .tool_teachermcp_dashboard .btn,
 .tool_teachermcp_dashboard .form-control {
     max-width: 100%;
@@ -64,13 +69,29 @@
 }
 
 .tool_teachermcp_connection_details {
-    max-width: min(60ch, calc(100vw - 3rem));
     white-space: normal;
     overflow-wrap: anywhere;
 }
 
-.tool_teachermcp_connection_details > summary {
-    cursor: pointer;
+.tool_teachermcp_mobile_label {
+    display: none;
+}
+
+.tool_teachermcp_connection_actions .d-flex {
+    justify-content: flex-end;
+}
+
+.tool_teachermcp_connection_modal .modal-title {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.tool_teachermcp_connection_modal .modal-body {
+    min-height: 0;
+    overflow-wrap: anywhere;
 }
 
 .tool_teachermcp_actions {
@@ -142,6 +163,79 @@
 }
 
 @media (max-width: 767.98px) {
+    .tool_teachermcp_connections,
+    .tool_teachermcp_connections tbody,
+    .tool_teachermcp_connections .tool_teachermcp_connection_row,
+    .tool_teachermcp_connections td {
+        display: block;
+        width: 100%;
+    }
+
+    .tool_teachermcp_connections {
+        font-size: 1rem;
+    }
+
+    .tool_teachermcp_connections thead,
+    .tool_teachermcp_connections .tool_teachermcp_connection_identifier,
+    .tool_teachermcp_connections .tool_teachermcp_connection_created {
+        display: none;
+    }
+
+    .tool_teachermcp_connections .tool_teachermcp_connection_row {
+        padding: 1rem 0;
+        background: transparent;
+    }
+
+    .tool_teachermcp_connections .tool_teachermcp_connection_row > td {
+        padding: 0 0 0.5rem;
+        border: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .tool_teachermcp_connections .tool_teachermcp_connection_actions {
+        padding-bottom: 0;
+        text-align: left !important;
+    }
+
+    .tool_teachermcp_connection_actions .d-flex {
+        justify-content: flex-start;
+    }
+
+    .tool_teachermcp_connection_actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+
+    .tool_teachermcp_connections .btn,
+    .tool_teachermcp_connection_modal .btn,
+    .tool_teachermcp_connection_modal .btn-close {
+        min-height: 44px;
+    }
+
+    .tool_teachermcp_mobile_label {
+        display: inline;
+        margin-inline-end: 0.25rem;
+    }
+
+    .tool_teachermcp_connection_modal .modal-dialog {
+        width: calc(100% - 1rem);
+        max-width: none;
+        height: calc(100% - 1rem);
+        max-height: calc(100% - 1rem);
+        margin: 0.5rem;
+    }
+
+    .tool_teachermcp_connection_modal .modal-content {
+        height: 100%;
+        max-height: 100%;
+    }
+
+    .tool_teachermcp_connection_modal .modal-body {
+        overflow-y: auto;
+    }
+
     .tool_teachermcp_dashboard #agentTabs .nav-link.active {
         background-color: var(--bs-nav-tabs-link-active-bg, var(--blue));
     }

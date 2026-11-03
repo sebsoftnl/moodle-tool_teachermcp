@@ -34,7 +34,10 @@
         <h2 class="h4">{{#str}}dashboard_connections, tool_teachermcp{{/str}}</h2>
         <h3 class="h6 mt-3">{{#str}}tokens_header, tool_teachermcp{{/str}}</h3>
         {{#has_tokens}}{{> tool_teachermcp/connection_table}}{{/has_tokens}}
-        {{^has_tokens}}<p class="text-muted">{{#str}}no_active_connections, tool_teachermcp{{/str}}</p>{{/has_tokens}}
+        {{^has_tokens}}
+        <p class="text-muted">{{#str}}no_active_connections, tool_teachermcp{{/str}}</p>
+        <p class="text-muted">{{#str}}connection_account_help, tool_teachermcp{{/str}}</p>
+        {{/has_tokens}}
         {{#history}}
         <details class="tool_teachermcp_history mt-3">
             <summary class="font-weight-bold">{{#str}}connection_history, tool_teachermcp{{/str}} ({{count}})</summary>
@@ -48,8 +51,16 @@
     {{> tool_teachermcp/dashboard_reference}}
     {{#return_url}}<p class="mt-4"><a href="{{return_url}}">{{#str}}back_to_course, tool_teachermcp{{/str}}</a></p>{{/return_url}}
 </div>
+{{> tool_teachermcp/connection_modals}}
 {{#js}}
 const dashboard = document.querySelector('.tool_teachermcp_dashboard');
+require(['jquery'], function($) {
+    $(dashboard).on('shown.bs.tab', '#agentTabs [data-client]', event => {
+        dashboard.querySelectorAll('[data-workspace-client]').forEach(help => {
+            help.hidden = help.dataset.workspaceClient !== event.target.dataset.client;
+        });
+    });
+});
 dashboard.querySelectorAll('form[data-preserve-client]').forEach(form => {
     form.addEventListener('submit', () => {
         form.elements.client.value = dashboard.querySelector('#agentTabs [aria-selected="true"]').dataset.client;
@@ -72,7 +83,13 @@ dashboard.querySelectorAll('button[data-copy-target], button[data-prompt]').forE
             let text = button.dataset.prompt;
             if (button.dataset.copyTarget) {
                 const target = document.getElementById(button.dataset.copyTarget);
-                text = target instanceof HTMLInputElement ? target.value : target.innerText;
+                if (target instanceof HTMLInputElement) {
+                    text = target.value;
+                } else if (target.tagName === 'CODE') {
+                    text = target.textContent;
+                } else {
+                    text = target.innerText;
+                }
             }
             await navigator.clipboard.writeText(text);
             button.textContent = dashboard.dataset.copySuccess;

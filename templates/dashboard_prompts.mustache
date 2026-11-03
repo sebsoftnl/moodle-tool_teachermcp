@@ -26,17 +26,7 @@
     <details id="{{id}}" class="tool_teachermcp_prompt_group border-bottom py-2">
         <summary class="font-weight-bold">{{category}} ({{count}})</summary>
         {{#items}}
-        <article id="{{id}}" class="py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-start tool_teachermcp_actions">
-                <h3 class="h6 font-weight-bold mb-1">{{title}}</h3>
-                <button class="btn btn-sm btn-primary" type="button" data-prompt="{{prompt}}"><i class="fa fa-copy" aria-hidden="true"></i> {{#str}}copy, tool_teachermcp{{/str}}</button>
-            </div>
-            <p class="text-muted mb-2">{{description}}</p>
-            <details class="tool_teachermcp_prompt_preview">
-                <summary>{{#str}}preview_prompt, tool_teachermcp{{/str}}</summary>
-                <div class="tool_teachermcp_prompt_text bg-light text-body p-3 mt-2">{{prompt}}</div>
-            </details>
-        </article>
+        {{> tool_teachermcp/prompt_item}}
         {{/items}}
     </details>
     {{/prompt_categories}}

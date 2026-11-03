@@ -63,76 +63,52 @@ $alltokens = $DB->get_records_sql("
   ORDER BY t.timecreated DESC
 ");
 
-$tables = [];
-$counts = ['active' => 0, 'history' => 0];
-foreach (['active', 'history'] as $kind) {
-    $table = new html_table();
-    $table->head = [
-        get_string('col_teacher', 'tool_teachermcp'),
-        get_string('col_agent_name', 'tool_teachermcp'),
-        get_string('col_token', 'tool_teachermcp'),
-        get_string('col_created', 'tool_teachermcp'),
-        get_string('col_last_active', 'tool_teachermcp'),
-        get_string('col_status', 'tool_teachermcp'),
-    ];
-    if ($kind === 'active') {
-        $table->head[] = get_string('col_actions', 'tool_teachermcp');
-    }
-    $table->attributes['class'] = 'table table-hover table-striped';
-    $tables[$kind] = $table;
-}
+$connections = ['active' => [], 'history' => []];
 $now = time();
 
 foreach ($alltokens as $t) {
     $active = \tool_teachermcp\local\token_history::is_active($t, $now);
     $kind = $active ? 'active' : 'history';
-    $counts[$kind]++;
-    $userlink = html_writer::link(new moodle_url('/user/profile.php', ['id' => $t->userid]), fullname($t));
-    $statusbadge = html_writer::span(
-        get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
-        $active ? 'badge badge-success' : 'badge badge-secondary');
-
-    $row = [
-        $userlink,
-        s($t->name),
-        '<code class="tool_teachermcp_token_suffix">...' . s($t->tokenlastchars) . '</code>',
-        userdate($t->timecreated),
-        $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
-        $statusbadge,
+    $connections[$kind][] = [
+        'id' => (int)$t->id,
+        'teachername' => fullname($t),
+        'teacherurl' => (new moodle_url('/user/profile.php', ['id' => $t->userid]))->out(false),
+        'name' => $t->name,
+        'lastchars' => $t->tokenlastchars,
+        'created' => userdate($t->timecreated),
+        'lastaccess' => $t->lastaccess ? userdate($t->lastaccess) : get_string('never', 'tool_teachermcp'),
+        'status_active' => $active,
+        'status_label' => get_string('status_' . \tool_teachermcp\local\token_history::status($t, $now), 'tool_teachermcp'),
+        'details' => \tool_teachermcp\local\connection_details::get($t),
+        'revokelink' => (new moodle_url('/admin/tool/teachermcp/index.php', [
+            'action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey(),
+        ]))->out(false),
     ];
-    if ($active) {
-        $rurl = new moodle_url('/admin/tool/teachermcp/index.php', ['action' => 'revoke', 'tokenid' => $t->id, 'sesskey' => sesskey()]);
-        $row[] = html_writer::link($rurl,
-            '<i class="fa fa-ban" aria-hidden="true"></i> ' . get_string('revoke', 'tool_teachermcp'), [
-                'class' => 'btn btn-sm btn-outline-danger',
-                'onclick' => "return confirm('" . addslashes_js(get_string('confirm_revoke', 'tool_teachermcp')) . "');",
-            ]);
-    }
-    $tables[$kind]->data[] = $row;
-    $detailscell = new html_table_cell($OUTPUT->render_from_template('tool_teachermcp/connection_details',
-        \tool_teachermcp\local\connection_details::get($t)));
-    $detailscell->colspan = $active ? 7 : 6;
-    $detailsrow = new html_table_row([$detailscell]);
-    $detailsrow->attributes['class'] = 'tool_teachermcp_details_row';
-    $tables[$kind]->data[] = $detailsrow;
 }
 
-echo $OUTPUT->heading(get_string('tokens_header', 'tool_teachermcp') . ' (' . $counts['active'] . ')', 3);
-if ($tables['active']->data) {
-    echo html_writer::div(html_writer::table($tables['active']), 'table-responsive', ['tabindex' => 0]);
+echo $OUTPUT->heading(get_string('tokens_header', 'tool_teachermcp') . ' (' . count($connections['active']) . ')', 3);
+if ($connections['active']) {
+    echo $OUTPUT->render_from_template('tool_teachermcp/connection_table', [
+        'tokens' => $connections['active'], 'admin_view' => true,
+        'confirm_revoke' => get_string('confirm_revoke', 'tool_teachermcp'),
+    ]);
 } else {
     echo $OUTPUT->notification(get_string('no_active_connections', 'tool_teachermcp'), 'info');
 }
-if ($tables['history']->data) {
+if ($connections['history']) {
     echo html_writer::start_tag('details', ['class' => 'tool_teachermcp_history mt-4']);
     echo html_writer::tag('summary', get_string('connection_history', 'tool_teachermcp') .
-        ' (' . $counts['history'] . ')', ['class' => 'h5']);
+        ' (' . count($connections['history']) . ')', ['class' => 'h5']);
     echo html_writer::tag('p', get_string('connection_history_help', 'tool_teachermcp'), ['class' => 'text-muted mt-2']);
     echo html_writer::link(new moodle_url('/admin/tool/teachermcp/clear_history.php', ['allusers' => 1]),
         get_string('clear_history', 'tool_teachermcp'), ['class' => 'btn btn-outline-secondary mb-3']);
-    echo html_writer::div(html_writer::table($tables['history']), 'table-responsive', ['tabindex' => 0]);
+    echo $OUTPUT->render_from_template('tool_teachermcp/connection_table', [
+        'tokens' => $connections['history'], 'admin_view' => true,
+        'confirm_revoke' => get_string('confirm_revoke', 'tool_teachermcp'),
+    ]);
     echo html_writer::end_tag('details');
 }
 
 echo html_writer::end_div(); // tool_teachermcp_admin.
+echo $OUTPUT->render_from_template('tool_teachermcp/connection_modals', []);
 echo $OUTPUT->footer();

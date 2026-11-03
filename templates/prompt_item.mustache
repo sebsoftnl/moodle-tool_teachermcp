@@ -1,0 +1,19 @@
+{{!
+    @template tool_teachermcp/prompt_item
+    Shared prompt title, description, copy action and optional code preview.
+}}
+<article id="{{id}}" class="tool_teachermcp_prompt_item py-3" aria-labelledby="{{id}}-title">
+    <div class="d-flex align-items-center tool_teachermcp_actions mb-1">
+        <h3 id="{{id}}-title" class="h6 font-weight-bold mb-0">{{title}}</h3>
+        <button type="button" class="btn btn-sm btn-primary flex-shrink-0" aria-label="{{copy_label}}"
+                {{#copy_target}}data-copy-target="{{copy_target}}"{{/copy_target}}
+                {{^copy_target}}data-prompt="{{prompt}}"{{/copy_target}}>
+            <i class="fa fa-copy" aria-hidden="true"></i> {{#str}}copy, tool_teachermcp{{/str}}
+        </button>
+    </div>
+    <p class="text-muted mb-2">{{description}}</p>
+    <details class="tool_teachermcp_prompt_preview">
+        <summary>{{#str}}preview_prompt, tool_teachermcp{{/str}}</summary>
+        <code id="{{textid}}" class="tool_teachermcp_prompt_text d-block bg-light text-body border rounded p-3 mt-2">{{prompt}}</code>
+    </details>
+</article>

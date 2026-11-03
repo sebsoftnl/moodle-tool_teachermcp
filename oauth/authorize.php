@@ -64,6 +64,7 @@ $pageurl = new moodle_url('/admin/tool/teachermcp/oauth/authorize.php', [
 
 $PAGE->set_url($pageurl);
 $PAGE->set_context($systemcontext);
+$PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('oauth_authorize_title', 'tool_teachermcp'));
 $PAGE->set_heading(get_string('oauth_authorize_title', 'tool_teachermcp'));
 
@@ -116,7 +117,6 @@ $toolscount = count($server->get_tools());
 $templatedata = [
     'client_name' => $client->clientname, // K3-R8: registered name from DB.
     'redirect_host' => $redirecthost,     // K3-R8: host of redirect URI (B6).
-    'is_verified' => !empty($client->isverified), // B6: verification status badge.
     'user_fullname' => fullname($USER),
     'user_email' => $USER->email,
     'tools_count' => $toolscount,
