@@ -26,18 +26,31 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('tool_teachermcp', get_string('pluginname', 'tool_teachermcp'));
-
-    // M4: Maximum token validity in days (default 90).
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/max_token_validity',
-        get_string('setting_max_token_validity', 'tool_teachermcp'),
-        get_string('setting_max_token_validity_desc', 'tool_teachermcp'),
-        90,
-        PARAM_INT
-    ));
-
-    // K3-R7 & M4: Enable/disable dynamic OAuth client registration (default 0, B7).
+    $category = 'tool_teachermcp_category';
+    $ADMIN->add('tools', new admin_category($category, get_string('pluginname', 'tool_teachermcp')));
+    $settings = new admin_settingpage('tool_teachermcp', get_string('settings_title', 'tool_teachermcp'));
+    $advanced = new admin_settingpage('tool_teachermcp_advanced', get_string('settings_advanced', 'tool_teachermcp'));
+    $settings->add(new admin_setting_heading('tool_teachermcp/settings_intro', '',
+        get_string('settings_intro', 'tool_teachermcp') . html_writer::div(
+            html_writer::link(new moodle_url('/admin/tool/teachermcp/index.php'), get_string('manage_tokens', 'tool_teachermcp')) .
+            html_writer::link(new moodle_url('/admin/settings.php', ['section' => 'tool_teachermcp_advanced']),
+                get_string('settings_advanced', 'tool_teachermcp')), 'tool_teachermcp_actions d-flex flex-wrap')));
+    $settings->add(new admin_setting_heading('tool_teachermcp/settings_actions',
+        get_string('settings_actions', 'tool_teachermcp'), ''));
+    foreach (['enable_write_tools', 'enable_grade_tools', 'enable_messaging_tool'] as $name) {
+        $settings->add(new admin_setting_configcheckbox('tool_teachermcp/' . $name,
+            get_string('setting_' . $name, 'tool_teachermcp'), get_string('setting_' . $name . '_desc', 'tool_teachermcp'), 1));
+    }
+    $settings->add(new admin_setting_heading('tool_teachermcp/settings_deletion',
+        get_string('settings_deletion', 'tool_teachermcp'), ''));
+    foreach (['allow_delete_questions' => 0, 'enable_delete_tool' => 1, 'delete_requires_ui_confirmation' => 1] as $name => $default) {
+        $settings->add(new admin_setting_configcheckbox('tool_teachermcp/' . $name,
+            get_string('setting_' . $name, 'tool_teachermcp'), get_string('setting_' . $name . '_desc', 'tool_teachermcp'), $default));
+    }
+    $settings->hide_if('tool_teachermcp/allow_delete_questions', 'tool_teachermcp/enable_write_tools');
+    $settings->hide_if('tool_teachermcp/delete_requires_ui_confirmation', 'tool_teachermcp/enable_delete_tool');
+    $settings->add(new admin_setting_heading('tool_teachermcp/settings_connections',
+        get_string('settings_connections', 'tool_teachermcp'), ''));
     $settings->add(new admin_setting_configcheckbox(
         'tool_teachermcp/oauth_registration_enabled',
         get_string('setting_oauth_registration_enabled', 'tool_teachermcp'),
@@ -45,128 +58,50 @@ if ($hassiteconfig) {
         0
     ));
 
-    // B11: Maximum active OAuth tokens per client per user (default 5).
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/max_oauth_tokens_per_client',
-        get_string('setting_max_oauth_tokens_per_client', 'tool_teachermcp'),
-        get_string('setting_max_oauth_tokens_per_client_desc', 'tool_teachermcp'),
-        5,
-        PARAM_INT
-    ));
+    foreach (['max_token_validity' => 90, 'max_oauth_tokens_per_client' => 5] as $name => $default) {
+        $settings->add(new \tool_teachermcp\local\bounded_integer('tool_teachermcp/' . $name,
+            get_string('setting_' . $name, 'tool_teachermcp'), get_string('setting_' . $name . '_desc', 'tool_teachermcp'), $default, 1));
+    }
 
-    // M3: Message rate limit per hour per user/token.
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/message_ratelimit_per_hour',
-        get_string('setting_message_ratelimit_per_hour', 'tool_teachermcp'),
-        get_string('setting_message_ratelimit_per_hour_desc', 'tool_teachermcp'),
-        50,
-        PARAM_INT
-    ));
-
-    // L2: CORS allowed origins.
-    $settings->add(new admin_setting_configtextarea(
+    $advanced->add(new admin_setting_heading('tool_teachermcp/advanced_intro', '',
+        get_string('settings_advanced_intro', 'tool_teachermcp') . html_writer::div(
+            html_writer::link(new moodle_url('/admin/settings.php', ['section' => 'tool_teachermcp']),
+                get_string('settings_title', 'tool_teachermcp')))));
+    foreach ([
+        'message_ratelimit_per_hour' => [50, 1, null],
+        'mcp_requests_per_minute' => [60, 1, 600],
+        'max_mcp_request_bytes' => [1048576, 1024, 10485760],
+        'max_mcp_response_bytes' => [262144, 1024, 5242880],
+        'max_mcp_batch_size' => [10, 1, 50],
+    ] as $name => [$default, $minimum, $maximum]) {
+        $description = get_string('setting_' . $name . '_desc', 'tool_teachermcp');
+        if ($name === 'message_ratelimit_per_hour' && (string)get_config('tool_teachermcp', 'enable_messaging_tool') === '0') {
+            $description .= ' ' . get_string('setting_message_limit_inactive', 'tool_teachermcp');
+        }
+        $advanced->add(new \tool_teachermcp\local\bounded_integer('tool_teachermcp/' . $name,
+            get_string('setting_' . $name, 'tool_teachermcp'), $description, $default, $minimum, $maximum));
+    }
+    $advanced->add(new admin_setting_heading('tool_teachermcp/settings_integrations',
+        get_string('settings_integrations', 'tool_teachermcp'), ''));
+    $advanced->add(new admin_setting_configtextarea(
         'tool_teachermcp/allowed_cors_origins',
         get_string('setting_allowed_cors_origins', 'tool_teachermcp'),
         get_string('setting_allowed_cors_origins_desc', 'tool_teachermcp'),
         '',
-        PARAM_RAW
-    ));
-
-    // M6: Maximum accepted JSON-RPC request size, in bytes.
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/max_mcp_request_bytes',
-        get_string('setting_max_mcp_request_bytes', 'tool_teachermcp'),
-        get_string('setting_max_mcp_request_bytes_desc', 'tool_teachermcp'),
-        1048576,
-        PARAM_INT
-    ));
-
-    // M6: Maximum JSON-RPC batch size.
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/max_mcp_batch_size',
-        get_string('setting_max_mcp_batch_size', 'tool_teachermcp'),
-        get_string('setting_max_mcp_batch_size_desc', 'tool_teachermcp'),
-        10,
-        PARAM_INT
-    ));
-
-    // M6: Maximum returned MCP tool response size, in bytes.
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/max_mcp_response_bytes',
-        get_string('setting_max_mcp_response_bytes', 'tool_teachermcp'),
-        get_string('setting_max_mcp_response_bytes_desc', 'tool_teachermcp'),
-        262144,
-        PARAM_INT
-    ));
-
-    // M6: Maximum authenticated MCP requests per token and IP address per minute.
-    $settings->add(new admin_setting_configtext(
-        'tool_teachermcp/mcp_requests_per_minute',
-        get_string('setting_mcp_requests_per_minute', 'tool_teachermcp'),
-        get_string('setting_mcp_requests_per_minute_desc', 'tool_teachermcp'),
+        PARAM_RAW,
         60,
-        PARAM_INT
+        3
     ));
-
-    // External providers are disabled until a site administrator explicitly opts in.
-    $settings->add(new admin_setting_configcheckbox(
+    $advanced->add(new admin_setting_configcheckbox(
         'tool_teachermcp/enable_external_tools',
         get_string('setting_enable_external_tools', 'tool_teachermcp'),
         get_string('setting_enable_external_tools_desc', 'tool_teachermcp'),
         0
     ));
 
-    // N3: Allow deleting questions via MCP tools (default 0).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/allow_delete_questions',
-        get_string('setting_allow_delete_questions', 'tool_teachermcp'),
-        get_string('setting_allow_delete_questions_desc', 'tool_teachermcp'),
-        0
-    ));
-
-    // N6: Enable write tools (default 1).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/enable_write_tools',
-        get_string('setting_enable_write_tools', 'tool_teachermcp'),
-        get_string('setting_enable_write_tools_desc', 'tool_teachermcp'),
-        1
-    ));
-
-    // N6: Enable grade tools (default 1).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/enable_grade_tools',
-        get_string('setting_enable_grade_tools', 'tool_teachermcp'),
-        get_string('setting_enable_grade_tools_desc', 'tool_teachermcp'),
-        1
-    ));
-
-    // N6: Enable messaging tool (default 1).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/enable_messaging_tool',
-        get_string('setting_enable_messaging_tool', 'tool_teachermcp'),
-        get_string('setting_enable_messaging_tool_desc', 'tool_teachermcp'),
-        1
-    ));
-
-    // N6: Enable delete tool (default 1).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/enable_delete_tool',
-        get_string('setting_enable_delete_tool', 'tool_teachermcp'),
-        get_string('setting_enable_delete_tool_desc', 'tool_teachermcp'),
-        1
-    ));
-
-    // N3: Delete activity requires UI confirmation (default 1).
-    $settings->add(new admin_setting_configcheckbox(
-        'tool_teachermcp/delete_requires_ui_confirmation',
-        get_string('setting_delete_requires_ui_confirmation', 'tool_teachermcp'),
-        get_string('setting_delete_requires_ui_confirmation_desc', 'tool_teachermcp'),
-        1
-    ));
-
-    $ADMIN->add('tools', $settings);
-
-    $ADMIN->add('tools', new admin_externalpage(
+    $ADMIN->add($category, $settings);
+    $ADMIN->add($category, $advanced);
+    $ADMIN->add($category, new admin_externalpage(
         'tool_teachermcp_manage',
         get_string('manage_tokens', 'tool_teachermcp'),
         new moodle_url('/admin/tool/teachermcp/index.php')

@@ -35,7 +35,7 @@ class get_h5p_libraries extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Lists installed and runnable H5P interactive content types (e.g. H5P.MultiChoice, H5P.Flashcards, H5P.TrueFalse, H5P.Accordion, H5P.Column) along with their installed versions and ready-to-use JSON parameter schemas. Call this tool before creating H5P activities to inspect available content types and their expected JSON structures.';
+        return 'Lists enabled, runnable H5P content types and installed versions. Selected types include example parameters, not complete schemas for every library. When a filter is used, total_installed_types counts matching types, not the unfiltered site inventory. Call this tool before creating H5P activities and check the installed library\'s requirements.';
     }
 
     public function get_input_schema(): array {
@@ -52,7 +52,7 @@ class get_h5p_libraries extends base_tool {
                 ],
                 'include_schema_examples' => [
                     'type' => 'boolean',
-                    'description' => 'Whether to include complete, valid JSON parameter templates for popular content types.',
+                    'description' => 'Whether to include example parameters for selected content types; these are not complete library schemas.',
                     'default' => true,
                 ],
             ],
@@ -95,7 +95,8 @@ class get_h5p_libraries extends base_tool {
             return [
                 'total_installed_types' => 0,
                 'libraries' => [],
-                'usage_guide' => 'No runnable H5P libraries are installed on this site. Please visit Site Administration > H5P > Manage H5P content types to download and install content types.',
+                'usage_guide' => get_string(!empty($filter) ? 'h5p_no_matching_libraries' : 'h5p_no_available_libraries',
+                    'tool_teachermcp'),
             ];
         }
 

@@ -69,7 +69,7 @@ class file_extractor {
         }
 
         if ($component === 'question') {
-            return true;
+            return !str_starts_with($filearea, 'response_');
         }
 
         return false;
@@ -82,24 +82,28 @@ class file_extractor {
      * @return \stored_file[]
      */
     public static function get_module_files(int $cmid): array {
+        global $DB;
         $context = \context_module::instance($cmid, IGNORE_MISSING);
         if (!$context) {
             return [];
         }
 
         $fs = get_file_storage();
-        $allfiles = $fs->get_area_files($context->id, false, false, false, 'itemid, filepath, filename', false);
+        $areas = $DB->get_records_sql('SELECT MIN(id) AS id, component, filearea
+                FROM {files} WHERE contextid = :contextid AND filename <> :directory
+            GROUP BY component, filearea ORDER BY component, filearea',
+            ['contextid' => $context->id, 'directory' => '.']);
 
         $validfiles = [];
-        foreach ($allfiles as $file) {
-            if ($file->is_directory() || $file->get_filename() === '.') {
-                continue;
-            }
+        foreach ($areas as $area) {
             // M1: Enforce whitelist so student submissions or grading feedback files are never leaked.
-            if (!self::is_allowed_filearea($file->get_component(), $file->get_filearea())) {
+            if (!self::is_allowed_filearea($area->component, $area->filearea)) {
                 continue;
             }
-            $validfiles[] = $file;
+            foreach ($fs->get_area_files($context->id, $area->component, $area->filearea, false,
+                    'itemid, filepath, filename', false) as $file) {
+                $validfiles[] = $file;
+            }
         }
 
         return $validfiles;
@@ -230,6 +234,9 @@ class file_extractor {
 
         $text = strip_tags($xmlcontent);
         $clean = self::clean_plain_text($text, $maxchars);
+        if ($clean === '') {
+            return ['success' => false, 'content' => '', 'notice' => 'No readable text found in Word document.'];
+        }
 
         return ['success' => true, 'content' => $clean, 'notice' => null];
     }
@@ -250,6 +257,7 @@ class file_extractor {
         }
 
         $slidetexts = [];
+        $limited = false;
         for ($i = 1; $i <= $zip->numFiles; $i++) {
             $slidename = "ppt/slides/slide{$i}.xml";
             $stat = $zip->statName($slidename);
@@ -261,7 +269,11 @@ class file_extractor {
                     if (!empty($clean)) {
                         $slidetexts[] = "--- Slide {$i} ---\n" . $clean;
                     }
+                } else {
+                    $limited = true;
                 }
+            } else if ($stat) {
+                $limited = true;
             }
         }
         $zip->close();
@@ -274,7 +286,8 @@ class file_extractor {
         $alltext = implode("\n\n", $slidetexts);
         $clean = self::clean_plain_text($alltext, $maxchars);
 
-        return ['success' => true, 'content' => $clean, 'notice' => null];
+        return ['success' => true, 'content' => $clean,
+            'notice' => $limited ? 'Some PowerPoint slides exceeded extraction limits or could not be read; the text is partial.' : null];
     }
 
     /**
@@ -313,6 +326,9 @@ class file_extractor {
 
         $text = strip_tags($xmlcontent);
         $clean = self::clean_plain_text($text, $maxchars);
+        if ($clean === '') {
+            return ['success' => false, 'content' => '', 'notice' => 'No readable text found in ODT document.'];
+        }
 
         return ['success' => true, 'content' => $clean, 'notice' => null];
     }
@@ -328,21 +344,31 @@ class file_extractor {
 
         // L3: Split streams with bounded count.
         $extracted = [];
-        preg_match_all('/stream\r?\n(.*?)[\r\n]+endstream/s', $raw, $matches);
+        // A length-only dictionary identifies the supported unfiltered stream form.
+        preg_match_all('/(<<\s*\/Length\s+\d+(?:\s+\d+\s+R)?\s*>>\s*)?stream\r?\n(.*?)[\r\n]+endstream/s',
+            $raw, $matches, PREG_SET_ORDER);
         if (preg_last_error() !== PREG_NO_ERROR) {
             return ['success' => false, 'content' => '', 'notice' => 'Failed to parse PDF stream syntax.'];
         }
 
-        $streams = array_slice($matches[1] ?? [], 0, self::MAX_PDF_STREAMS);
+        $limited = count($matches) > self::MAX_PDF_STREAMS;
+        $streams = array_slice($matches, 0, self::MAX_PDF_STREAMS);
 
-        foreach ($streams as $stream) {
+        foreach ($streams as $match) {
+            $stream = $match[2];
             // L3: Bounded decompression (max 50 MB per stream).
             $decompressed = @gzuncompress($stream, self::MAX_DECOMPRESS_SIZE);
             if ($decompressed === false) {
                 $decompressed = @gzinflate($stream, self::MAX_DECOMPRESS_SIZE);
             }
             if ($decompressed === false) {
+                $limited = $limited || $match[1] === '';
                 $decompressed = $stream; // Might be uncompressed.
+            }
+            // Native zlib's requested maximum is not an exact output-size guarantee.
+            if (strlen($decompressed) > self::MAX_DECOMPRESS_SIZE) {
+                $limited = true;
+                continue;
             }
 
             // Look for BT (Begin Text) ... ET (End Text) blocks.
@@ -366,7 +392,9 @@ class file_extractor {
             }
         }
 
-        if (empty($extracted)) {
+        $alltext = implode(' ', $extracted);
+        $clean = self::clean_plain_text($alltext, $maxchars);
+        if ($clean === '') {
             return [
                 'success' => false,
                 'content' => '',
@@ -374,10 +402,8 @@ class file_extractor {
             ];
         }
 
-        $alltext = implode(' ', $extracted);
-        $clean = self::clean_plain_text($alltext, $maxchars);
-
-        return ['success' => true, 'content' => $clean, 'notice' => null];
+        return ['success' => true, 'content' => $clean,
+            'notice' => $limited ? 'Some PDF streams were omitted or could not be confirmed as decoded text; the extraction may be incomplete.' : null];
     }
 
     /**

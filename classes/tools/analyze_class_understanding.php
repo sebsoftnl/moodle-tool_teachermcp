@@ -162,24 +162,23 @@ class analyze_class_understanding extends base_tool {
         $slots = $structure->get_slots();
 
         $questionsbreakdown = [];
-        $attemptids = array_keys($attempts);
-        list($inatt, $inparams) = $DB->get_in_or_equal($attemptids, SQL_PARAMS_NAMED);
+        $slotfractions = [];
+        if ($slots) {
+            foreach ($attempts as $attempt) {
+                $nativeattempt = \mod_quiz\quiz_attempt::create($attempt->id);
+                foreach ($slots as $slot) {
+                    $slotfractions[$slot->slot][] = $nativeattempt->get_question_attempt($slot->slot)->get_fraction();
+                }
+            }
+        }
 
         foreach ($slots as $slot) {
             $q = $structure->get_question_in_slot($slot->slot);
-            $qname = $structure->get_question_name_in_slot($slot->slot);
+            $qname = $q->name;
             $qtype = $structure->get_question_type_for_slot($slot->slot);
             $qtext = $q ? shorten_text(strip_tags($q->questiontext), 100) : '';
 
-            $qaquery = "
-                SELECT qa.fraction
-                  FROM {question_attempts} qa
-                  JOIN {quiz_attempts} quiza ON quiza.uniqueid = qa.questionusageid
-                 WHERE quiza.id $inatt AND qa.slot = :slot
-            ";
-            $slotparams = array_merge($inparams, ['slot' => $slot->slot]);
-
-            $fractions = $DB->get_fieldset_sql($qaquery, $slotparams);
+            $fractions = $slotfractions[$slot->slot];
             $correctcount = 0;
             $wrongcount = 0;
             $partialcount = 0;

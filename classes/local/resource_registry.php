@@ -75,7 +75,7 @@ final class resource_registry {
             [
                 'uriTemplate' => 'moodle://activity/{cmid}/rubric',
                 'name' => 'Activity Grading Rubric',
-                'description' => 'Grading rubric criteria, level definitions, and score allocations.',
+                'description' => 'Existing grading method and rubric title/description. Use prepare_grading_session for full criteria.',
                 'mimeType' => 'application/json',
             ],
         ];
@@ -190,7 +190,8 @@ final class resource_registry {
             }
 
             require_once($CFG->dirroot . '/mod/forum/lib.php');
-            $newsforum = forum_get_course_forum($courseid, 'news');
+            $newsforums = $DB->get_records('forum', ['course' => $courseid, 'type' => 'news'], 'id ASC', '*', 0, 1);
+            $newsforum = reset($newsforums);
             if (!$newsforum) {
                 return [
                     'contents' => [
@@ -203,28 +204,28 @@ final class resource_registry {
                 ];
             }
 
-            $discussions = $DB->get_records(
-                'forum_discussions',
-                ['forum' => $newsforum->id],
-                'timemodified DESC',
-                '*',
-                0,
-                self::ANNOUNCEMENT_LIMIT
+            $cm = get_fast_modinfo($course)->instances['forum'][$newsforum->id];
+            if (!$cm->uservisible) {
+                return null;
+            }
+
+            $firstposts = forum_get_discussions(
+                $cm,
+                'd.timemodified DESC',
+                limit: self::ANNOUNCEMENT_LIMIT,
+                groupid: FORUM_POSTS_ALL_USER_GROUPS
             );
             $md = "# Announcements: {$course->fullname}\n\n";
 
-            if (empty($discussions)) {
+            if (empty($firstposts)) {
                 $md .= "*No announcements have been posted yet.*\n";
             } else {
-                foreach ($discussions as $d) {
-                    $post = $DB->get_record('forum_posts', ['id' => $d->firstpost]);
-                    $date = userdate($d->created);
+                foreach ($firstposts as $post) {
+                    $date = userdate($post->created);
 
-                    $md .= "## {$d->name}\n";
+                    $md .= "## {$post->name}\n";
                     $md .= "**Posted:** {$date}\n\n";
-                    if ($post) {
-                        $md .= strip_tags($post->message) . "\n\n";
-                    }
+                    $md .= strip_tags($post->message) . "\n\n";
                     $md .= "---\n\n";
                 }
             }
@@ -282,7 +283,7 @@ final class resource_registry {
                         'text' => json_encode([
                             'cmid' => $cmid,
                             'activity_name' => $cm->name,
-                            'method' => $controller->get_method_name(),
+                                'method' => $gradingmanager->get_active_method(),
                             'rubric_title' => $definition ? $definition->name : '',
                             'rubric_description' => $definition ? $definition->description : '',
                         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),

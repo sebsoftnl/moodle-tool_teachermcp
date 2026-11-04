@@ -1,0 +1,34 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+    @template tool_teachermcp/dashboard_prompts
+}}
+<section id="teacher-prompts" class="mb-4 pt-3 border-top">
+    <h2 class="h4">{{#str}}dashboard_tasks, tool_teachermcp{{/str}}</h2>
+    {{#invalid_course}}<div class="alert alert-warning" role="alert">{{#str}}dashboard_course_unavailable, tool_teachermcp{{/str}}</div>{{/invalid_course}}
+    {{#has_courses}}
+    <form id="promptCourseForm" action="{{course_form_url}}" method="get" data-preserve-client class="mb-3">
+        <input type="hidden" name="client" value="{{selected_client}}">
+        <label for="promptCourseFilter" class="font-weight-bold">{{#str}}course_filter_label, tool_teachermcp{{/str}}</label>
+        <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions">
+            <select id="promptCourseFilter" name="courseid" class="custom-select form-control tool_teachermcp_course_select" required>
+                {{^selected_course}}<option value="" selected disabled>{{#str}}course_filter_all, tool_teachermcp{{/str}}</option>{{/selected_course}}
+                {{#courses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{fullname}}</option>{{/courses}}
+            </select>
+            <button type="submit" class="btn btn-secondary">{{#str}}use_course, tool_teachermcp{{/str}}</button>
+        </div>
+    </form>
+    {{/has_courses}}
+    {{^has_courses}}<p class="text-muted">{{#str}}dashboard_no_courses, tool_teachermcp{{/str}}</p>{{/has_courses}}
+    {{#selected_course}}
+    <p>{{#str}}prompt_library_desc, tool_teachermcp{{/str}}</p>
+    {{#prompt_categories}}
+    <details id="{{id}}" class="tool_teachermcp_prompt_group border-bottom py-2">
+        <summary class="font-weight-bold">{{category}} ({{count}})</summary>
+        {{#items}}
+        {{> tool_teachermcp/prompt_item}}
+        {{/items}}
+    </details>
+    {{/prompt_categories}}
+    {{/selected_course}}
+</section>

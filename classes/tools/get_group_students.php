@@ -85,8 +85,9 @@ class get_group_students extends base_tool {
         }
 
         $result = [];
+        $userfields = \core_user\fields::for_name()->including('id', 'email')->get_sql('u', false, '', '', false)->selects;
         foreach ($groupsquery as $gid => $grp) {
-            $members = groups_get_members($gid, 'u.id, u.firstname, u.lastname, u.email');
+            $members = groups_get_members($gid, $userfields);
             $students = [];
             foreach ($members as $m) {
                 $students[] = [

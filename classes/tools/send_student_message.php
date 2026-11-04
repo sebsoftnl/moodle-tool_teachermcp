@@ -19,7 +19,7 @@ namespace tool_teachermcp\tools;
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
-use core_message\message;
+use core\message\message;
 use tool_teachermcp\auth;
 
 /**
@@ -155,6 +155,7 @@ class send_student_message extends base_tool {
 
         // Send message.
         $msg = new message();
+        $msg->courseid = $courseid;
         $msg->component = 'moodle';
         $msg->name = 'instantmessage';
         $msg->userfrom = $USER;
@@ -163,7 +164,7 @@ class send_student_message extends base_tool {
         $msg->fullmessage = $messagetext;
         $msg->fullmessageformat = FORMAT_MARKDOWN;
         $msg->fullmessagehtml = markdown_to_html($messagetext);
-        $msg->smallmessage = shorten_text(strip_tags($messagetext), 64);
+        $msg->smallmessage = $messagetext;
         $msg->notification = 0;
 
         $messageid = message_send($msg);

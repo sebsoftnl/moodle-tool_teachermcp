@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+    @template tool_teachermcp/dashboard_other_methods
+}}
+<details id="other-methods" class="mb-4 pt-3 border-top" {{#manual_open}}open{{/manual_open}}>
+    <summary class="h5">{{#str}}other_connection_methods, tool_teachermcp{{/str}}</summary>
+    <p>{{#str}}other_connection_methods_desc, tool_teachermcp{{/str}}</p>
+    <details id="manual-token" class="mb-3" {{#manual_open}}open{{/manual_open}}>
+        <summary class="font-weight-bold">{{#str}}create_token, tool_teachermcp{{/str}}</summary>
+        <form method="post" action="{{manual_form_url}}" data-preserve-client class="mt-3">
+            <input type="hidden" name="sesskey" value="{{sesskey}}">
+            <input type="hidden" name="action" value="create">
+            <input type="hidden" name="client" value="{{selected_client}}">
+            <div class="form-group mb-3">
+                <label for="agentname">{{#str}}agent_name, tool_teachermcp{{/str}}</label>
+                <input type="text" name="agentname" id="agentname" class="form-control" placeholder="{{agent_name_placeholder}}" required>
+            </div>
+            <div class="form-group mb-3">
+                <label for="scope_preset">{{#str}}scope_preset, tool_teachermcp{{/str}}</label>
+                <select name="scope_preset" id="scope_preset" class="form-control custom-select" aria-describedby="scopePresetHelp">
+                    <option value="full" selected>{{#str}}scope_preset_full, tool_teachermcp{{/str}}</option>
+                    <option value="grading">{{#str}}scope_preset_grading, tool_teachermcp{{/str}}</option>
+                    <option value="curriculum">{{#str}}scope_preset_curriculum, tool_teachermcp{{/str}}</option>
+                    <option value="readonly">{{#str}}scope_preset_readonly, tool_teachermcp{{/str}}</option>
+                </select>
+                <p id="scopePresetHelp" class="text-muted mt-1">{{#str}}scope_preset_help, tool_teachermcp{{/str}}</p>
+            </div>
+            <div class="form-group mb-3">
+                <label for="validity">{{#str}}validity_period, tool_teachermcp{{/str}}</label>
+                <select name="validity" id="validity" class="form-control custom-select">
+                    {{#validity_options}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/validity_options}}
+                </select>
+            </div>
+            {{#has_external_tools}}
+            <fieldset class="mb-3">
+                <legend class="h6">{{#str}}external_tool_grants, tool_teachermcp{{/str}}</legend>
+                <p>{{#str}}external_tool_grants_desc, tool_teachermcp{{/str}}</p>
+                {{#external_tools}}
+                <div class="custom-control custom-checkbox mb-1">
+                    <input class="custom-control-input" type="checkbox" name="externaltools[]" value="{{name}}" id="externaltool-{{name}}">
+                    <label class="custom-control-label" for="externaltool-{{name}}"><code>{{name}}</code><br>{{description}}</label>
+                </div>
+                {{/external_tools}}
+            </fieldset>
+            {{/has_external_tools}}
+            <button type="submit" class="btn btn-primary">{{#str}}create_token, tool_teachermcp{{/str}}</button>
+        </form>
+    </details>
+    <details id="oauth" class="mb-3">
+        <summary class="font-weight-bold">{{#str}}oauth_tab_title, tool_teachermcp{{/str}}</summary>
+        <h3 class="h6 mt-3">{{#str}}oauth_setup_title, tool_teachermcp{{/str}}</h3>
+        <p>{{#str}}oauth_setup_desc, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}download_bridge_desc, tool_teachermcp{{/str}}</p>
+        <a href="{{download_bridge_url}}" class="btn btn-primary mb-3">{{#str}}download_bridge_btn, tool_teachermcp{{/str}}</a>
+        <p>{{#str}}claude_oauth_bridge_desc, tool_teachermcp{{/str}}</p>
+        <pre class="bg-light border rounded p-3" id="claudeOAuthConfigBlock"><code>{{config_claude_oauth}}</code></pre>
+        <button type="button" class="btn btn-primary mb-3" data-copy-target="claudeOAuthConfigBlock">{{#str}}copy_config, tool_teachermcp{{/str}}</button>
+        <h3 class="h6">{{#str}}claude_desktop_title, tool_teachermcp{{/str}}</h3>
+        <p>{{#str}}claude_desktop_desc, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}claude_manual_bridge_desc, tool_teachermcp{{/str}}</p>
+        <pre class="bg-light border rounded p-3" id="claudeConfigBlock"><code>{{config_claude}}</code></pre>
+        <button type="button" class="btn btn-primary mb-3" data-copy-target="claudeConfigBlock">{{#str}}copy_config, tool_teachermcp{{/str}}</button>
+        <h3 class="h6">{{#str}}cli_setup_title, tool_teachermcp{{/str}}</h3>
+        <p>{{#str}}cli_setup_desc, tool_teachermcp{{/str}}</p>
+        <div class="d-flex flex-wrap tool_teachermcp_actions">
+            <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">{{#str}}claude_cli_docs, tool_teachermcp{{/str}}</a>
+            <a href="https://learn.chatgpt.com/docs/extend/mcp" target="_blank" rel="noopener noreferrer">{{#str}}codex_cli_docs, tool_teachermcp{{/str}}</a>
+        </div>
+    </details>
+    <details id="codex">
+        <summary class="font-weight-bold">{{#str}}codex_cursor_title, tool_teachermcp{{/str}}</summary>
+        <p class="mt-2">{{#str}}codex_cursor_desc, tool_teachermcp{{/str}}</p>
+        <p>{{#str}}http_config_cli_note, tool_teachermcp{{/str}}</p>
+        <pre class="bg-light border rounded p-3" id="codexConfigBlock"><code>{{config_codex}}</code></pre>
+        <button type="button" class="btn btn-primary" data-copy-target="codexConfigBlock">{{#str}}copy_config, tool_teachermcp{{/str}}</button>
+    </details>
+</details>

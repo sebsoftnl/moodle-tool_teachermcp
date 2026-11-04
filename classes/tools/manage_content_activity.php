@@ -96,8 +96,8 @@ class manage_content_activity extends base_tool {
                 ],
                 'visible' => [
                     'type' => 'boolean',
-                    'description' => 'Activity visibility to students (true = visible, false = hidden).',
-                    'default' => true,
+                    'description' => 'Activity visibility to students (true = visible, false = hidden; default: false).',
+                    'default' => false,
                 ],
             ],
             'required' => ['action'],
@@ -193,6 +193,7 @@ class manage_content_activity extends base_tool {
             'status' => 'success',
             'activity_type' => 'page',
             'cmid' => $cmid,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST),
             'page_id' => $pageid,
             'title' => $title,
             'course_id' => (int)$course->id,
@@ -215,6 +216,9 @@ class manage_content_activity extends base_tool {
 
         // N1: get_course_and_cm_from_cmid checking 'page' module type followed by require_cm_access.
         list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities', 'page');
+        if (isset($params['visible'])) {
+            require_capability('moodle/course:activityvisibility', $context);
+        }
         $page = $DB->get_record('page', ['id' => $cm->instance], '*', MUST_EXIST);
 
         if (isset($params['title']) && trim($params['title']) !== '') {
@@ -232,7 +236,6 @@ class manage_content_activity extends base_tool {
         $DB->update_record('page', $page);
 
         if (isset($params['visible'])) {
-            require_capability('moodle/course:activityvisibility', $context);
             set_coursemodule_visible($cm->id, $params['visible'] ? 1 : 0);
         }
 
@@ -243,6 +246,7 @@ class manage_content_activity extends base_tool {
             'status' => 'success',
             'activity_type' => 'page',
             'cmid' => (int)$cm->id,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cm->id], MUST_EXIST),
             'title' => $page->name,
             'revision' => (int)$page->revision,
             'message' => "Page '{$page->name}' updated successfully.",
@@ -331,6 +335,7 @@ class manage_content_activity extends base_tool {
             'status' => 'success',
             'activity_type' => 'book',
             'cmid' => $cmid,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST),
             'book_id' => $bookid,
             'first_chapter_id' => (int)$chapter->id,
             'title' => $title,
@@ -394,6 +399,7 @@ class manage_content_activity extends base_tool {
             'status' => 'success',
             'activity_type' => 'book',
             'cmid' => (int)$cm->id,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cm->id], MUST_EXIST),
             'book_id' => (int)$book->id,
             'chapter_id' => (int)$chapter->id,
             'chapter_title' => $chaptertitle,
@@ -447,6 +453,7 @@ class manage_content_activity extends base_tool {
             'status' => 'success',
             'activity_type' => 'book',
             'cmid' => (int)$cm->id,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cm->id], MUST_EXIST),
             'chapter_id' => (int)$chapter->id,
             'chapter_title' => $chapter->title,
             'message' => "Chapter '{$chapter->title}' updated successfully.",

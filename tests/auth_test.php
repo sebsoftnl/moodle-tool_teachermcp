@@ -29,6 +29,53 @@ defined('MOODLE_INTERNAL') || die();
  * @covers     \tool_teachermcp\auth
  */
 final class auth_test extends \advanced_testcase {
+    public function test_revocation_rejects_foreign_and_missing_tokens_without_mutation(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $owner = $generator->create_user();
+        $other = $generator->create_user();
+        $generator->enrol_user($owner->id, $course->id, 'editingteacher');
+        $generator->enrol_user($other->id, $course->id, 'editingteacher');
+        $this->setUser($other);
+        $this->assertFalse(has_capability('tool/teachermcp:manageall', \context_system::instance()));
+        $token = auth::generate_token_record($owner->id, 'Owned revocation fixture', 1);
+        $fields = 'id,userid,status,timemodified';
+        $before = $DB->get_record('tool_teachermcp_tokens', ['id' => $token['id']], $fields, MUST_EXIST);
+        $sink = $this->redirectEvents();
+        $this->assertFalse(auth::revoke_token($token['id'], $other->id));
+        $this->assertFalse(auth::revoke_token(0, $owner->id));
+        $this->assertEquals($before, $DB->get_record('tool_teachermcp_tokens', ['id' => $token['id']], $fields, MUST_EXIST));
+        $this->assertCount(0, $sink->get_events());
+        $sink->close();
+    }
+
+    public function test_manager_revokes_another_users_token_without_affecting_others(): void {
+        global $DB, $USER;
+        $this->resetAfterTest(true);
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $owner = $generator->create_user();
+        $generator->enrol_user($owner->id, $course->id, 'editingteacher');
+        $target = auth::generate_token_record($owner->id, 'Manager revocation target', 1);
+        $survivor = auth::generate_token_record($owner->id, 'Unaffected connection', 1);
+        $this->setAdminUser();
+        $this->assertTrue(has_capability('tool/teachermcp:manageall', \context_system::instance()));
+        $this->assertNotEquals($owner->id, $USER->id);
+        $sink = $this->redirectEvents();
+        $this->assertTrue(auth::revoke_token($target['id'], $USER->id));
+        $this->assertSame(0, (int)$DB->get_field('tool_teachermcp_tokens', 'status', ['id' => $target['id']], MUST_EXIST));
+        $this->assertSame(1, (int)$DB->get_field('tool_teachermcp_tokens', 'status', ['id' => $survivor['id']], MUST_EXIST));
+        $events = $sink->get_events();
+        $sink->close();
+        $this->assertCount(1, $events);
+        $event = reset($events);
+        $this->assertInstanceOf(\tool_teachermcp\event\token_revoked::class, $event);
+        $this->assertEquals($target['id'], $event->objectid);
+        $this->assertEquals($owner->id, $event->relateduserid);
+    }
+
     public function test_token_lifecycle(): void {
         global $DB;
 

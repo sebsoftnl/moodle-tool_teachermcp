@@ -1,0 +1,29 @@
+{{!
+    @template tool_teachermcp/connection_details
+    Shared display of token expiry and grants; contains no credentials.
+}}
+<div class="tool_teachermcp_connection_details">
+    {{#teachername}}<p><strong>{{#str}}col_teacher, tool_teachermcp{{/str}}:</strong> {{teachername}}</p>{{/teachername}}
+    <dl class="mb-2">
+        <dt>{{#str}}status, tool_teachermcp{{/str}}</dt>
+        <dd>{{status_label}}</dd>
+        <dt>{{#str}}col_created, tool_teachermcp{{/str}}</dt>
+        <dd>{{created}}</dd>
+        <dt>{{#str}}lastaccess, tool_teachermcp{{/str}}</dt>
+        <dd>{{lastaccess}}</dd>
+        <dt>{{#str}}connection_expires, tool_teachermcp{{/str}}</dt>
+        <dd>{{details.validuntil}}</dd>
+        <dt>{{#str}}col_token, tool_teachermcp{{/str}}</dt>
+        <dd><code class="tool_teachermcp_token_suffix">...{{lastchars}}</code></dd>
+        <dt>{{#str}}connection_granted_actions, tool_teachermcp{{/str}}</dt>
+        <dd>
+            <ul class="pl-3 ps-3 mb-0">
+                {{#details.permissions}}
+                <li>{{#name}}<code>{{name}}</code>: {{/name}}{{description}}</li>
+                {{/details.permissions}}
+                {{^details.permissions}}<li>{{#str}}connection_no_grants, tool_teachermcp{{/str}}</li>{{/details.permissions}}
+            </ul>
+        </dd>
+    </dl>
+    <p class="text-muted mb-0">{{#str}}connection_grants_help, tool_teachermcp{{/str}}</p>
+</div>

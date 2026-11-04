@@ -22,6 +22,8 @@ use moodle_exception;
 use stdClass;
 use context_course;
 use core_question\local\bank\question_version_status;
+use tool_teachermcp\local\question_category_resolver;
+use tool_teachermcp\local\numerical_question;
 
 /**
  * MCP tool for interacting with the Moodle Question Bank (Moodle 4.0+ schema).
@@ -38,7 +40,7 @@ class manage_question_bank extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Manage Question Bank: list/create categories, list/get/create/update/delete questions, and attach questions to quizzes (Moodle 4.0+ schema).';
+        return 'Manage Question Bank: list categories; list/get/create/update/delete questions; and attach questions to quizzes (Moodle 4.0+ schema). Category creation is not an exposed action. Updates create a new version and return its new question_id; use that ID for subsequent edits.';
     }
 
     public function get_input_schema(): array {
@@ -76,7 +78,7 @@ class manage_question_bank extends base_tool {
                 ],
                 'qtype' => [
                     'type' => 'string',
-                    'enum' => ['multichoice', 'truefalse', 'shortanswer', 'essay'],
+                    'enum' => ['multichoice', 'truefalse', 'shortanswer', 'essay', 'numerical'],
                     'description' => 'Question type (for create_question).',
                 ],
                 'name' => [
@@ -101,7 +103,7 @@ class manage_question_bank extends base_tool {
                 ],
                 'single' => [
                     'type' => 'boolean',
-                    'description' => 'For multichoice: true for single correct answer, false for multiple correct answers (default: true).',
+                    'description' => 'For multichoice: true for single correct answer, false for multiple correct answers (default on creation: true; omitted on update: preserve existing setting).',
                 ],
                 'correct_truefalse' => [
                     'type' => 'boolean',
@@ -109,13 +111,14 @@ class manage_question_bank extends base_tool {
                 ],
                 'options' => [
                     'type' => 'array',
-                    'description' => 'Answer choices for multichoice or shortanswer questions. Each item: {answer: string, fraction: float, feedback?: string}.',
+                    'description' => 'Answer options for multichoice, shortanswer or numerical questions. For multichoice and numerical questions, supplied options replace the answer list; omit them on update to preserve existing answers.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
-                            'answer' => ['type' => 'string'],
-                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0.'],
+                            'answer' => ['type' => 'string', 'description' => 'Numerical answers use dot-decimal or scientific notation without units.'],
+                            'fraction' => ['type' => 'number', 'description' => 'Grade fraction between -1.0 and 1.0 (0.5 means 50%, not 50). Multichoice accepts numbers or numeric strings. Single-answer multichoice requires an answer with fraction 1.0. Multi-answer multichoice requires positive fractions to sum to 1.0 (rounded to two decimals); zero and negative distractors do not contribute to that sum. Numerical answers use Moodle-supported fractions from 0.0 to 1.0.'],
                             'feedback' => ['type' => 'string'],
+                            'tolerance' => ['type' => 'number', 'description' => 'Numerical answers: nonnegative absolute tolerance (default: 0).'],
                         ],
                         'required' => ['answer', 'fraction'],
                     ],
@@ -177,7 +180,9 @@ class manage_question_bank extends base_tool {
         $contexts = [$context->id];
         $modinfo = get_fast_modinfo($course);
         foreach ($modinfo->cms as $cm) {
-            $contexts[] = $cm->context->id;
+            if (has_capability('moodle/question:viewall', $cm->context)) {
+                $contexts[] = $cm->context->id;
+            }
         }
 
         list($ctxsql, $ctxparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
@@ -236,7 +241,9 @@ class manage_question_bank extends base_tool {
             $contexts = [$context->id];
             $modinfo = get_fast_modinfo($course);
             foreach ($modinfo->cms as $cm) {
-                $contexts[] = $cm->context->id;
+                if (has_capability('moodle/question:viewall', $cm->context)) {
+                    $contexts[] = $cm->context->id;
+                }
             }
             list($ctxsql, $ctxparams) = $DB->get_in_or_equal($contexts, SQL_PARAMS_NAMED);
             $catids = $DB->get_fieldset_select('question_categories', 'id', "contextid $ctxsql", $ctxparams);
@@ -315,18 +322,27 @@ class manage_question_bank extends base_tool {
 
         require_capability('moodle/question:viewall', $qcontext);
 
-        $answers = $DB->get_records('question_answers', ['question' => $questionid], 'id ASC');
+        if ($question->qtype === 'numerical') {
+            \question_bank::get_qtype('numerical')->get_question_options($question);
+            $answers = $question->options->answers;
+        } else {
+            $answers = $DB->get_records('question_answers', ['question' => $questionid], 'id ASC');
+        }
         $answerslist = [];
         foreach ($answers as $ans) {
-            $answerslist[] = [
+            $answer = [
                 'answer_id' => (int)$ans->id,
                 'answer' => strip_tags($ans->answer),
                 'fraction' => (float)$ans->fraction,
                 'feedback' => strip_tags($ans->feedback ?? ''),
             ];
+            if ($question->qtype === 'numerical') {
+                $answer['tolerance'] = (float)$ans->tolerance;
+            }
+            $answerslist[] = $answer;
         }
 
-        return [
+        $result = [
             'question_id' => (int)$question->id,
             'category_id' => (int)$question->questioncategoryid,
             'name' => $question->name,
@@ -339,18 +355,20 @@ class manage_question_bank extends base_tool {
             'generalfeedback' => strip_tags($question->generalfeedback ?? ''),
             'answers' => $answerslist,
         ];
+        if ($question->qtype === 'numerical') {
+            $result['numerical_options'] = numerical_question::describe_options($question->options);
+        }
+        return $result;
     }
 
     /**
      * Create a question using the Moodle Question API (K4).
      */
     protected function action_create_question(stdClass $course, context_course $context, array $params): array {
-        global $DB, $USER, $CFG;
-
-        require_capability('moodle/question:add', $context);
+        global $DB, $USER;
 
         $qtype = trim($params['qtype'] ?? '');
-        $supportedtypes = ['multichoice', 'truefalse', 'shortanswer', 'essay'];
+        $supportedtypes = ['multichoice', 'truefalse', 'shortanswer', 'essay', 'numerical'];
         if (!in_array($qtype, $supportedtypes, true)) {
             throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
                 "Unsupported qtype '{$qtype}'. Must be one of: " . implode(', ', $supportedtypes));
@@ -366,119 +384,122 @@ class manage_question_bank extends base_tool {
             throw new moodle_exception('missingparam', 'error', '', 'questiontext');
         }
 
-        // Determine target category and verify course context ownership.
-        $categoryid = (int)($params['category_id'] ?? 0);
-        if ($categoryid > 0) {
-            $category = $DB->get_record('question_categories', ['id' => $categoryid], '*', MUST_EXIST);
-            $catcontext = \context::instance_by_id($category->contextid, IGNORE_MISSING);
-            $catcoursecontext = $catcontext ? $catcontext->get_course_context(false) : null;
-            if (!$catcoursecontext || $catcoursecontext->id != $context->id) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    'Category does not belong to this course.');
-            }
-        } else {
-            $contexts = new \core_question\local\bank\question_edit_contexts($context);
-            $category = question_make_default_categories($contexts->all());
-        }
-
         $this->validate_question_options($qtype, $params);
-
-        $qtypeobj = \question_bank::get_qtype($qtype);
-
-        $form = new stdClass();
-        $form->category = $category->id;
-        $form->name = $name;
-        $form->questiontext = ['text' => $questiontext, 'format' => FORMAT_HTML];
-        $form->generalfeedback = ['text' => isset($params['generalfeedback']) ? $this->clean_agent_html($params['generalfeedback']) : '', 'format' => FORMAT_HTML];
-        $form->defaultmark = isset($params['defaultmark']) ? (float)$params['defaultmark'] : 1.0;
-        $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : 0.3333333;
-        $form->status = question_version_status::QUESTION_STATUS_READY;
-
-        // Feedback defaults.
-        $form->correctfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->partiallycorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->incorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
-        $form->shownumcorrect = 0;
-
-        if ($qtype === 'multichoice') {
-            $issingle = !isset($params['single']) || !empty($params['single']);
-            $form->single = $issingle ? 1 : 0;
-            $form->shuffleanswers = 1;
-            $form->answernumbering = 'abc';
-            $form->showstandardinstruction = 0;
-
-            $options = $params['options'] ?? [];
-            $form->noanswers = count($options);
-            $form->answer = [];
-            $form->fraction = [];
-            $form->feedback = [];
-
-            foreach ($options as $idx => $opt) {
-                $form->answer[$idx] = ['text' => $this->clean_agent_html($opt['answer']), 'format' => FORMAT_HTML];
-                $form->fraction[$idx] = (string)(float)$opt['fraction'];
-                $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
-            }
-        } else if ($qtype === 'truefalse') {
-            $iscorrecttrue = !empty($params['correct_truefalse']);
-            $form->correctanswer = $iscorrecttrue ? 1 : 0;
-            $form->feedbacktrue = ['text' => '', 'format' => FORMAT_HTML];
-            $form->feedbackfalse = ['text' => '', 'format' => FORMAT_HTML];
-        } else if ($qtype === 'essay') {
-            $form->responseformat = 'editor';
-            $form->responserequired = 1;
-            $form->responsefieldlines = 15;
-            $form->attachments = 0;
-            $form->attachmentsrequired = 0;
-            $form->graderinfo = ['text' => '', 'format' => FORMAT_HTML];
-            $form->responsetemplate = ['text' => '', 'format' => FORMAT_HTML];
-        } else if ($qtype === 'shortanswer') {
-            $form->usecase = 0;
-            $options = $params['options'] ?? [];
-            $form->noanswers = count($options);
-            $form->answer = [];
-            $form->fraction = [];
-            $form->feedback = [];
-
-            foreach ($options as $idx => $opt) {
-                $form->answer[$idx] = clean_param($opt['answer'], PARAM_TEXT);
-                $form->fraction[$idx] = (string)(float)$opt['fraction'];
-                $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
-            }
-        }
-
-        $basequestion = new stdClass();
-        $basequestion->qtype = $qtype;
-        $basequestion->createdby = $USER->id;
-
-        $created = $qtypeobj->save_question($basequestion, $form);
-
-        $result = [
-            'success' => true,
-            'question_id' => (int)$created->id,
-            'category_id' => (int)$category->id,
-            'name' => $created->name,
-            'qtype' => $created->qtype,
-            'defaultmark' => (float)$created->defaultmark,
-        ];
-
-        // Attach to quiz if quiz_id provided (B4).
         $quizid = (int)($params['quiz_id'] ?? 0);
-        if ($quizid > 0) {
-            $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
-            list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
-            list($cm, $course, $quizcontext) = $this->require_cm_access($cm->id, 'mod/quiz:manage');
+        $quiz = $quizid !== 0 ? $this->require_editable_quiz($course, $quizid) : null;
+        $transaction = $DB->start_delegated_transaction();
 
-            require_once($CFG->dirroot . '/mod/quiz/locallib.php');
-            if (quiz_has_attempts($quiz->id)) {
-                throw new moodle_exception('cannoteditafterattempts', 'quiz');
+        try {
+            $category = question_category_resolver::resolve($course, (int)($params['category_id'] ?? 0));
+            if ($quiz !== null) {
+                require_capability('moodle/question:viewall', \context::instance_by_id($category->contextid));
+            }
+            $qtypeobj = \question_bank::get_qtype($qtype);
+
+            $form = new stdClass();
+            $form->category = $category->id;
+            $form->name = $name;
+            $form->questiontext = ['text' => $questiontext, 'format' => FORMAT_HTML];
+            $form->generalfeedback = ['text' => isset($params['generalfeedback']) ? $this->clean_agent_html($params['generalfeedback']) : '', 'format' => FORMAT_HTML];
+            $form->defaultmark = isset($params['defaultmark']) ? (float)$params['defaultmark'] : 1.0;
+            $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : 0.3333333;
+            $form->status = question_version_status::QUESTION_STATUS_READY;
+
+            // Feedback defaults.
+            $form->correctfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->partiallycorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->incorrectfeedback = ['text' => '', 'format' => FORMAT_HTML];
+            $form->shownumcorrect = 0;
+
+            if ($qtype === 'multichoice') {
+                $issingle = !isset($params['single']) || !empty($params['single']);
+                $form->single = $issingle ? 1 : 0;
+                $form->shuffleanswers = 1;
+                $form->answernumbering = 'abc';
+                $form->showstandardinstruction = 0;
+
+                $options = $params['options'] ?? [];
+                $form->noanswers = count($options);
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+
+                foreach ($options as $idx => $opt) {
+                    $form->answer[$idx] = ['text' => $this->clean_agent_html($opt['answer']), 'format' => FORMAT_HTML];
+                    $form->fraction[$idx] = (string)(float)$opt['fraction'];
+                    $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
+                }
+            } else if ($qtype === 'truefalse') {
+                $iscorrecttrue = !empty($params['correct_truefalse']);
+                $form->correctanswer = $iscorrecttrue ? 1 : 0;
+                $form->feedbacktrue = ['text' => '', 'format' => FORMAT_HTML];
+                $form->feedbackfalse = ['text' => '', 'format' => FORMAT_HTML];
+            } else if ($qtype === 'essay') {
+                $form->responseformat = 'editor';
+                $form->responserequired = 1;
+                $form->responsefieldlines = 15;
+                $form->attachments = 0;
+                $form->attachmentsrequired = 0;
+                $form->graderinfo = ['text' => '', 'format' => FORMAT_HTML];
+                $form->responsetemplate = ['text' => '', 'format' => FORMAT_HTML];
+            } else if ($qtype === 'shortanswer') {
+                $form->usecase = 0;
+                $options = $params['options'] ?? [];
+                $form->noanswers = count($options);
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+
+                foreach ($options as $idx => $opt) {
+                    $form->answer[$idx] = clean_param($opt['answer'], PARAM_TEXT);
+                    $form->fraction[$idx] = (string)(float)$opt['fraction'];
+                    $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
+                }
             }
 
-            quiz_add_quiz_question($created->id, $quiz);
-            \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
-            $result['added_to_quiz_id'] = $quiz->id;
-        }
+            if ($qtype === 'numerical') {
+                numerical_question::prepare_form($form, $params);
+            }
 
-        return $result;
+            $basequestion = new stdClass();
+            $basequestion->qtype = $qtype;
+            $basequestion->createdby = $USER->id;
+
+            $created = $qtypeobj->save_question($basequestion, $form);
+
+            $result = [
+                'success' => true,
+                'question_id' => (int)$created->id,
+                'category_id' => (int)$category->id,
+                'name' => $created->name,
+                'qtype' => $created->qtype,
+                'defaultmark' => (float)$created->defaultmark,
+            ];
+
+            if ($quiz !== null) {
+                quiz_require_question_use($created->id);
+                quiz_add_quiz_question($created->id, $quiz);
+                \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
+                $result['added_to_quiz_id'] = $quiz->id;
+            }
+
+            $transaction->allow_commit();
+            return $result;
+        } catch (\Throwable $error) {
+            try {
+                $transaction->rollback($error);
+            } finally {
+                // Native module caches are outside the database transaction.
+                $cache = \cache::make('core', 'coursemodinfo');
+                $cache->acquire_lock($course->id);
+                try {
+                    $cache->delete($course->id);
+                } finally {
+                    $cache->release_lock($course->id);
+                }
+                \course_modinfo::clear_instance_cache();
+            }
+        }
     }
 
     /**
@@ -511,6 +532,7 @@ class manage_question_bank extends base_tool {
 
         // B3: Validate category move and verify course context ownership and move capabilities.
         $targetcatid = (int)($params['category_id'] ?? 0);
+        $newcat = null;
         if ($targetcatid > 0 && $targetcatid != $existing->questioncategoryid) {
             $newcat = $DB->get_record('question_categories', ['id' => $targetcatid], '*', MUST_EXIST);
             $newcatcontext = \context::instance_by_id($newcat->contextid, IGNORE_MISSING);
@@ -522,6 +544,7 @@ class manage_question_bank extends base_tool {
 
             require_once($CFG->dirroot . '/lib/questionlib.php');
             question_require_capability_on($existing, 'move');
+            require_capability('moodle/question:add', $newcatcontext);
 
             $ismine = ($existing->createdby == $USER->id);
             if ($ismine) {
@@ -532,6 +555,20 @@ class manage_question_bank extends base_tool {
                 require_capability('moodle/question:moveall', $newcatcontext);
             }
 
+        }
+
+        if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
+            $validationparams = $params;
+            if ($existing->qtype === 'multichoice' && !isset($params['single'])) {
+                $validationparams['single'] = (bool)$DB->get_field('qtype_multichoice_options', 'single',
+                    ['questionid' => $existing->id], MUST_EXIST);
+            }
+            $this->validate_question_options($existing->qtype, $validationparams);
+        }
+        if ($existing->qtype === 'numerical' && array_key_exists('options', $params)) {
+            numerical_question::validate_options($params['options']);
+        }
+        if ($newcat !== null) {
             question_move_questions_to_category([$existing->id], $newcat->id);
             $existing->questioncategoryid = $newcat->id;
         }
@@ -553,6 +590,10 @@ class manage_question_bank extends base_tool {
         $form->penalty = isset($params['penalty']) ? (float)$params['penalty'] : (float)$existing->penalty;
         $form->status = question_version_status::QUESTION_STATUS_READY;
 
+        if (in_array($existing->qtype, ['multichoice', 'essay'], true)) {
+            $this->prepare_existing_type_form($form, $existing, $params);
+        }
+
         if ($existing->qtype === 'truefalse') {
             $existingoptions = $DB->get_record('question_truefalse', ['question' => $existing->id], '*', MUST_EXIST);
             $trueanswer = $DB->get_record('question_answers', ['id' => $existingoptions->trueanswer], '*', MUST_EXIST);
@@ -563,7 +604,6 @@ class manage_question_bank extends base_tool {
         }
 
         if (isset($params['options']) && in_array($existing->qtype, ['multichoice', 'shortanswer'])) {
-            $this->validate_question_options($existing->qtype, $params);
             $options = $params['options'];
             $form->noanswers = count($options);
             $form->answer = [];
@@ -591,16 +631,15 @@ class manage_question_bank extends base_tool {
                     $form->feedback[$idx] = ['text' => $this->clean_agent_html($opt['feedback'] ?? ''), 'format' => FORMAT_HTML];
                 }
 
-                $issingle = !isset($params['single']) || !empty($params['single']);
-                $form->single = $issingle ? 1 : 0;
-                $form->shuffleanswers = 1;
-                $form->answernumbering = 'abc';
-                $form->showstandardinstruction = 0;
             }
         }
 
         if ($existing->qtype === 'truefalse' && array_key_exists('correct_truefalse', $params)) {
             $form->correctanswer = !empty($params['correct_truefalse']) ? 1 : 0;
+        }
+
+        if ($existing->qtype === 'numerical') {
+            numerical_question::prepare_form($form, $params, $existing);
         }
 
         $existing->modifiedby = $USER->id;
@@ -613,6 +652,86 @@ class manage_question_bank extends base_tool {
             'qtype' => $updated->qtype,
             'defaultmark' => (float)$updated->defaultmark,
         ];
+    }
+
+    /**
+     * Rebuild the native editor fields required when versioning multichoice and essay questions.
+     *
+     * @param stdClass $form Common fields for the new version.
+     * @param stdClass $existing Question being versioned.
+     * @param array $params Requested changes.
+     */
+    private function prepare_existing_type_form(stdClass $form, stdClass $existing, array $params): void {
+        global $CFG, $DB;
+        require_once($CFG->libdir . '/filelib.php');
+        \question_bank::get_qtype($existing->qtype)->get_question_options($existing);
+        $options = $existing->options;
+        $contextid = (int)$DB->get_field('question_categories', 'contextid', ['id' => $form->category], MUST_EXIST);
+        $form->idnumber = get_question_bank_entry($existing->id)->idnumber;
+        $form->parent = $existing->parent;
+        $form->status = $DB->get_field('question_versions', 'status', ['questionid' => $existing->id], MUST_EXIST);
+        foreach (['questiontext', 'generalfeedback'] as $area) {
+            $format = isset($params[$area]) ? FORMAT_HTML : (int)$existing->{$area . 'format'};
+            $form->{$area} = $this->existing_editor($form->{$area}['text'], $format,
+                $contextid, 'question', $area, (int)$existing->id);
+        }
+
+        if ($existing->qtype === 'multichoice') {
+            foreach (['single', 'shuffleanswers', 'answernumbering', 'layout', 'shownumcorrect',
+                    'showstandardinstruction'] as $field) {
+                $form->{$field} = $options->{$field};
+            }
+            if (array_key_exists('single', $params)) {
+                $form->single = !empty($params['single']) ? 1 : 0;
+            }
+            foreach (['correctfeedback', 'partiallycorrectfeedback', 'incorrectfeedback'] as $area) {
+                $form->{$area} = $this->existing_editor($options->{$area}, (int)$options->{$area . 'format'},
+                    $contextid, 'question', $area, (int)$existing->id);
+            }
+            if (!isset($params['options'])) {
+                $form->answer = [];
+                $form->fraction = [];
+                $form->feedback = [];
+                foreach ($options->answers as $answer) {
+                    $form->answer[] = $this->existing_editor($answer->answer, (int)$answer->answerformat,
+                        $contextid, 'question', 'answer', (int)$answer->id);
+                    $form->fraction[] = (string)$answer->fraction;
+                    $form->feedback[] = $this->existing_editor($answer->feedback, (int)$answer->feedbackformat,
+                        $contextid, 'question', 'answerfeedback', (int)$answer->id);
+                }
+                $form->noanswers = count($form->answer);
+            }
+            $form->hint = [];
+            foreach ($existing->hints as $hint) {
+                $form->hint[] = $this->existing_editor($hint->hint, (int)$hint->hintformat,
+                    $contextid, 'question', 'hint', (int)$hint->id);
+                $form->hintclearwrong[] = $hint->clearwrong;
+                $form->hintshownumcorrect[] = $hint->shownumcorrect;
+            }
+        } else {
+            foreach (['responseformat', 'responserequired', 'responsefieldlines', 'attachments',
+                    'attachmentsrequired', 'filetypeslist', 'maxbytes'] as $field) {
+                $form->{$field} = $options->{$field};
+            }
+            foreach (['minword', 'maxword'] as $limit) {
+                if ($options->{$limit . 'limit'} !== null) {
+                    $form->{$limit . 'enabled'} = 1;
+                    $form->{$limit . 'limit'} = $options->{$limit . 'limit'};
+                }
+            }
+            $form->graderinfo = $this->existing_editor((string)$options->graderinfo, (int)$options->graderinfoformat,
+                $contextid, 'qtype_essay', 'graderinfo', (int)$existing->id);
+            $form->responsetemplate = ['text' => (string)$options->responsetemplate,
+                'format' => (int)$options->responsetemplateformat];
+        }
+    }
+
+    /** Prepare a native draft so the new version retains the existing embedded files. */
+    private function existing_editor(string $text, int $format, int $contextid, string $component,
+            string $area, int $itemid): array {
+        $draftid = 0;
+        $text = file_prepare_draft_area($draftid, $contextid, $component, $area, $itemid, ['subdirs' => true], $text);
+        return ['text' => $text, 'format' => $format, 'itemid' => $draftid];
     }
 
     /**
@@ -682,7 +801,7 @@ class manage_question_bank extends base_tool {
         }
 
         // Replay prevention.
-        if (get_cache_flag('tool_teachermcp_usedtoken', $tokenhash, time())) {
+        if (get_cache_flag('tool_teachermcp_usedtoken', $tokenhash)) {
             throw new moodle_exception('error_confirmation_token_expired', 'tool_teachermcp');
         }
         set_cache_flag('tool_teachermcp_usedtoken', $tokenhash, 1, time() + 600);
@@ -700,7 +819,7 @@ class manage_question_bank extends base_tool {
      * Add existing question to a quiz (K4 scoped, B4 hardened).
      */
     protected function action_add_to_quiz(stdClass $course, context_course $context, array $params): array {
-        global $DB, $CFG;
+        global $DB;
 
         $quizid = (int)($params['quiz_id'] ?? 0);
         $questionid = (int)($params['question_id'] ?? 0);
@@ -709,16 +828,7 @@ class manage_question_bank extends base_tool {
             throw new moodle_exception('missingparam', 'error', '', 'quiz_id and question_id');
         }
 
-        $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
-
-        // B4: Require mod/quiz:manage on quiz module context and reject if attempts exist.
-        list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
-        list($cm, $course, $quizcontext) = $this->require_cm_access($cm->id, 'mod/quiz:manage');
-
-        require_once($CFG->dirroot . '/mod/quiz/locallib.php');
-        if (quiz_has_attempts($quiz->id)) {
-            throw new moodle_exception('cannoteditafterattempts', 'quiz');
-        }
+        $quiz = $this->require_editable_quiz($course, $quizid);
 
         // Verify question belongs to this course context.
         $sql = "SELECT q.*, qc.contextid
@@ -736,6 +846,8 @@ class manage_question_bank extends base_tool {
                 'Question does not belong to this course.');
         }
 
+        require_capability('moodle/question:viewall', $qcontext);
+        quiz_require_question_use($question->id);
         quiz_add_quiz_question($question->id, $quiz);
 
         \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
@@ -748,26 +860,50 @@ class manage_question_bank extends base_tool {
         ];
     }
 
+    private function require_editable_quiz(stdClass $course, int $quizid): stdClass {
+        global $DB;
+        $quiz = $DB->get_record('quiz', ['id' => $quizid, 'course' => $course->id], '*', MUST_EXIST);
+        list($course, $cm) = get_course_and_cm_from_instance($quiz->id, 'quiz', $course->id);
+        $this->require_cm_access($cm->id, 'mod/quiz:manage');
+        if (quiz_has_attempts($quiz->id)) {
+            throw new moodle_exception('cannoteditafterattempts', 'quiz');
+        }
+        $quiz->cmid = $cm->id;
+        return $quiz;
+    }
+
     /**
      * Validate question options and answer fractions according to Moodle rules.
      */
     protected function validate_question_options(string $qtype, array $params): void {
-        if ($qtype === 'multichoice') {
+        if ($qtype === 'numerical') {
+            numerical_question::validate_options($params['options'] ?? []);
+        } else if ($qtype === 'multichoice') {
             $options = $params['options'] ?? [];
             if (count($options) < 2) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
                     'Multichoice questions require at least 2 answer options.');
             }
-            $hasfullmark = false;
+            $maxfraction = -1.0;
+            $positivefraction = 0.0;
             foreach ($options as $opt) {
                 $frac = (float)($opt['fraction'] ?? 0.0);
-                if (abs($frac - 1.0) < 0.001) {
-                    $hasfullmark = true;
+                if (!is_finite($frac) || $frac < -1.0 || $frac > 1.0) {
+                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                        'Multichoice answer fractions must be finite numbers between -1.0 and 1.0, not percentages.');
                 }
+                $maxfraction = max($maxfraction, $frac);
+                $positivefraction += max(0.0, $frac);
             }
-            if (!$hasfullmark) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    'At least one answer option must have a grade fraction of 1.0 (100% correct).');
+            $single = !isset($params['single']) || !empty($params['single']);
+            if ($single && $maxfraction != 1.0) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                    'Single-answer multichoice requires at least one answer with a grade fraction of 1.0 (100% correct).');
+            }
+            // Match the native multichoice form and save API, including rounded thirds.
+            if (!$single && round($positivefraction, 2) != 1.0) {
+                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                    'Multi-answer multichoice requires positive answer fractions to sum to 1.0 (100%) when rounded to two decimals.');
             }
         } else if ($qtype === 'shortanswer') {
             $options = $params['options'] ?? [];

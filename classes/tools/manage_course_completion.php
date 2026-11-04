@@ -141,13 +141,14 @@ class manage_course_completion extends base_tool {
                     $statuslabel = 'complete_fail';
                 }
 
+                $timecompleted = $data->completionstate == COMPLETION_INCOMPLETE ? null : (int)$data->timemodified;
                 $activitiesprogress[] = [
                     'cmid' => (int)$cm->id,
                     'modname' => $cm->modname,
                     'name' => $cm->name,
                     'state' => $statuslabel,
-                    'timecompleted' => $data->timecompleted ? (int)$data->timecompleted : null,
-                    'timecompleted_iso' => $data->timecompleted ? date('c', (int)$data->timecompleted) : null,
+                    'timecompleted' => $timecompleted,
+                    'timecompleted_iso' => $timecompleted !== null ? date('c', $timecompleted) : null,
                 ];
             }
 

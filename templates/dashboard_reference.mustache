@@ -1,0 +1,39 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+    @template tool_teachermcp/dashboard_reference
+}}
+<details id="technical-reference" class="mb-4 pt-3 border-top">
+    <summary class="h5">{{#str}}technical_reference, tool_teachermcp{{/str}}</summary>
+    <p class="text-muted">{{tools_count_badge}}</p>
+    <details id="resourcestab" class="mb-3">
+        <summary class="font-weight-bold">{{#str}}mcp_resources_title, tool_teachermcp{{/str}}</summary>
+        <p class="mt-2">{{#str}}mcp_resources_desc, tool_teachermcp{{/str}}</p>
+        <div class="table-responsive" tabindex="0">
+            <table class="table table-sm">
+                <thead><tr><th>{{#str}}resource_uri, tool_teachermcp{{/str}}</th><th>{{#str}}resource_name, tool_teachermcp{{/str}}</th><th>{{#str}}description{{/str}}</th></tr></thead>
+                <tbody>
+                    {{#mcp_resources}}<tr><td><code>{{uri}}</code></td><td>{{name}}</td><td>{{description}}</td></tr>{{/mcp_resources}}
+                    {{#mcp_resource_templates}}<tr><td><code>{{uriTemplate}}</code></td><td>{{name}}</td><td>{{description}}</td></tr>{{/mcp_resource_templates}}
+                </tbody>
+            </table>
+        </div>
+    </details>
+    <details id="skilltab" class="mb-3">
+        <summary class="font-weight-bold">{{#str}}agent_skill_title, tool_teachermcp{{/str}}</summary>
+        <p class="mt-2">{{#str}}agent_skill_subtitle, tool_teachermcp{{/str}}</p>
+        <div class="d-flex flex-wrap tool_teachermcp_actions mb-3">
+            <a href="{{download_skill_url}}" class="btn btn-primary">{{#str}}download_skill_file, tool_teachermcp{{/str}}</a>
+            <button type="button" class="btn btn-primary" data-copy-target="agentSystemPromptBlock">{{#str}}copy_skill_prompt, tool_teachermcp{{/str}}</button>
+        </div>
+        <pre class="tool_teachermcp_guide_preview bg-light border rounded p-3" id="agentSystemPromptBlock"><code>{{system_prompt_content}}</code></pre>
+    </details>
+    <details>
+        <summary class="font-weight-bold">{{#str}}oauth_endpoints_title, tool_teachermcp{{/str}}</summary>
+        <dl class="mt-2">
+            <dt>{{#str}}oauth_auth_endpoint, tool_teachermcp{{/str}}</dt><dd><code>{{oauth_auth_url}}</code></dd>
+            <dt>{{#str}}oauth_token_endpoint, tool_teachermcp{{/str}}</dt><dd><code>{{oauth_token_url}}</code></dd>
+            <dt>{{#str}}oauth_metadata_endpoint, tool_teachermcp{{/str}}</dt><dd><code>{{oauth_meta_url}}</code></dd>
+        </dl>
+    </details>
+</details>

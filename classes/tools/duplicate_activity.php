@@ -18,6 +18,8 @@ namespace tool_teachermcp\tools;
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_courseformat\formatactions;
+use core_courseformat\local\cmactions;
 use moodle_exception;
 use stdClass;
 
@@ -88,9 +90,19 @@ class duplicate_activity extends base_tool {
                 "Module '{$cm->modname}' does not support duplication.");
         }
 
-        // If in same course and same section, we can use core duplicate_module.
+        if ($sectionnum !== null) {
+            $targetsections = get_fast_modinfo($targetcourse)->get_section_info_all();
+            if (!isset($targetsections[$sectionnum])) {
+                throw new moodle_exception('sectionnotexist', 'error');
+            }
+        }
+
         if ($targetcourse->id === $sourcecourse->id && $sectionnum === null) {
-            $newcm = duplicate_module($sourcecourse, $cm);
+            if (method_exists(cmactions::class, 'duplicate')) {
+                $newcm = formatactions::cm($sourcecourse)->duplicate((int)$cm->id);
+            } else {
+                $newcm = duplicate_module($sourcecourse, $cm);
+            }
             return [
                 'success' => true,
                 'message' => "Activity '{$cm->name}' successfully duplicated.",
@@ -132,8 +144,10 @@ class duplicate_activity extends base_tool {
         // Move to requested section if specified.
         if ($newcmid && $sectionnum !== null) {
             $targetmodinfo = get_fast_modinfo($targetcourse);
-            if (isset($targetmodinfo->sections[$sectionnum])) {
-                $targetsection = $targetmodinfo->get_section_info($sectionnum);
+            $targetsection = $targetmodinfo->get_section_info($sectionnum, MUST_EXIST);
+            if (method_exists(cmactions::class, 'move_end_section')) {
+                formatactions::cm($targetcourse)->move_end_section((int)$newcmid, (int)$targetsection->id);
+            } else {
                 moveto_module($targetmodinfo->cms[$newcmid], $targetsection);
             }
         }

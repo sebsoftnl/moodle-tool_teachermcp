@@ -35,7 +35,7 @@ class manage_activity extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Get settings for a course activity, or update the name, description, and visibility of a Moodle Page activity.';
+        return 'Get basic activity settings; update Page name, description and visibility; or publish/unpublish Assignment, Quiz, H5P and Book using visibility-only updates. Other module settings must be edited in Moodle.';
     }
 
     public function get_input_schema(): array {
@@ -48,21 +48,21 @@ class manage_activity extends base_tool {
                 ],
                 'action' => [
                     'type' => 'string',
-                    'description' => 'Action to perform: "get_settings" for any activity or "update_settings" for a Moodle Page activity.',
+                    'description' => '"get_settings" reads basic settings. "update_settings" edits Pages; for Assignment, Quiz, H5P and Book, supply only cmid, action and visible.',
                     'enum' => ['get_settings', 'update_settings'],
                     'default' => 'get_settings',
                 ],
                 'name' => [
                     'type' => 'string',
-                    'description' => 'New activity title/name (when updating).',
+                    'description' => 'New Page title/name. Not supported for other module types.',
                 ],
                 'intro' => [
                     'type' => 'string',
-                    'description' => 'New activity introduction/description text (when updating).',
+                    'description' => 'New Page introduction/description. Not supported for other module types.',
                 ],
                 'visible' => [
                     'type' => 'boolean',
-                    'description' => 'Set visibility status (true = visible to students, false = hidden).',
+                    'description' => 'Set the visibility flag for Page, Assignment, Quiz, H5P or Book. Course/section visibility and availability restrictions still apply.',
                 ],
             ],
             'required' => ['cmid', 'action'],
@@ -96,8 +96,27 @@ class manage_activity extends base_tool {
 
         if ($action === 'update_settings') {
             if ($cm->modname !== 'page') {
-                throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null,
-                    'Updating settings is currently supported only for Page activities.');
+                if (!in_array($cm->modname, ['assign', 'quiz', 'h5pactivity', 'book'], true)
+                        || !isset($params['visible'])
+                        || array_diff(array_keys($params), ['cmid', 'action', 'visible'])) {
+                    throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '',
+                        get_string('error_activity_settings_restricted', 'tool_teachermcp', $cm->modname));
+                }
+                require_capability('moodle/course:activityvisibility', $context);
+                set_coursemodule_visible($cm->id, (int)$params['visible'], (int)$cm->visibleoncoursepage);
+                \core\event\course_module_updated::create_from_cm($cm)->trigger();
+                rebuild_course_cache($course->id, true);
+                $updatedcm = get_coursemodule_from_id('', $cm->id, 0, false, MUST_EXIST);
+                return [
+                    'success' => true,
+                    'message' => "Activity {$cm->id} ({$cm->modname}) visibility updated; availability restrictions still apply.",
+                    'cmid' => (int)$cm->id,
+                    'name' => $instancerecord->name,
+                    'visible' => (bool)$updatedcm->visible,
+                ];
+            }
+            if (isset($params['visible'])) {
+                require_capability('moodle/course:activityvisibility', $context);
             }
             // H7: Use core modlib API to update instance and grade item definitions.
             $coursemodule = get_coursemodule_from_id('page', $cm->id, 0, false, MUST_EXIST);
@@ -127,17 +146,21 @@ class manage_activity extends base_tool {
                 'itemid' => 0,
             ];
             $moduleinfo->display = $instancerecord->display;
-            $moduleinfo->printintro = 0;
-            $moduleinfo->printlastmodified = 0;
+            $displayoptions = unserialize($instancerecord->displayoptions, ['allowed_classes' => false]);
+            $moduleinfo->printintro = $displayoptions['printintro'] ?? 0;
+            $moduleinfo->printlastmodified = $displayoptions['printlastmodified'] ?? 0;
+            foreach (['popupwidth', 'popupheight'] as $option) {
+                if (isset($displayoptions[$option])) {
+                    $moduleinfo->{$option} = $displayoptions[$option];
+                }
+            }
             $moduleinfo->revision = $instancerecord->revision;
 
             if ($hascontentupdates) {
                 update_moduleinfo($coursemodule, $moduleinfo, $course);
             }
 
-            // H7: Changing visibility requires moodle/course:activityvisibility.
             if (isset($params['visible'])) {
-                require_capability('moodle/course:activityvisibility', $context);
                 set_coursemodule_visible($cm->id, (int)$params['visible']);
                 \core\event\course_module_updated::create_from_cm($cm)->trigger();
                 rebuild_course_cache($course->id, true);
@@ -156,6 +179,6 @@ class manage_activity extends base_tool {
             ];
         }
 
-        throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null, "Unsupported action: {$action}");
+        throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', $action);
     }
 }

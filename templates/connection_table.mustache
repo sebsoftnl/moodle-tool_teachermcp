@@ -1,0 +1,70 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is distributed under the GNU General Public License, version 3 or later.
+
+    @template tool_teachermcp/connection_table
+    Shared teacher connection rows for active access and inactive history.
+}}
+<div class="table-responsive" tabindex="0">
+    <table class="table table-hover table-striped mb-0 {{^admin_view}}small{{/admin_view}} tool_teachermcp_connections">
+        <thead>
+            <tr>
+                {{#admin_view}}<th scope="col">{{#str}}col_teacher, tool_teachermcp{{/str}}</th>{{/admin_view}}
+                <th scope="col">{{#str}}agent_name, tool_teachermcp{{/str}}</th>
+                {{#admin_view}}
+                <th scope="col">{{#str}}col_token, tool_teachermcp{{/str}}</th>
+                <th scope="col">{{#str}}col_created, tool_teachermcp{{/str}}</th>
+                {{/admin_view}}
+                <th scope="col">{{#str}}lastaccess, tool_teachermcp{{/str}}</th>
+                <th scope="col">{{#str}}status, tool_teachermcp{{/str}}</th>
+                <th scope="col" class="text-right text-end">{{#str}}actions, tool_teachermcp{{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#tokens}}
+            <tr data-token-id="{{id}}" class="tool_teachermcp_connection_row border-bottom">
+                {{#admin_view}}
+                <td class="align-middle tool_teachermcp_connection_teacher">
+                    <span class="tool_teachermcp_mobile_label">{{#str}}col_teacher, tool_teachermcp{{/str}}:</span>
+                    <a href="{{teacherurl}}">{{teachername}}</a>
+                </td>
+                {{/admin_view}}
+                <td class="align-middle tool_teachermcp_connection_name">
+                    <div class="font-weight-bold">{{name}}</div>
+                    {{^admin_view}}<code class="tool_teachermcp_token_suffix tool_teachermcp_connection_identifier">...{{lastchars}}</code>{{/admin_view}}
+                </td>
+                {{#admin_view}}
+                <td class="align-middle tool_teachermcp_connection_identifier"><code class="tool_teachermcp_token_suffix">...{{lastchars}}</code></td>
+                <td class="align-middle tool_teachermcp_connection_created">{{created}}</td>
+                {{/admin_view}}
+                <td class="align-middle text-muted tool_teachermcp_connection_lastaccess">
+                    <span class="tool_teachermcp_mobile_label">{{#str}}lastaccess, tool_teachermcp{{/str}}:</span>
+                    {{lastaccess}}
+                </td>
+                <td class="align-middle tool_teachermcp_connection_status">
+                    <span class="tool_teachermcp_mobile_label">{{#str}}status, tool_teachermcp{{/str}}:</span>
+                    <span class="badge {{#status_active}}badge-success{{/status_active}}{{^status_active}}badge-secondary{{/status_active}}">{{status_label}}</span>
+                </td>
+                <td class="align-middle text-right text-end tool_teachermcp_connection_actions">
+                    <div class="d-flex flex-wrap tool_teachermcp_actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled
+                                data-connection-details="tool-teachermcp-details-{{id}}"
+                                data-modal-title="{{#str}}connection_details, tool_teachermcp{{/str}}: {{name}}"
+                                data-close-label="{{#str}}closebuttontitle, core{{/str}}"
+                                aria-label="{{#str}}connection_details, tool_teachermcp{{/str}}: {{name}}">
+                            {{#str}}connection_details, tool_teachermcp{{/str}}
+                        </button>
+                        {{#status_active}}
+                        <a href="{{revokelink}}" class="btn btn-outline-danger btn-sm" aria-label="{{#str}}revoke, tool_teachermcp{{/str}}: {{name}}"
+                           data-confirm-revoke="{{confirm_revoke}}" onclick="return confirm(this.dataset.confirmRevoke);">
+                            <i class="fa fa-ban" aria-hidden="true"></i> {{#str}}btn_revoke, tool_teachermcp{{/str}}
+                        </a>
+                        {{/status_active}}
+                    </div>
+                    <template id="tool-teachermcp-details-{{id}}">{{> tool_teachermcp/connection_details}}</template>
+                </td>
+            </tr>
+            {{/tokens}}
+        </tbody>
+    </table>
+</div>

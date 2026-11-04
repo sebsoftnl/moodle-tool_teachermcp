@@ -62,7 +62,23 @@ final class prompt_registry {
         }
 
         $def = $definitions[$name];
-        $text = call_user_func($def['generator'], $arguments);
+        $context = (object)[
+            'courseid' => $arguments['course_id'] ?? '[course_id]',
+            'coursename' => '[course_name]',
+            'cmid' => $arguments['cmid'] ?? '[enter_cmid]',
+        ];
+        $text = get_string($def['text_key'], 'tool_teachermcp', $context);
+        $details = [];
+        foreach ($def['arguments'] as $argument) {
+            $key = $argument['name'];
+            if (!$argument['required'] && isset($arguments[$key])) {
+                $details[$key] = $arguments[$key];
+            }
+        }
+        if ($details) {
+            $text .= "\n\n" . get_string('prompt_supplied_arguments', 'tool_teachermcp',
+                json_encode($details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
 
         return [
             'description' => get_string($def['desc_key'], 'tool_teachermcp'),
@@ -79,7 +95,7 @@ final class prompt_registry {
     }
 
     /**
-     * Raw prompt definitions with localized description keys and generator closures.
+     * Prompt definitions with localized text keys and public argument declarations.
      *
      * @return array<string, array>
      */
@@ -87,6 +103,7 @@ final class prompt_registry {
         return [
             'ingest_course' => [
                 'desc_key' => 'prompt_ingest_desc',
+                'text_key' => 'prompt_ingest_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -94,15 +111,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    return "Use \"export_course_learning_material\" for course ID {$cid}. " .
-                        "Give me a summary of the 5 key concepts, explain the required knowledge per section, " .
-                        "and list any attached source files you extracted.";
-                },
             ],
             'create_page' => [
                 'desc_key' => 'prompt_page_desc',
+                'text_key' => 'prompt_page_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -111,7 +123,7 @@ final class prompt_registry {
                     ],
                     [
                         'name' => 'section_number',
-                        'description' => 'Target section number (default: 1).',
+                        'description' => 'Target section number; ask the teacher if omitted.',
                         'required' => false,
                     ],
                     [
@@ -120,17 +132,10 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? '1';
-                    $title = $args['title'] ?? 'Core Concepts and Summary';
-                    return "Using \"manage_content_activity\", create a Page in course ID {$cid} in section {$sec} " .
-                        "titled \"{$title}\". Include structured headings, a callout box summarizing key takeaways, " .
-                        "and clean formatting.";
-                },
             ],
             'create_book' => [
                 'desc_key' => 'prompt_book_desc',
+                'text_key' => 'prompt_book_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -139,7 +144,7 @@ final class prompt_registry {
                     ],
                     [
                         'name' => 'section_number',
-                        'description' => 'Target section number (default: 1).',
+                        'description' => 'Target section number; ask the teacher if omitted.',
                         'required' => false,
                     ],
                     [
@@ -148,17 +153,10 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? '1';
-                    $title = $args['title'] ?? 'Course Study Guide';
-                    return "Create a Book in course ID {$cid} section {$sec} titled \"{$title}\". " .
-                        "Create Chapter 1: Introduction & Definitions, Chapter 2: Core Theory & Analysis, " .
-                        "and Chapter 3: Practical Applications.";
-                },
             ],
             'upload_image' => [
                 'desc_key' => 'prompt_image_desc',
+                'text_key' => 'prompt_image_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -176,25 +174,21 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $file = $args['filename'] ?? 'diagram.png';
-                    $sec = $args['section_number'] ?? '1';
-                    return "Upload the provided diagram to course ID {$cid} as \"{$file}\" using \"upload_course_asset\". " .
-                        "Then create a Page in section {$sec} with the image embedded inside.";
-                },
             ],
             'inspect_h5p' => [
                 'desc_key' => 'prompt_h5p_inspect_desc',
-                'arguments' => [],
-                'generator' => function(array $args): string {
-                    return "Run \"get_h5p_libraries\" with include_schema_examples=true. " .
-                        "Which interactive content types are installed on this Moodle site and what is the parameter schema " .
-                        "for Flashcards and Multiple Choice?";
-                },
+                'text_key' => 'prompt_h5p_inspect_text',
+                'arguments' => [
+                    [
+                        'name' => 'course_id',
+                        'description' => 'Target Moodle course ID.',
+                        'required' => true,
+                    ],
+                ],
             ],
             'h5p_flashcards' => [
                 'desc_key' => 'prompt_h5p_flashcards_desc',
+                'text_key' => 'prompt_h5p_flashcards_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -212,17 +206,10 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? '1';
-                    $title = $args['title'] ?? 'Interactive Flashcards';
-                    return "Use \"create_h5p_activity\" to build an interactive Flashcard set in course ID {$cid}, " .
-                        "section {$sec} titled \"{$title}\" with library \"H5P.Flashcards\". " .
-                        "Add definition cards covering key terminology.";
-                },
             ],
             'h5p_quiz' => [
                 'desc_key' => 'prompt_h5p_quiz_desc',
+                'text_key' => 'prompt_h5p_quiz_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -240,17 +227,10 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? '1';
-                    $title = $args['title'] ?? 'Check Your Understanding';
-                    return "Use \"create_h5p_activity\" to deploy an interactive \"H5P.MultiChoice\" in course ID {$cid}, " .
-                        "section {$sec} titled \"{$title}\". Include question text, 4 answer choices, " .
-                        "didactic feedback per choice, and enable the solutions button.";
-                },
             ],
             'inspect_files' => [
                 'desc_key' => 'prompt_files_desc',
+                'text_key' => 'prompt_files_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -258,15 +238,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    return "Inspect the attached documents in course ID {$cid} using \"read_activity_file\" or " .
-                        "\"export_course_learning_material\". Formulate 5 high-level exam questions based strictly " .
-                        "on the theory in the uploaded documents.";
-                },
             ],
             'scaffold_quiz' => [
                 'desc_key' => 'prompt_scaffold_desc',
+                'text_key' => 'prompt_scaffold_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -275,26 +250,19 @@ final class prompt_registry {
                     ],
                     [
                         'name' => 'section_number',
-                        'description' => 'Target section number (default: 1).',
+                        'description' => 'Target section number; ask the teacher if omitted.',
                         'required' => false,
                     ],
                     [
                         'name' => 'question_count',
-                        'description' => 'Number of questions to generate (default: 5).',
+                        'description' => 'Number of questions to generate; ask the teacher if omitted.',
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? '1';
-                    $count = $args['question_count'] ?? '5';
-                    return "Use \"scaffold_assessment_unit\" to create a formative quiz of {$count} multiple-choice " .
-                        "questions in course ID {$cid}, section {$sec}. Base questions on the course material, " .
-                        "include didactic feedback for distractors, and keep the quiz hidden for teacher review.";
-                },
             ],
             'detect_at_risk' => [
                 'desc_key' => 'prompt_atrisk_desc',
+                'text_key' => 'prompt_atrisk_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -302,15 +270,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    return "Run \"detect_at_risk_students\" for course ID {$cid}. Which students are inactive or have " .
-                        "missing work? Draft a motivating check-in message for the students with highest risk that I " .
-                        "can send via \"send_student_message\".";
-                },
             ],
             'analyze_quiz' => [
                 'desc_key' => 'prompt_analytics_desc',
+                'text_key' => 'prompt_analytics_module_text',
                 'arguments' => [
                     [
                         'name' => 'cmid',
@@ -318,14 +281,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cmid = $args['cmid'] ?? '[enter_cmid]';
-                    return "Run \"analyze_class_understanding\" for quiz CMID {$cmid}. Which questions had a facility index " .
-                        "below 50% and what misconceptions were common? Provide a 10-minute recap lesson plan for the next lecture.";
-                },
             ],
             'prepare_grading' => [
                 'desc_key' => 'prompt_grading_desc',
+                'text_key' => 'prompt_grading_module_text',
                 'arguments' => [
                     [
                         'name' => 'cmid',
@@ -333,15 +292,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cmid = $args['cmid'] ?? '[enter_cmid]';
-                    return "Prepare ungraded submissions for assignment CMID {$cmid} using \"prepare_grading_session\". " .
-                        "Evaluate the submitted work against the rubric and propose grades with constructive feedback " .
-                        "for \"grade_submission\".";
-                },
             ],
             'delete_activity_safe' => [
                 'desc_key' => 'prompt_delete_desc',
+                'text_key' => 'prompt_delete_module_text',
                 'arguments' => [
                     [
                         'name' => 'cmid',
@@ -349,15 +303,10 @@ final class prompt_registry {
                         'required' => true,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cmid = $args['cmid'] ?? '[enter_cmid]';
-                    return "Inspect activity cmid {$cmid} and run \"delete_activity\" with confirm_token=''. " .
-                        "Show me the activity details and warn me about any consequences. " .
-                        "Do not proceed until I explicitly give confirmation.";
-                },
             ],
             'scaffold_assignment' => [
                 'desc_key' => 'prompt_assignment_desc',
+                'text_key' => 'prompt_assignment_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -366,7 +315,7 @@ final class prompt_registry {
                     ],
                     [
                         'name' => 'section_number',
-                        'description' => 'Target section number (default: 1).',
+                        'description' => 'Target section number; ask the teacher if omitted.',
                         'required' => false,
                     ],
                     [
@@ -375,18 +324,11 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $sec = $args['section_number'] ?? 1;
-                    $title = $args['title'] ?? 'AI Ethics Case Study';
-                    return "Use \"create_assignment\" to create an assignment in course ID {$cid}, section {$sec} " .
-                        "titled \"{$title}\". Set the due date 14 days from now, allow online text and PDF submissions, " .
-                        "and include rubric evaluation criteria with percentage weights.";
-                },
             ],
 
             'schedule_event' => [
                 'desc_key' => 'prompt_calendar_desc',
+                'text_key' => 'prompt_calendar_text',
                 'arguments' => [
                     [
                         'name' => 'course_id',
@@ -399,13 +341,6 @@ final class prompt_registry {
                         'required' => false,
                     ],
                 ],
-                'generator' => function(array $args): string {
-                    $cid = $args['course_id'] ?? '[course_id]';
-                    $name = $args['name'] ?? 'Midterm Q&A Review Session';
-                    return "Use \"manage_course_calendar\" with action=\"create_event\" in course ID {$cid}. " .
-                        "Schedule a 60-minute \"{$name}\" for tomorrow at 14:00 with meeting guidelines " .
-                        "and preparation notes.";
-                },
             ],
         ];
     }

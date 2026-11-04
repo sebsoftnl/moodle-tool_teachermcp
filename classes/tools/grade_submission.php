@@ -21,6 +21,7 @@ defined('MOODLE_INTERNAL') || die();
 use moodle_exception;
 use stdClass;
 use context_user;
+use tool_teachermcp\local\assignment_grading;
 
 /**
  * MCP tool to view student submissions and submit grades, feedback, and files.
@@ -37,7 +38,7 @@ class grade_submission extends base_tool {
     }
 
     public function get_description(): string {
-        return 'View student assignment submissions and submit numeric/scale grades with feedback comments, marking workflow state, allocation, and optional feedback files.';
+        return 'View assignment submissions and stored feedback-file manifests; save numeric/scale grades, feedback and optional files. File requests require enabled feedback-file support and are validated before saving. Returned download URLs require native Moodle authorization.';
     }
 
     public function get_input_schema(): array {
@@ -90,7 +91,7 @@ class grade_submission extends base_tool {
                 ],
                 'feedback_files' => [
                     'type' => 'array',
-                    'description' => 'List of feedback files to attach to this grade submission. Each item: {filename: string, content_base64: string}.',
+                    'description' => 'Nonempty list replaces the feedback-file set for each targeted grade using Moodle\'s native file-manager behavior. Omit or pass [] to retain existing files. Requires enabled feedback files, unique safe filenames and valid base64 content within upload limits. Returns verified native file metadata and authenticated download URLs.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -108,6 +109,7 @@ class grade_submission extends base_tool {
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
+        require_once($CFG->libdir . '/gradelib.php');
 
         $cmid = (int)($params['cmid'] ?? 0);
         $action = $params['action'] ?? 'list_submissions';
@@ -148,7 +150,7 @@ class grade_submission extends base_tool {
             $list = [];
             foreach ($users as $student) {
                 $submission = $assign->get_user_submission($student->id, false);
-                $grade = $assign->get_user_grade($student->id, false);
+                $grade = assignment_grading::read_grade($assign, (int)$student->id);
                 $flags = $assign->get_user_flags($student->id, false);
 
                 $status = $submission ? $submission->status : 'nosubmission';
@@ -162,6 +164,7 @@ class grade_submission extends base_tool {
                     'time_submitted' => ($submission && $submission->timemodified) ? (int)$submission->timemodified : null,
                     'time_submitted_iso' => ($submission && $submission->timemodified) ? date('c', $submission->timemodified) : null,
                     'current_grade' => ($grade && $grade->grade !== null && (float)$grade->grade >= 0) ? (float)$grade->grade : null,
+                    'feedback_files' => assignment_grading::feedback_manifest($assign, $grade),
                     'workflowstate' => $flags ? ($flags->workflowstate ?? null) : null,
                     'allocatedmarker' => $flags ? (int)($flags->allocatedmarker ?? 0) : 0,
                 ];
@@ -200,7 +203,26 @@ class grade_submission extends base_tool {
                 }
             }
 
-            $currentgrade = $assign->get_user_grade($studentid, false);
+            $applytoall = !isset($params['applytoall']) || !empty($params['applytoall']);
+            $gradeitem = \grade_item::fetch(['courseid' => $course->id, 'itemtype' => 'mod', 'itemmodule' => 'assign',
+                'iteminstance' => $instance->id, 'itemnumber' => 0]);
+            $gradeuserids = [$studentid];
+            if ($instance->teamsubmission && $applytoall) {
+                $group = $assign->get_submission_group($studentid);
+                $members = $assign->get_submission_group_members($group ? $group->id : 0, true, $assign->show_only_active_users());
+                $gradeuserids = array_map(static fn($member) => (int)$member->id, $members);
+            }
+            foreach ($gradeuserids as $gradeuserid) {
+                if ($gradeitem && $gradeitem->is_locked($gradeuserid)) {
+                    throw new moodle_exception('error_grade_locked', 'tool_teachermcp');
+                }
+                $bookgrade = $gradeitem ? \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $gradeuserid]) : false;
+                if (isset($params['grade']) && $bookgrade && $bookgrade->is_overridden()) {
+                    throw new moodle_exception('error_grade_overridden', 'tool_teachermcp');
+                }
+            }
+            $attemptnumber = isset($params['attemptnumber']) ? (int)$params['attemptnumber'] : -1;
+            $currentgrade = assignment_grading::read_grade($assign, $studentid, $attemptnumber);
 
             // H5: Missing grade means preserve existing grade, not -1.
             if (isset($params['grade'])) {
@@ -226,21 +248,27 @@ class grade_submission extends base_tool {
                 $gradeval = ($currentgrade && $currentgrade->grade !== null) ? (float)$currentgrade->grade : -1.0;
             }
 
-            $attemptnumber = isset($params['attemptnumber']) ? (int)$params['attemptnumber'] : -1;
             $feedback = isset($params['feedback_comment']) ? clean_text($params['feedback_comment']) : '';
-            $applytoall = !isset($params['applytoall']) || !empty($params['applytoall']);
-
+            $feedbackformat = FORMAT_HTML;
+            if (!isset($params['feedback_comment']) && $currentgrade) {
+                $commentsplugin = $assign->get_feedback_plugin_by_type('comments');
+                if ($commentsplugin && $commentsplugin->is_enabled()) {
+                    $previouscomments = $commentsplugin->get_feedback_comments($currentgrade->id);
+                    if ($previouscomments) {
+                        $feedback = $previouscomments->commenttext;
+                        $feedbackformat = (int)$previouscomments->commentformat;
+                    }
+                }
+            }
             $gradedata = new stdClass();
             $gradedata->grade = $gradeval;
             $gradedata->attemptnumber = $attemptnumber;
             $gradedata->addattempt = 0;
             $gradedata->applytoall = $applytoall ? 1 : 0;
-            if (isset($params['feedback_comment'])) {
-                $gradedata->assignfeedbackcomments_editor = [
-                    'text' => $feedback,
-                    'format' => FORMAT_HTML,
-                ];
-            }
+            $gradedata->assignfeedbackcomments_editor = [
+                'text' => $feedback,
+                'format' => $feedbackformat,
+            ];
 
             // Marking workflow and allocation.
             if (!empty($instance->markingworkflow) && !empty($params['workflowstate'])) {
@@ -253,48 +281,86 @@ class grade_submission extends base_tool {
                 $gradedata->allocatedmarker = $allocatedmarker;
             }
 
-            // Feedback files support.
-            if (!empty($params['feedback_files']) && is_array($params['feedback_files'])) {
-                $fileplugin = $assign->get_feedback_plugin_by_type('file');
-                if ($fileplugin && $fileplugin->is_enabled() && $fileplugin->is_visible()) {
+            $feedbackfiles = assignment_grading::validate_feedback_files($assign, $params['feedback_files'] ?? []);
+            $draftitemid = null;
+            $transaction = $DB->start_delegated_transaction();
+            try {
+                if ($feedbackfiles) {
                     $draftitemid = file_get_unused_draft_itemid();
-                    $fs = get_file_storage();
-                    $usercontext = context_user::instance($USER->id);
+                    foreach ($feedbackfiles as $filename => $bytes) {
+                        get_file_storage()->create_file_from_string([
+                            'contextid' => context_user::instance($USER->id)->id,
+                            'component' => 'user', 'filearea' => 'draft', 'itemid' => $draftitemid,
+                            'filepath' => '/', 'filename' => (string)$filename,
+                        ], $bytes);
+                    }
+                    $gradedata->files_filemanager = $draftitemid;
+                }
 
-                    foreach ($params['feedback_files'] as $fbfile) {
-                        $filename = clean_param($fbfile['filename'] ?? '', PARAM_FILE);
-                        $contentbase64 = $fbfile['content_base64'] ?? '';
-                        if (!empty($filename) && !empty($contentbase64)) {
-                            $decoded = base64_decode($contentbase64, true);
-                            if ($decoded !== false) {
-                                $filerecord = [
-                                    'contextid' => $usercontext->id,
-                                    'component' => 'user',
-                                    'filearea' => 'draft',
-                                    'itemid' => $draftitemid,
-                                    'filepath' => '/',
-                                    'filename' => $filename,
-                                ];
-                                $fs->create_file_from_string($filerecord, $decoded);
-                            }
+                if (!$assign->save_grade($studentid, $gradedata)) {
+                    throw new moodle_exception('error_grade_not_saved', 'tool_teachermcp');
+                }
+                $outcomes = [];
+                foreach ($gradeuserids as $gradeuserid) {
+                    $saved = assignment_grading::read_grade($assign, $gradeuserid, $attemptnumber);
+                    if (!$saved || (isset($params['grade']) && !grade_floats_equal($saved->grade, $gradeval))) {
+                        throw new moodle_exception('error_grade_not_saved', 'tool_teachermcp');
+                    }
+                    foreach ($feedbackfiles as $filename => $bytes) {
+                        $stored = get_file_storage()->get_file($context->id, 'assignfeedback_file',
+                            'feedback_files', $saved->id, '/', (string)$filename);
+                        if (!$stored || $stored->get_contenthash() !== sha1($bytes)) {
+                            throw new moodle_exception('error_feedback_files_not_saved', 'tool_teachermcp');
                         }
                     }
-                    $gradedata->assignfeedbackfile_filemanager = $draftitemid;
+                    $bookgrade = $gradeitem ? \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $gradeuserid]) : false;
+                    $outcomes[$gradeuserid] = [
+                        'student_user_id' => $gradeuserid,
+                        'attemptnumber' => (int)$saved->attemptnumber,
+                        'grade_saved' => $saved->grade !== null && (float)$saved->grade >= 0 ? (float)$saved->grade : null,
+                        'feedback_files' => assignment_grading::feedback_manifest($assign, $saved),
+                        'gradebook' => [
+                            'grade_item_id' => $gradeitem ? (int)$gradeitem->id : null,
+                            'finalgrade' => $bookgrade && $bookgrade->finalgrade !== null ? (float)$bookgrade->finalgrade : null,
+                            'overridden' => $bookgrade ? $bookgrade->is_overridden() : false,
+                            'locked' => $gradeitem ? $gradeitem->is_locked($gradeuserid) : false,
+                        ],
+                    ];
                 }
+                $target = $outcomes[$studentid];
+                $saved = assignment_grading::read_grade($assign, $studentid, $attemptnumber);
+                $commentsplugin = $assign->get_feedback_plugin_by_type('comments');
+                $comments = $commentsplugin && $commentsplugin->is_enabled()
+                    ? $commentsplugin->get_feedback_comments($saved->id) : false;
+                $flags = $assign->get_user_flags($studentid, false);
+                $result = [
+                    'success' => true,
+                    'cmid' => $cmid,
+                    'student_user_id' => $studentid,
+                    'attemptnumber' => $target['attemptnumber'],
+                    'grade_saved' => $target['grade_saved'],
+                    'feedback' => $comments ? $comments->commenttext : '',
+                    'workflowstate' => $flags->workflowstate ?? null,
+                    'gradebook' => $target['gradebook'],
+                    'affected_students' => array_values($outcomes),
+                    'feedback_files' => $target['feedback_files'],
+                ];
+                foreach ($outcomes as $outcome) {
+                    if ($outcome['gradebook']['overridden'] ||
+                            !grade_floats_equal($outcome['grade_saved'], $outcome['gradebook']['finalgrade'])) {
+                        $result['warning'] = get_string('warning_gradebook_differs', 'tool_teachermcp');
+                        break;
+                    }
+                }
+                if ($draftitemid !== null) {
+                    get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', $draftitemid);
+                }
+                $transaction->allow_commit();
+                return $result;
+            } catch (\Throwable $error) {
+                $transaction->rollback($error);
             }
 
-            // Save grade using Moodle Assign API.
-            $assign->save_grade($studentid, $gradedata);
-
-            return [
-                'success' => true,
-                'cmid' => $cmid,
-                'student_user_id' => $studentid,
-                'attemptnumber' => $attemptnumber,
-                'grade_saved' => $gradeval >= 0 ? $gradeval : null,
-                'feedback' => $feedback,
-                'workflowstate' => $gradedata->workflowstate ?? null,
-            ];
         }
 
         throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null, "Unsupported action: {$action}");

@@ -189,6 +189,33 @@ final class server_test extends \advanced_testcase {
         auth::enforce_mcp_request_rate_limit($token);
     }
 
+    public function test_mcp_rate_limit_carries_retry_after_from_its_sampled_window(): void {
+        $this->resetAfterTest(true);
+        set_config('mcp_requests_per_minute', 1, 'tool_teachermcp');
+        foreach ([120 => 60, 179 => 1, 180 => 60] as $now => $expected) {
+            $token = (object)['id' => random_int(1000000, 9999999)];
+            auth::enforce_mcp_request_rate_limit($token, $now);
+            try {
+                auth::enforce_mcp_request_rate_limit($token, $now);
+                $this->fail('A second request in the same sampled window must be rate limited');
+            } catch (\moodle_exception $error) {
+                $this->assertSame('error_rate_limited', $error->errorcode);
+                $this->assertSame($expected, $error->a, 'Retry-After must describe the window used for the counter');
+            }
+        }
+    }
+
+    public function test_mcp_rate_limit_starts_a_new_fixed_minute_window(): void {
+        $this->resetAfterTest(true);
+        set_config('mcp_requests_per_minute', 1, 'tool_teachermcp');
+        $token = (object)['id' => random_int(1000000, 9999999)];
+        auth::enforce_mcp_request_rate_limit($token, 179);
+        auth::enforce_mcp_request_rate_limit($token, 180);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('error_rate_limited', 'tool_teachermcp'));
+        auth::enforce_mcp_request_rate_limit($token, 180);
+    }
+
     public function test_tool_execution_audit_event_records_safe_failure_metadata(): void {
         $this->resetAfterTest(true);
         $this->setUser($this->getDataGenerator()->create_user());

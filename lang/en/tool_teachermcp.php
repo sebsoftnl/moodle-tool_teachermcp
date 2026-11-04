@@ -29,8 +29,30 @@ $string['pluginname'] = 'Teacher MCP Agent Integration';
 $string['teachermcp:connectagent'] = 'Connect and manage personal AI Agent via Model Context Protocol (MCP)';
 $string['teachermcp:manageall'] = 'Manage all teacher MCP agent connections across site';
 
-$string['dashboard_title'] = 'Teacher AI Agent Assistant (MCP)';
-$string['dashboard_desc'] = 'Connect your local or cloud AI assistant (Claude Desktop, Codex, ChatGPT, Cursor) directly to your Moodle teacher account through the Model Context Protocol.';
+$string['dashboard_title'] = 'Teacher AI assistant';
+$string['dashboard_desc'] = 'Connect an AI assistant, choose a course task, or manage its access to Moodle.';
+$string['dashboard_sections'] = 'Dashboard sections';
+$string['dashboard_connect'] = 'Connect';
+$string['dashboard_tasks'] = 'Use with a course';
+$string['dashboard_connections'] = 'Manage connections';
+$string['other_connection_methods'] = 'Other connection methods';
+$string['other_connection_methods_desc'] = 'For local bridge or manually configured HTTP clients. Claude and ChatGPT remote connections above do not need a manually generated token.';
+$string['technical_reference'] = 'Technical reference';
+$string['use_course'] = 'Use course';
+$string['preview_prompt'] = 'Preview prompt';
+$string['dashboard_course_unavailable'] = 'The requested course is not available to your teaching account. Choose a course below; no task has been prepared for the unavailable course.';
+$string['dashboard_no_courses'] = 'No teaching courses are available to this account. You can still connect your assistant and manage connections.';
+$string['workspace_setup'] = 'Workspace access and owner setup';
+$string['official_setup_guide'] = 'Current official setup guide';
+$string['copy_connection_check'] = 'Copy connection-check prompt';
+$string['preview_connection_check'] = 'Connection-check prompt';
+$string['connection_check_description'] = 'Checks the connected Moodle account and available teaching courses without changing data.';
+$string['connection_help'] = 'Connection requirements and troubleshooting';
+$string['connection_refresh_help'] = 'After a plugin update, refresh its tools in the AI app and review or publish changes if your workspace requires it. Start a new chat. If the desktop app still shows old definitions, fully quit and reopen it, then check again; do not delete unrelated connections or clear credentials.';
+$string['connection_expiry_help'] = 'If access expires, reconnect and sign in to Moodle again. This server does not issue refresh tokens. Revoke unwanted access from Manage connections below.';
+$string['connection_check_prompt'] = 'Use the Moodle connection to call get_my_profile and get_teacher_courses. Tell me which Moodle account is connected and which teaching courses it can access. Do not create, edit, grade, message or delete anything. Report any missing tools or authorization errors instead of assuming the connection works.';
+$string['resource_uri'] = 'Resource URI';
+$string['resource_name'] = 'Resource';
 
 $string['tokens_header'] = 'Active Agent Connections';
 $string['create_token'] = 'Generate New Agent Connection';
@@ -38,6 +60,7 @@ $string['agent_name'] = 'Agent Name / Device';
 $string['agent_name_help'] = 'E.g. "Work Laptop Claude", "Home Desktop Codex"';
 $string['token_created'] = 'Agent token generated successfully. Copy it now, as it will never be displayed again!';
 $string['token_revoked'] = 'Agent connection revoked successfully.';
+$string['token_revoke_failed'] = 'The agent connection could not be revoked. It may not exist or you may not have permission.';
 $string['validuntil'] = 'Valid until';
 $string['lastaccess'] = 'Last active';
 $string['never'] = 'Never';
@@ -49,44 +72,74 @@ $string['revoke'] = 'Revoke Access';
 $string['copy_token'] = 'Copy Token';
 $string['token_warning'] = 'Keep this bearer token secret! It allows your agent to perform teacher actions on your behalf according to your Moodle permissions.';
 
-$string['tab_claude'] = 'Claude Desktop';
-$string['tab_codex'] = 'Codex / Cursor';
-$string['tab_chatgpt'] = 'ChatGPT / Custom GPT';
+$string['tab_claude'] = 'Claude';
+$string['tab_codex'] = 'HTTP clients';
+$string['tab_chatgpt'] = 'ChatGPT';
+$string['tab_resources'] = 'Resources';
 $string['tab_bridge'] = 'Stdio Bridge (Node.js)';
 
 $string['config_instructions'] = 'Paste the configuration below into your agent settings file:';
 $string['endpoint_url'] = 'Moodle MCP Endpoint URL';
 
 // Setup & Tokens
-$string['active_tools_count'] = '{$a} Active MCP Tools';
+$string['active_tools_count'] = '{$a} tools enabled by site policy; this is not a live connection check.';
 $string['copied'] = 'Copied!';
+$string['copy_failed'] = 'Copy failed. Select the text and copy it manually.';
 $string['copy'] = 'Copy';
 $string['copy_config'] = 'Copy Configuration';
 $string['copy_claude_config'] = 'Copy Claude Config';
 $string['copy_codex_config'] = 'Copy Codex/Cursor Config';
 $string['validity_period'] = 'Validity period';
+$string['validity_days'] = '{$a} days';
+$string['token_validity_error'] = 'Choose a validity from 1 to {$a} days. No token was created.';
 $string['validity_30'] = '30 days';
 $string['validity_90'] = '90 days (recommended)';
 $string['validity_180'] = '180 days (one semester)';
 $string['validity_365'] = '1 year';
 $string['validity_unlimited'] = 'Unlimited / No expiration';
-$string['no_tokens_found'] = 'You have not generated any active agent connections yet.';
 $string['confirm_revoke'] = 'Are you sure you want to revoke this agent connection? The connected client will immediately lose access.';
 $string['back_to_course'] = 'Return to course';
-$string['course_filter_label'] = 'Personalize prompts for course:';
+$string['course_filter_label'] = 'Course';
 $string['course_filter_all'] = 'Select a course to personalize example prompts';
 
 // Guides
-$string['how_to_connect'] = 'How to Connect Your AI Agent';
-$string['claude_desktop_title'] = 'Claude Desktop Configuration';
-$string['claude_desktop_desc'] = 'Paste this JSON snippet into your claude_desktop_config.json configuration file:';
-$string['codex_cursor_title'] = 'Codex / Cursor / HTTP Client Configuration';
-$string['codex_cursor_desc'] = 'For agents with native HTTP/SSE MCP support:';
-$string['chatgpt_title'] = 'ChatGPT / Custom GPT Custom Actions';
-$string['chatgpt_step1'] = 'Create a Custom GPT in OpenAI.';
-$string['chatgpt_step2'] = 'Configure a Custom Action.';
-$string['chatgpt_step3'] = 'Set the MCP endpoint URL: {$a}';
-$string['chatgpt_step4'] = 'Choose Authentication: Bearer and paste your generated token.';
+$string['how_to_connect'] = 'Connect your AI assistant';
+$string['claude_desktop_title'] = 'Local bridge: manual bearer token';
+$string['claude_desktop_desc'] = 'Create a token with the required permission preset, then use this configuration. Replace YOUR_BEARER_TOKEN_HERE if no new token is shown. Keep the token private; this mode does not use OAuth.';
+$string['codex_cursor_title'] = 'HTTP client configuration';
+$string['codex_cursor_desc'] = 'For clients that support this HTTP MCP endpoint and a manually configured bearer header:';
+$string['remote_app_intro'] = 'Choose your app and sign in with your Moodle account. No local installation or manually generated token is needed.';
+$string['remote_app_requirements'] = 'This Moodle site must be reachable by the app over public HTTPS. Ask your administrator to enable OAuth client registration if needed. Enter your Moodle password only on the Moodle sign-in page, never in chat or a client-secret field.';
+$string['remote_app_cached'] = 'An existing authorization may skip sign-in or consent. Verify access with an actual get_my_profile call; a tool list alone is not proof of a working connection.';
+$string['copy_endpoint'] = 'Copy server URL';
+$string['open_claude_connectors'] = 'Open Claude connectors';
+$string['open_chatgpt_plugins'] = 'Open ChatGPT plugins';
+$string['open_claude_app'] = 'Open Claude app';
+$string['open_chatgpt_app'] = 'Open ChatGPT app';
+$string['claude_app_link_help'] = 'The desktop button opens a chat, not settings. Open Customize > Connectors there, or use the web button.';
+$string['chatgpt_app_link_help'] = 'The desktop button opens a chat, not plugin settings. Open Plugins there, or use the web button.';
+$string['cli_setup_title'] = 'Claude Code and Codex CLI';
+$string['cli_setup_desc'] = 'Both CLIs can launch local stdio MCP servers. Register the downloaded bridge as the server command, using the Node command and arguments shown above. These JSON examples are for desktop clients, not CLI syntax; follow the CLI documentation for registration. CLI-specific end-to-end setup has not been verified here.';
+$string['claude_cli_docs'] = 'Claude Code CLI setup';
+$string['codex_cli_docs'] = 'Codex CLI setup';
+$string['http_config_cli_note'] = 'This JSON example is for compatible HTTP clients such as Cursor. Codex CLI uses config.toml or codex mcp add instead. See Local bridge for CLI documentation.';
+$string['claude_app_title'] = 'Connect the Claude app';
+$string['claude_app_step1'] = 'For a personal connector, open Customize > Connectors > + Add > Add custom connector. In a workspace, use an owner-added connector or follow the owner setup below.';
+$string['claude_app_step2'] = 'Enter a name and paste the <strong>Moodle MCP Endpoint URL</strong> shown above. Choose Continue, review the detected authentication settings, and choose Continue again.';
+$string['claude_app_step3'] = 'Choose OAuth / Sign in now with Register automatically and empty request headers.';
+$string['claude_app_step4'] = 'Select Add, then Connect if shown. If prompted, sign in to Moodle with your teacher account and review the requested permissions.';
+$string['claude_app_step5'] = 'Start a new chat and select your Moodle connection. Under <strong>Connection-check prompt</strong> below, choose Copy and send the prompt to confirm the connected Moodle account and courses.';
+$string['claude_app_workspace'] = 'Team owners, and authorised Enterprise owners or custom roles, add the server through Organization settings > Connectors > Add > Custom > Web. Enter the name and URL, continue through authentication review, and choose Sign in now with Register automatically. Members then open Customize > Connectors and select Connect for their own Moodle account.';
+$string['chatgpt_title'] = 'Connect ChatGPT with a remote MCP server';
+$string['chatgpt_step1'] = 'Open Plugins in ChatGPT web. Select Add > Add custom MCP server.';
+$string['chatgpt_step2'] = 'Enter a name, for example Moodle Teacher. Under Connection, choose Server URL and paste the <strong>Moodle MCP Endpoint URL</strong> shown above. The icon and description are optional.';
+$string['chatgpt_step3'] = 'Set Authentication to OAuth. Review the risk warning, select "I understand and want to continue", then choose "Create as a plugin".';
+$string['chatgpt_step4'] = 'In the connection dialog, review the information and select "Connect Moodle Teacher" (or the name you chose). On Moodle, check the displayed teacher account, return address and permissions, then choose "Authorize Connection".';
+$string['chatgpt_step5'] = 'In a new chat, open the + menu and select Moodle Teacher (or your chosen name) under Plugins. Under <strong>Connection-check prompt</strong> below, choose Copy and send the prompt. Check the returned Moodle account and courses.';
+$string['chatgpt_connection_status'] = 'ChatGPT may show "Primary is now connected". This is a ChatGPT-side label; use the connection-check prompt to verify the actual Moodle account and tool access.';
+$string['connection_oauth_help'] = 'For automatic registration, this server supports DCR (dynamic client registration). If Advanced OAuth settings asks for a client setup method, choose DCR. The Moodle administrator controls whether new app registration is enabled.';
+$string['connection_account_help'] = 'This page lists connections for the Moodle account currently signed in. After completing the connection in your AI app, reload this page using the same Moodle account that authorized it. Administrators can view all users\' connections on Manage Agent Connections in Site administration.';
+$string['chatgpt_remote_access'] = 'Availability and read/write access depend on your plan and workspace permissions. A workspace owner or authorised administrator may need to create, approve or publish the connection. Check the current official requirements below. Set up on the web; use the desktop app only if it exposes the connection.';
 
 // MCP Tool descriptions.
 $string['tool_get_my_profile_desc'] = 'Get current teacher user profile, capabilities, and system preferences.';
@@ -97,7 +150,7 @@ $string['tool_scaffold_assessment_unit_desc'] = 'Assemble end-to-end quiz includ
 $string['tool_detect_at_risk_students_desc'] = 'Compute early-warning risk index based on days inactive, overdue assignments, failing grades, and missing completions.';
 $string['tool_analyze_class_understanding_desc'] = 'Analyze class performance, question difficulty (facility index), error patterns, and learning gaps on a completed quiz.';
 $string['tool_prepare_grading_session_desc'] = 'Prepare batch grading session with submitted texts, file attachments metadata, rubric criteria, and student context.';
-$string['tool_manage_activity_desc'] = 'Create or update settings, descriptions, or parameters of a course module (quiz, assign, page, etc.).';
+$string['tool_manage_activity_desc'] = 'Inspect basic activity settings; edit Page names/descriptions or change visibility for Page, Assignment, Quiz, H5P and Book. Other settings require Moodle.';
 $string['tool_grade_submission_desc'] = 'Review student submissions, submit numeric or scale grades, and provide feedback comments.';
 $string['tool_manage_grades_desc'] = 'View course gradebook items and update individual student grade entries.';
 $string['tool_get_group_students_desc'] = 'List students belonging to course groups and groupings where the teacher has access.';
@@ -115,76 +168,75 @@ $string['download_forbidden'] = 'You do not have permission to download this fil
 $string['flag_inactivity'] = 'No course activity in {$a} days';
 $string['flag_overdue_assignments'] = '{$a} overdue or missed assignments';
 $string['flag_low_grade'] = 'Low course grade average ({$a})';
+$string['flag_low_grade_threshold'] = 'Course grade {$a->grade} is below the applicable warning threshold {$a->threshold}; see the native grade range and percentage.';
 $string['flag_incomplete_activities'] = '{$a} required activities incomplete';
 $string['flag_analytics_risk'] = 'High dropout risk predicted by Moodle Analytics ({$a}%)';
 $string['error_unauthorized'] = 'Unauthorized access: valid session or active agent bearer token required.';
 $string['error_invalid_scope'] = 'The requested OAuth scope is not supported.';
 $string['error_remote_image_fetch_disabled'] = 'Remote image URLs are disabled. Provide file_content_base64 instead.';
-$string['setting_max_mcp_request_bytes'] = 'Maximum MCP request size';
-$string['setting_max_mcp_request_bytes_desc'] = 'Maximum accepted JSON-RPC request body size in bytes. Default: 1048576 (1 MiB). Values are capped at 10485760 (10 MiB).';
+$string['setting_max_mcp_request_bytes'] = 'Maximum request size (bytes)';
+$string['setting_max_mcp_request_bytes_desc'] = 'Limits incoming requests, including file uploads. 1 MiB = 1048576 bytes. Supported range: 1024 to 10485760 bytes.';
 $string['setting_max_mcp_batch_size'] = 'Maximum MCP batch size';
-$string['setting_max_mcp_batch_size_desc'] = 'Maximum JSON-RPC calls accepted in one batch. Default: 10. Values are capped at 50.';
-$string['setting_max_mcp_response_bytes'] = 'Maximum MCP response size';
-$string['setting_max_mcp_response_bytes_desc'] = 'Maximum tool response size returned to an agent in bytes. Larger results are truncated with an explicit notice. Default: 262144 (256 KiB), maximum: 5242880 (5 MiB).';
+$string['setting_max_mcp_batch_size_desc'] = 'Number of calls accepted in a single batch, from 1 to 50.';
+$string['setting_max_mcp_response_bytes'] = 'Maximum response size (bytes)';
+$string['setting_max_mcp_response_bytes_desc'] = 'Larger tool results are truncated with a notice. 256 KiB = 262144 bytes. Supported range: 1024 to 5242880 bytes.';
 $string['setting_mcp_requests_per_minute'] = 'MCP requests per minute';
-$string['setting_mcp_requests_per_minute_desc'] = 'Maximum authenticated MCP requests per minute for each token and source IP address. Default: 60, maximum: 600.';
+$string['setting_mcp_requests_per_minute_desc'] = 'Requests allowed per minute for each token and source IP address, from 1 to 600. Further requests are temporarily rejected.';
 
 // Prompt Library
-$string['prompt_library_title'] = 'Teacher Prompt Library (Ready to Use)';
-$string['prompt_library_desc'] = 'Copy-paste these pedagogical prompts into your connected AI agent (Claude, Cursor, Codex, ChatGPT) to instantly trigger complete teaching workflows:';
-$string['prompt_cat_context'] = 'Course Ingestion & Lesson Prep';
-$string['prompt_cat_assessment'] = 'Quiz & Question Assembly';
-$string['prompt_cat_analytics'] = 'Student Progress & Risk Signals';
-$string['prompt_cat_grading'] = 'Grading & Rubric Feedback';
+$string['prompt_library_title'] = 'Course prompt examples';
+$string['prompt_library_desc'] = 'Choose a task, preview or copy its prompt, and paste it into your connected assistant. Review the proposed details before making changes.';
+$string['prompt_supplied_arguments'] = 'Use these supplied task details; ask for any remaining requirements: {$a}';
+$string['prompt_cat_context'] = 'Understand course material';
+$string['prompt_cat_assessment'] = 'Prepare assessments';
+$string['prompt_cat_analytics'] = 'Review student progress';
+$string['prompt_cat_grading'] = 'Prepare grading';
 
-$string['prompt_badge_context'] = 'Context & Ingestion';
-$string['prompt_badge_assessment'] = 'Assessment';
-$string['prompt_badge_analytics'] = 'Early Warning';
-$string['prompt_badge_grading'] = 'Grading';
+$string['prompt_ingest_title'] = 'Summarise course material';
+$string['prompt_ingest_desc'] = 'Summarises accessible material and identifies drafts, restrictions and extraction limits.';
+$string['prompt_ingest_text'] = 'Use "export_course_learning_material" for course ID {$a->courseid} ("{$a->coursename}"). Summarise five key concepts from the material actually returned. Keep hidden-content and availability labels, and report unsupported or truncated material. This is a teacher view, not proof of student access or permanent AI memory.';
 
-$string['prompt_ingest_title'] = 'Load Complete Course Material into AI Memory';
-$string['prompt_ingest_desc'] = 'Ingests all pages, chapters, H5P interactive activities, assignments, and attached documents into the agent context.';
-$string['prompt_ingest_text'] = 'Use "export_course_learning_material" for course ID {$a->courseid} ("{$a->coursename}"). Give me a summary of the 5 key concepts, explain the required knowledge per section, and list any attached source files you extracted.';
+$string['prompt_files_title'] = 'Review a course document';
+$string['prompt_files_desc'] = 'Reads a chosen supported document and proposes questions grounded in its extracted text.';
+$string['prompt_files_text'] = 'Find the document I want to review in course ID {$a->courseid} using "get_course_contents". Ask which document if unclear. Read it with "read_activity_file" or "export_course_learning_material", report any unsupported or incomplete extraction, and propose five questions grounded only in the returned text.';
 
-$string['prompt_h5p_title'] = 'Analyze H5P & Interactive Modules';
-$string['prompt_h5p_desc'] = 'Inspect questions, theory, and dialogs across interactive video, presentation, and book modules.';
-$string['prompt_h5p_text'] = 'Use "export_course_learning_material" for course ID {$a->courseid}. Inspect the H5P activities and files, and verify if all core learning goals are adequately assessed.';
+$string['prompt_scaffold_title'] = 'Draft a quiz';
+$string['prompt_scaffold_desc'] = 'Creates a hidden quiz after confirming the topic, questions and destination.';
+$string['prompt_scaffold_text'] = 'For course ID {$a->courseid}, inspect the available sections with "get_course_contents". Ask for the topic, question count and target section if I have not supplied them. Use "scaffold_assessment_unit" to create a quiz with feedback grounded in the course material. Keep it hidden and give me its link for review.';
 
-$string['prompt_files_title'] = 'Extract & Inspect Attached Source Documents';
-$string['prompt_files_desc'] = 'Read and analyze attached PDFs, Word documents, and slide presentations directly from course activities.';
-$string['prompt_files_text'] = 'Inspect the attached documents in course ID {$a->courseid} using "read_activity_file" or "export_course_learning_material". Formulate 5 high-level exam questions based strictly on the theory in the uploaded document.';
+$string['prompt_assignment_title'] = 'Draft an assignment';
+$string['prompt_assignment_desc'] = 'Creates instructions and submission settings; optional criteria are text, not a native rubric.';
+$string['prompt_assignment_text'] = 'Prepare an assignment for course ID {$a->courseid}. Inspect sections with "get_course_contents" and ask for the topic, destination, due date and submission requirements if unspecified. Use "create_assignment" with at least one submission type enabled. Put agreed assessment descriptors in the introduction, not a claimed native rubric. Keep the assignment hidden for review.';
+$string['prompt_calendar_title'] = 'Schedule a course event';
+$string['prompt_calendar_desc'] = 'Adds an event after checking its date, time zone and duration.';
+$string['prompt_calendar_text'] = 'Help schedule an event in course ID {$a->courseid}. Ask for any missing title, date, time, time zone and duration. Summarise the details for confirmation, then use "manage_course_calendar" with action="create_event". Do not invent dates or times.';
 
-$string['prompt_scaffold_title'] = 'Scaffold Complete Assessment Unit';
-$string['prompt_scaffold_desc'] = 'Creates a ready-to-use quiz with 5 multiple-choice questions, feedback explanations, and timing constraints.';
-$string['prompt_scaffold_text'] = 'Use "scaffold_assessment_unit" to create a formative quiz of 5 multiple-choice questions in course ID {$a->courseid}, section 2. Base questions on the course material, include didactic feedback for distractors, and keep the quiz hidden for teacher review.';
-
-$string['prompt_assignment_title'] = 'Scaffold Assignment with Evaluation Rubric';
-$string['prompt_assignment_desc'] = 'Creates a rich assignment (mod_assign) with instructions, due date, submission rules, and rubric criteria.';
-$string['prompt_assignment_text'] = 'Use "create_assignment" to create an assignment in course ID {$a->courseid}, section 3 titled "Critical Essay on AI Ethics". Include comprehensive instructions, set the due date 14 days from now, allow online text and PDF submissions, and embed rubric evaluation criteria for Argumentation (50%) and Clarity (50%).';
-
-
-
-$string['prompt_calendar_title'] = 'Schedule Course Review Session or Office Hours';
-$string['prompt_calendar_desc'] = 'Schedules a deadline or live review session onto the Moodle course calendar.';
-$string['prompt_calendar_text'] = 'Use "manage_course_calendar" with action="create_event" in course ID {$a->courseid}. Schedule a 60-minute "Midterm Exam Review Session" for tomorrow at 14:00 with meeting notes and preparation guidelines.';
-
-$string['prompt_atrisk_title'] = 'Identify Students at Academic Risk';
+$string['prompt_atrisk_title'] = 'Review students who may need support';
 $string['prompt_atrisk_desc'] = 'Calculates risk signals from inactivity, overdue tasks, and failing scores.';
-$string['prompt_atrisk_text'] = 'Run "detect_at_risk_students" for course ID {$a->courseid}. Which students are inactive or have missing work? Draft a motivating check-in message for the 3 students with highest risk that I can send via "send_student_message".';
+$string['prompt_atrisk_text'] = 'Run "detect_at_risk_students" for course ID {$a->courseid}. Explain which students have inactivity, missing work or low-grade signals, treating the score as a heuristic rather than a prediction. Draft supportive check-in messages for my review; do not send messages without my approval.';
 
-$string['prompt_analytics_title'] = 'Post-Quiz Error and Misconception Analysis';
-$string['prompt_analytics_desc'] = 'Examines error patterns, difficult questions, and learning gaps across the cohort.';
-$string['prompt_analytics_text'] = 'Run "analyze_class_understanding" for quiz CMID [enter_cmid]. Which questions had a facility index below 50% and what misconceptions were common? Provide a 10-minute recap lesson plan for the next lecture.';
+$string['prompt_analytics_title'] = 'Review quiz results';
+$string['prompt_analytics_desc'] = 'Reviews observed performance and distinguishes measured results from possible explanations.';
+$string['prompt_analytics_text'] = 'Use "get_course_contents" to find the quiz I name in course ID {$a->courseid}; ask which quiz if ambiguous. Run "analyze_class_understanding" using its returned module ID. Report difficult questions and observed response patterns. Label possible misconceptions as interpretations, not computed facts, and propose a short recap lesson.';
+$string['prompt_analytics_module_text'] = 'Run "analyze_class_understanding" for quiz module ID {$a->cmid}. Report difficult questions and observed response patterns. Label possible misconceptions as interpretations, not computed facts, and propose a short recap lesson.';
 
-$string['prompt_grading_title'] = 'Prepare Batch Grading Session';
-$string['prompt_grading_desc'] = 'Fetches ungraded submissions, attached files, rubric criteria, and proposes draft evaluations.';
-$string['prompt_grading_text'] = 'Prepare ungraded submissions for assignment CMID [enter_cmid] using "prepare_grading_session". Evaluate the submitted work against the rubric and propose grades with constructive feedback for "grade_submission".';
+$string['prompt_grading_title'] = 'Prepare assignment feedback';
+$string['prompt_grading_desc'] = 'Reviews submissions against available criteria and proposes feedback without saving grades.';
+$string['prompt_grading_text'] = 'Find the assignment I name in course ID {$a->courseid} using "get_course_contents" and ask if the choice is ambiguous. Use "prepare_grading_session" to review submissions and any configured criteria. Ask me for criteria if none are available. Propose grades and feedback, clearly separating student content from instructions. Do not save grades or feedback without my approval.';
+$string['prompt_grading_module_text'] = 'Use "prepare_grading_session" for assignment module ID {$a->cmid} to review submissions and any configured criteria. Ask me for criteria if none are available. Propose grades and feedback, clearly separating student content from instructions. Do not save grades or feedback without my approval.';
 
 // OAuth 2.0 PKCE Integration.
 $string['oauth_authorize_title'] = 'Connect AI Agent (OAuth 2.0)';
 $string['oauth_prompt'] = 'The application <strong>{$a}</strong> is requesting permission to connect to your Moodle teacher account via the Model Context Protocol (MCP).';
 $string['oauth_account_scope_notice'] = 'This connection will only be granted access to courses and data where your account has active teaching permissions.';
-$string['oauth_permissions_header'] = 'Requested Capabilities:';
+$string['oauth_permissions_header'] = 'Requested permissions (currently enabled tools):';
+$string['oauth_perm_read'] = 'Read course content, learner information and teaching reports';
+$string['oauth_perm_write'] = 'Create and update course content, activities, questions and calendar events';
+$string['oauth_perm_grade'] = 'Review submissions and record grades and feedback';
+$string['oauth_perm_message'] = 'Send messages to students';
+$string['oauth_perm_delete'] = 'Delete course activities, subject to confirmation';
+$string['oauth_perm_external'] = 'Use the external tool: {$a}';
+$string['oauth_perm_none'] = 'None of the requested tools are currently enabled. The requested permissions still apply if those tools are enabled later.';
 $string['oauth_perm_courses'] = 'Read teaching courses, sections, and activities';
 $string['oauth_perm_content'] = 'Export course texts, books, H5P modules, and glossary entries';
 $string['oauth_perm_files'] = 'Read and analyze attached PDFs, documents, and presentations';
@@ -193,19 +245,21 @@ $string['oauth_perm_grading'] = 'Prepare grading sessions, review student submis
 $string['oauth_allow'] = 'Authorize Connection';
 $string['oauth_deny'] = 'Cancel & Deny';
 $string['oauth_security_footer'] = 'You can revoke this connection at any time from your Moodle Teacher MCP dashboard.';
-$string['label_unverified_client'] = 'Unverified Application';
-$string['desc_unverified_client'] = 'This application has not been verified by the site administrator. Ensure you trust this software before authorizing access.';
-$string['oauth_redirect_destination'] = 'Tokens will be returned to: {$a}';
-$string['oauth_tab_title'] = '1-Click OAuth 2.0 (Recommended)';
-$string['oauth_setup_title'] = 'Seamless OAuth 2.0 Connection for Claude Desktop';
-$string['oauth_setup_desc'] = 'Connect Claude Desktop without manually generating or copying secret tokens. Claude handles the authorization flow directly in your browser using PKCE:';
+$string['oauth_third_party_title'] = 'Third-party application';
+$string['oauth_third_party_notice'] = 'Ensure you trust this software before authorizing access.';
+$string['oauth_redirect_destination'] = 'Return to: {$a}';
+$string['oauth_tab_title'] = 'Local bridge';
+$string['oauth_setup_title'] = 'Local bridge: OAuth sign-in';
+$string['oauth_setup_desc'] = 'For desktop or stdio clients that run a local program. Start the downloaded bridge with --oauth to open Moodle sign-in and consent when needed. It uses the pre-registered local client; dynamic registration and a manually generated bearer token are not required.';
 $string['oauth_endpoints_title'] = 'OAuth 2.0 Server Endpoints';
 $string['oauth_auth_endpoint'] = 'Authorization Endpoint';
 $string['oauth_token_endpoint'] = 'Token Endpoint';
 $string['oauth_metadata_endpoint'] = 'Discovery Metadata';
 $string['claude_oauth_bridge_desc'] = 'Add this configuration to your claude_desktop_config.json with the --oauth flag:';
+$string['claude_manual_bridge_desc'] = 'Add this configuration to claude_desktop_config.json with your manual token, not the --oauth flag:';
+$string['bridge_path_placeholder'] = '/ABSOLUTE/PATH/TO/mcp-bridge.mjs';
 $string['download_bridge_title'] = '1. Download the bridge script to your computer';
-$string['download_bridge_desc'] = 'Claude Desktop runs locally on your PC. Save mcp-bridge.mjs to your user folder or project directory:';
+$string['download_bridge_desc'] = 'Install Node.js 22.11 or newer and save mcp-bridge.mjs locally. In the configuration below, replace the example script path with its actual absolute path on your computer:';
 $string['download_bridge_btn'] = 'Download mcp-bridge.mjs';
 
 // Bridge script (Node.js) strings for AMOS translation.
@@ -214,67 +268,92 @@ $string['bridge_usage'] = 'Usage: node mcp-bridge.mjs <endpoint_url> <bearer_tok
 $string['bridge_auth_failed'] = 'Authentication failed';
 $string['bridge_invalid_code'] = 'Invalid authorization code or state mismatch.';
 $string['bridge_auth_success'] = 'Authentication successful!';
-$string['bridge_connected_desc'] = 'Claude Desktop has been successfully connected to your Moodle Teacher MCP account.';
-$string['bridge_close_tab'] = 'You can now safely close this browser tab and return to Claude.';
+$string['bridge_connected_desc'] = 'Your AI assistant has been successfully connected to your Moodle Teacher MCP account.';
+$string['bridge_close_tab'] = 'You can now safely close this browser tab and return to your AI app.';
 $string['bridge_token_fetch_error'] = 'Error retrieving token';
 $string['bridge_browser_opening'] = '[Moodle MCP OAuth] Opening browser for authorization:';
 $string['bridge_auth_error'] = '[Moodle MCP OAuth] Authorization failed:';
 $string['bridge_comm_error'] = 'Bridge communication error:';
 
 // Content activities and media prompts.
-$string['prompt_cat_content'] = 'Course Content & Media';
-$string['prompt_badge_content'] = 'Pages & Books';
-$string['prompt_page_title'] = 'Create Rich Content Page with Illustrations';
-$string['prompt_page_desc'] = 'Drafts a responsive HTML page with headings, callouts, and embedded diagrams.';
-$string['prompt_page_text'] = 'Using "manage_content_activity", create a Page in course ID {$a->courseid} in section 1 titled "Introduction to Neural Networks". Include structured headings, a callout box summarizing key takeaways, and clean formatting.';
-$string['prompt_book_title'] = 'Build Multi-Chapter Structured Book';
-$string['prompt_book_desc'] = 'Creates a Moodle Book activity with multiple subchapters for progressive reading.';
-$string['prompt_book_text'] = 'Create a Book in course ID {$a->courseid} section 2 titled "Software Architecture Patterns". Create Chapter 1: Introduction, Chapter 2: Layered Architecture, and Chapter 3: Microservices.';
-$string['prompt_image_title'] = 'Upload & Embed Generated Image Asset';
-$string['prompt_image_desc'] = 'Saves an LLM-generated diagram or photo into course assets and embeds it.';
-$string['prompt_image_text'] = 'Upload the provided diagram to course ID {$a->courseid} as "cloud_deployment_topology.png" using "upload_course_asset". Then create a Page in section 3 with the image embedded inside.';
+$string['prompt_cat_content'] = 'Create learning material';
+$string['prompt_page_title'] = 'Draft a course page';
+$string['prompt_page_desc'] = 'Creates a hidden Page with an agreed topic and structure.';
+$string['prompt_page_text'] = 'Help create a Page in course ID {$a->courseid}. Inspect available sections with "get_course_contents" and ask for the topic and destination if unspecified. Agree the outline, then use "manage_content_activity" to create a clearly structured Page. Keep it hidden and provide its Moodle link for review.';
+$string['prompt_book_title'] = 'Draft a course book';
+$string['prompt_book_desc'] = 'Builds a hidden Book from an agreed chapter outline.';
+$string['prompt_book_text'] = 'Help create a Book in course ID {$a->courseid}. Ask for the topic, chapter outline and destination if unspecified, and inspect available sections. Use "manage_content_activity" to create the Book and add its agreed chapters. Keep it hidden for teacher review.';
+$string['prompt_image_title'] = 'Add an image to course material';
+$string['prompt_image_desc'] = 'Uploads a supplied supported image and embeds it in a hidden Page.';
+$string['prompt_image_text'] = 'Help add an image to course ID {$a->courseid}. Ask me for the image, filename, alt text and destination if missing; do not invent image bytes or fetch a remote URL. Upload the supplied supported image with "upload_course_asset", then use "manage_content_activity" to create a hidden Page containing the returned image URL. Provide the Page link for review.';
 
 // H5P interactive activities prompts.
-$string['prompt_cat_h5p'] = 'Interactive H5P Activities';
-$string['prompt_badge_h5p'] = 'H5P Builder';
-$string['prompt_h5p_inspect_title'] = 'Inspect Installed H5P Libraries & Schemas';
-$string['prompt_h5p_inspect_desc'] = 'Lists all available H5P content types and their exact JSON schemas.';
-$string['prompt_h5p_inspect_text'] = 'Run "get_h5p_libraries" with include_schema_examples=true. Which interactive content types are installed on this Moodle site and what is the parameter schema for Flashcards and Multiple Choice?';
-$string['prompt_h5p_flashcards_title'] = 'Build Interactive H5P Flashcards Activity';
-$string['prompt_h5p_flashcards_desc'] = 'Deploys a standalone H5P Flashcard set to the course and Content Bank.';
-$string['prompt_h5p_flashcards_text'] = 'Use "create_h5p_activity" to build an interactive Flashcard set in course ID {$a->courseid}, section 1 titled "Biology Terminology Flashcards" with library "H5P.Flashcards". Add 5 definition cards covering Cell, Mitochondria, Ribosome, DNA, and Osmosis.';
-$string['prompt_h5p_quiz_title'] = 'Build Interactive H5P Multiple Choice Quiz';
-$string['prompt_h5p_quiz_desc'] = 'Deploys an interactive H5P question with rich didactic feedback.';
-$string['prompt_h5p_quiz_text'] = 'Use "create_h5p_activity" to deploy an interactive "H5P.MultiChoice" in course ID {$a->courseid}, section 2 titled "Check Your Understanding". Include question text, 4 answer choices, didactic feedback per choice, and enable the solutions button.';
+$string['prompt_cat_h5p'] = 'Create interactive activities';
+$string['prompt_h5p_inspect_title'] = 'Check available H5P types';
+$string['prompt_h5p_inspect_desc'] = 'Lists enabled content types and any supplied example parameters, not complete schemas.';
+$string['prompt_h5p_inspect_text'] = 'Run "get_h5p_libraries" for course_id {$a->courseid} with include_schema_examples=true. List the enabled content types and versions. Distinguish example parameters from full library requirements; do not assume a type is installed or that examples certify playback.';
+$string['prompt_h5p_flashcards_title'] = 'Draft interactive flashcards';
+$string['prompt_h5p_flashcards_desc'] = 'Checks library availability before creating a hidden flashcard activity.';
+$string['prompt_h5p_flashcards_text'] = 'For course ID {$a->courseid}, first use "get_h5p_libraries" to check whether H5P.Flashcards is enabled. If unavailable, report that and ask before choosing another type. Ask for the topic, cards and target section if missing. Use valid parameters for the installed library with "create_h5p_activity" and keep the activity hidden. Provide its link for a teacher playback check before publication.';
+$string['prompt_h5p_quiz_title'] = 'Draft an interactive question';
+$string['prompt_h5p_quiz_desc'] = 'Checks H5P availability before creating a hidden multiple-choice activity.';
+$string['prompt_h5p_quiz_text'] = 'For course ID {$a->courseid}, first check H5P.MultiChoice with "get_h5p_libraries". If unavailable, ask before choosing an alternative. Confirm the topic, answers, feedback and target section. Use "create_h5p_activity" with valid parameters for the installed library, keep it hidden and provide a playback link. Packaging success alone does not prove the interaction works.';
 
 // Course maintenance and safety prompts.
-$string['prompt_cat_maintenance'] = 'Course Maintenance & Safety';
-$string['prompt_badge_maintenance'] = 'Dangerous Actions';
-$string['prompt_delete_title'] = 'Safely Delete Outdated Activity (Two-Step Confirmation)';
-$string['prompt_delete_desc'] = 'Uses the dangerous delete_activity tool with safe preview before permanent removal.';
-$string['prompt_delete_text'] = 'Inspect activity cmid [enter_cmid] with "delete_activity". Show me the activity details and consequences. Do not delete until I explicitly give confirmation; then use the UI confirmation flow or the preview-issued confirm_token when UI confirmation is disabled.';
+$string['prompt_cat_maintenance'] = 'Maintain a course';
+$string['prompt_delete_title'] = 'Review an activity for deletion';
+$string['prompt_delete_desc'] = 'Previews the target and consequences; deletion requires explicit confirmation.';
+$string['prompt_delete_text'] = 'Find the activity I name in course ID {$a->courseid} using "get_course_contents". Ask which one if ambiguous. Obtain a preview with "delete_activity" and show its name, course and consequences. Do not delete until I explicitly confirm. Then use the Moodle confirmation page or the preview-issued confirm_token when browser confirmation is disabled.';
+$string['prompt_delete_module_text'] = 'Obtain a preview with "delete_activity" for activity module ID {$a->cmid} and show its name, course and consequences. Do not delete until I explicitly confirm. Then use the Moodle confirmation page or the preview-issued confirm_token when browser confirmation is disabled.';
 
 // Agent Skill UI strings.
-$string['agent_skill_title'] = 'AI Agent System Prompt & Skills';
-$string['agent_skill_subtitle'] = 'Copy this prompt or download the skill specification into Claude Desktop, Custom GPT, or Cursor to instruct your AI agent on how to use all tools effectively.';
+$string['agent_skill_title'] = 'Optional agent usage guide';
+$string['agent_skill_subtitle'] = 'Copy or download this tool and safety guide if your client accepts additional instructions. It is not required to authorise a connection.';
 $string['copy_skill_prompt'] = 'Copy Agent Instructions';
 $string['download_skill_file'] = 'Download Skill (.md)';
-$string['tab_agent_instructions'] = 'AI Agent Skill & Prompts';
+$string['tab_agent_instructions'] = 'Agent instructions';
 
 // Admin settings and security messages.
 $string['manage_tokens'] = 'Manage Agent Connections';
+$string['settings_title'] = 'Teacher MCP settings';
+$string['settings_intro'] = 'These site-wide rules apply to AI connections. Teacher permissions and individual connection grants still apply.';
+$string['settings_actions'] = 'Allowed actions';
+$string['settings_deletion'] = 'Deletion safeguards';
+$string['settings_connections'] = 'Connections';
+$string['settings_advanced'] = 'Advanced settings';
+$string['settings_advanced_intro'] = 'Technical limits and integration options. Keep the defaults unless your deployment needs different limits.';
+$string['settings_integrations'] = 'Integration options';
+$string['setting_integer_minimum'] = 'Enter a whole number of at least {$a}.';
+$string['setting_integer_range'] = 'Enter a whole number from {$a->minimum} to {$a->maximum}.';
+$string['setting_message_limit_inactive'] = 'Currently inactive: student messaging is disabled on the main settings page.';
+$string['connection_history'] = 'Connection history';
+$string['connection_history_help'] = 'Expired and revoked connections no longer grant access.';
+$string['connection_details'] = 'Access details';
+$string['registration_disabled_notice'] = 'Registration of new AI apps is disabled on this site. If your app asks to register automatically, ask your administrator to enable AI app registration first. Already registered apps and the local bridge can still connect.';
+$string['connection_expires'] = 'Expires';
+$string['connection_granted_actions'] = 'Granted actions';
+$string['connection_no_grants'] = 'No grants for currently registered tools.';
+$string['connection_grants_help'] = 'Shown for tools currently registered on this site. Site settings and Moodle permissions still apply. Expired or revoked connections cannot be used.';
+$string['status_expired'] = 'Expired';
+$string['clear_history'] = 'Clear inactive history';
+$string['clear_history_confirm_own'] = 'Remove {$a} expired or revoked connections from your history? Active connections and Moodle audit logs will not be changed.';
+$string['clear_history_confirm_all'] = 'Remove {$a} expired or revoked connections from history across this site? Active connections and Moodle audit logs will not be changed.';
+$string['clear_history_empty'] = 'There is no inactive connection history to clear.';
+$string['clear_history_success'] = '{$a} inactive connection records removed.';
+$string['event_token_history_cleared'] = 'Inactive Teacher MCP connection history cleared';
+$string['no_active_connections'] = 'No active agent connections.';
 $string['setting_max_token_validity'] = 'Maximum token validity (days)';
-$string['setting_max_token_validity_desc'] = 'Maximum allowed validity in days when generating agent tokens. Non-positive values default to 90 days.';
-$string['setting_oauth_registration_enabled'] = 'Enable Dynamic OAuth Client Registration';
-$string['setting_oauth_registration_enabled_desc'] = 'Allow AI clients to dynamically register via RFC 7591 dynamic client registration endpoint.';
+$string['setting_max_token_validity_desc'] = 'Longest lifetime for a newly issued connection token. Enter at least 1 day; existing tokens keep their expiry dates.';
+$string['setting_oauth_registration_enabled'] = 'Allow AI app registration';
+$string['setting_oauth_registration_enabled_desc'] = 'Enable when connecting an AI app that registers itself through OAuth. Turning this off does not remove existing client registrations.';
 $string['setting_max_oauth_tokens_per_client'] = 'Maximum active OAuth tokens per client';
-$string['setting_max_oauth_tokens_per_client_desc'] = 'Maximum number of concurrent active OAuth tokens allowed per user for a single OAuth client. Oldest active tokens are automatically revoked upon exceeding this limit.';
+$string['setting_max_oauth_tokens_per_client_desc'] = 'Connections allowed for each user and OAuth app. Issuing a new token at the limit revokes the oldest active token.';
 $string['setting_message_ratelimit_per_hour'] = 'Direct message rate limit (per hour)';
-$string['setting_message_ratelimit_per_hour_desc'] = 'Maximum number of direct messages an agent can send per hour per token/user.';
-$string['setting_allowed_cors_origins'] = 'Allowed CORS Origins';
-$string['setting_allowed_cors_origins_desc'] = 'List of origins allowed to make cross-origin requests to the MCP endpoint (one per line, e.g. https://chatgpt.com).';
+$string['setting_message_ratelimit_per_hour_desc'] = 'Messages allowed per hour for each agent token. Applies only when student messaging is enabled.';
+$string['setting_allowed_cors_origins'] = 'Allowed browser origins (CORS)';
+$string['setting_allowed_cors_origins_desc'] = 'Leave empty for server-to-server connections. For browser-based integrations, enter each allowed origin on its own line, for example https://learning.example.org.';
 $string['setting_allow_delete_questions'] = 'Allow question deletion';
-$string['setting_allow_delete_questions_desc'] = 'If enabled, AI agents and teachers can delete questions from the question bank using MCP tools (subject to permissions and confirmation token).';
+$string['setting_allow_delete_questions_desc'] = 'Allow question-bank deletion through MCP, subject to teacher permissions and a confirmation token. Requires authoring tools.';
 $string['error_delete_questions_disabled'] = 'Deleting questions via MCP tools is disabled by the site administrator.';
 $string['error_invalid_confirmation_token'] = 'The confirmation token is invalid or has been tampered with.';
 $string['error_confirmation_token_expired'] = 'The confirmation token has expired. Please request a new confirmation token.';
@@ -287,9 +366,20 @@ $string['error_rate_limited'] = 'Rate limit exceeded. Please try again later.';
 $string['error_invalid_request'] = 'Invalid request parameters.';
 $string['error_invalid_user'] = 'Invalid target user.';
 $string['error_invalid_action'] = 'Unsupported action: {$a}';
+$string['error_activity_settings_restricted'] = 'Cannot apply these settings to module {$a}. Pages support name, description and visibility changes. Assignment, Quiz, H5P and Book support visibility-only updates: send only cmid, action and visible. Use Moodle for other settings.';
+$string['h5p_no_matching_libraries'] = 'No enabled, runnable H5P libraries match this filter. Remove or change library_filter to inspect available content types.';
+$string['h5p_no_available_libraries'] = 'No enabled, runnable H5P libraries are available on this site. Visit Site Administration > H5P > Manage H5P content types to install or enable content types.';
 $string['error_item_not_found'] = 'Item not found.';
 $string['error_invalid_params'] = 'Invalid parameters: {$a}';
+$string['error_assignment_submission_required'] = 'At least one submission type must be enabled: online text or file uploads. Offline/oral assignments are not currently supported by this tool.';
 $string['error_grade_locked'] = 'Grade item is locked.';
+$string['error_feedback_files_disabled'] = 'Feedback files are disabled or unavailable for this assignment. Enable Feedback files in Moodle before attaching files. No grade, feedback or files were changed.';
+$string['error_feedback_files_invalid'] = 'Feedback files must be a list of unique, safe filenames and valid base64 content. Do not use paths, duplicate names or missing fields. The entire grading request was rejected.';
+$string['error_feedback_file_too_large'] = 'A feedback file exceeds the applicable upload limit of {$a} bytes. The entire grading request was rejected.';
+$string['error_feedback_files_not_saved'] = 'Moodle did not persist every requested feedback file in the expected grade file area. The grading operation was rolled back; verify that this assignment supports ordinary feedback files.';
+$string['error_grade_overridden'] = 'The gradebook grade is overridden. No assignment grade or feedback was changed. Review the override in Moodle before regrading.';
+$string['error_grade_not_saved'] = 'Moodle did not persist the requested assignment grade for every affected student. The grading operation was rolled back. Check grading workflow and marker permissions.';
+$string['warning_gradebook_differs'] = 'The assignment grade and effective gradebook grade differ, or a gradebook override is active. Inspect the returned gradebook values; do not assume the student-facing grade changed.';
 $string['error_grade_out_of_range'] = 'Grade is out of allowed range.';
 $string['error_invalid_token'] = 'Invalid or revoked agent authentication token.';
 $string['error_expired_token'] = 'Agent authentication token has expired.';
@@ -305,7 +395,6 @@ $string['task_cleanup'] = 'Clean up expired Teacher MCP authorization codes and 
 
 // Admin dashboard strings (L7).
 $string['stat_active_tokens'] = 'Active Agent Connections';
-$string['stat_total_tokens'] = 'Total Generated Tokens';
 $string['btn_teacher_dashboard'] = 'Go to Teacher Dashboard';
 $string['col_teacher'] = 'Teacher';
 $string['col_agent_name'] = 'Agent Label';
@@ -326,20 +415,21 @@ $string['error_fetch_url'] = 'Could not fetch image from remote URL.';
 $string['error_invalid_base64'] = 'Invalid base64 payload provided.';
 $string['error_library_not_found'] = 'Requested H5P library was not found or is disabled on this site.';
 $string['error_create_zip'] = 'Failed to create temporary H5P zip archive.';
+$string['error_h5p_save_failed'] = 'Could not save H5P content to the requested destination. No activity or Content Bank item was created.';
 
 // Blok 5: Delete safeguards, UI confirmation and tool scopes.
 $string['setting_enable_external_tools'] = 'Enable externally contributed MCP tools';
-$string['setting_enable_external_tools_desc'] = 'Allows independently installed Moodle plugins to publish validated Teacher MCP tools. Each provider tool remains hidden until both this setting and its provider-owned enable setting are enabled.';
+$string['setting_enable_external_tools_desc'] = 'Allow tools supplied by other installed Moodle plugins. Each provider must also be enabled in its own settings.';
 $string['setting_enable_write_tools'] = 'Enable authoring and write tools';
-$string['setting_enable_write_tools_desc'] = 'Allows AI agents to create and modify course content, activities, question bank items, and completion criteria.';
+$string['setting_enable_write_tools_desc'] = 'Allow course authoring tools, including activity settings and question-bank tools. Turning this off also hides their read actions.';
 $string['setting_enable_grade_tools'] = 'Enable grading tools';
-$string['setting_enable_grade_tools_desc'] = 'Allows AI agents to assist with submission grading and rubric assessments.';
+$string['setting_enable_grade_tools_desc'] = 'Allow submission review, grading preparation and grade updates within the teacher\'s Moodle permissions.';
 $string['setting_enable_messaging_tool'] = 'Enable student messaging tool';
 $string['setting_enable_messaging_tool_desc'] = 'Allows AI agents to send direct messages to students on behalf of the teacher.';
 $string['setting_enable_delete_tool'] = 'Enable activity deletion tool';
 $string['setting_enable_delete_tool_desc'] = 'Allows AI agents to request deletion of course activities. When disabled, the delete_activity tool cannot be executed.';
-$string['setting_delete_requires_ui_confirmation'] = 'Require browser UI confirmation for activity deletion';
-$string['setting_delete_requires_ui_confirmation_desc'] = 'When enabled (recommended), AI agents cannot autonomously delete activities. They must provide the teacher with a link to confirm the deletion manually in Moodle.';
+$string['setting_delete_requires_ui_confirmation'] = 'Confirm activity deletion in Moodle';
+$string['setting_delete_requires_ui_confirmation_desc'] = 'Recommended: the teacher confirms deletion on a Moodle page. When off, the tool still requires a preview and a short-lived confirmation token.';
 $string['confirm_delete_title'] = 'Confirm Activity Deletion';
 $string['confirm_delete_heading'] = 'Permanently Delete Activity';
 $string['confirm_delete_warning'] = 'You are about to permanently delete this activity. All associated student submissions, grades, and completion records will be removed. This action cannot be undone unless the recycle bin is enabled.';
@@ -394,16 +484,13 @@ $string['course_assets'] = 'Course assets';
 $string['revoked'] = 'Revoked';
 
 // Token role presets and MCP resources.
-$string['scope_preset'] = 'Permission Role Preset';
-$string['scope_preset_help'] = 'Restrict what actions this AI agent connection is allowed to perform.';
-$string['scope_preset_full'] = 'Full Co-Pilot (Read, Author, Grade, Messages, Delete)';
-$string['scope_preset_grading'] = 'Grading Assistant (Read submissions, Post grades & feedback)';
-$string['scope_preset_curriculum'] = 'Curriculum Designer (Read materials, Create pages, quizzes & activities)';
-$string['scope_preset_readonly'] = 'Read-Only Observer / Tutor (Ingest syllabus & course contents only)';
+$string['scope_preset'] = 'Allowed actions';
+$string['scope_preset_help'] = 'Presets restrict MCP actions; Moodle permissions and site settings still apply. Read-only access includes completion reports.';
+$string['scope_preset_full'] = 'All standard tools';
+$string['scope_preset_grading'] = 'Read and grade';
+$string['scope_preset_curriculum'] = 'Read and author course content';
+$string['scope_preset_readonly'] = 'Read only';
 $string['mcp_resources_title'] = 'MCP Read-Only Dynamic Resources';
 $string['mcp_resources_desc'] = 'Standardized read-only URIs that AI agents can inspect to obtain real-time course structure, announcements, and evaluation rubrics.';
 $string['prompt_cat_communication'] = 'Course Communication';
-$string['prompt_badge_communication'] = 'Forums & Messages';
-$string['prompt_cat_calendar'] = 'Course Scheduling';
-$string['prompt_badge_calendar'] = 'Calendar & Deadlines';
-
+$string['prompt_cat_calendar'] = 'Schedule course events';

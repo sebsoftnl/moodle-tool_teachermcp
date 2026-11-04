@@ -37,7 +37,7 @@ class create_assignment extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Create a Moodle Assignment (mod_assign) in a course section with due dates, submission settings, and optional grading rubric.';
+        return 'Create a Moodle Assignment (mod_assign) with due dates, submission settings, and optional rubric descriptors in its introduction, not a native advanced-grading rubric. At least one submission type must be enabled; offline/oral assignments are not currently supported.';
     }
 
     public function get_input_schema(): array {
@@ -70,11 +70,11 @@ class create_assignment extends base_tool {
                 ],
                 'allow_online_text' => [
                     'type' => 'boolean',
-                    'description' => 'Allow student online text entry (default: true).',
+                    'description' => 'Allow student online text entry (default: true). Must be enabled if allow_file_submissions is false.',
                 ],
                 'allow_file_submissions' => [
                     'type' => 'boolean',
-                    'description' => 'Allow student file uploads (default: true).',
+                    'description' => 'Allow student file uploads (default: true). Must be enabled if allow_online_text is false.',
                 ],
                 'max_files' => [
                     'type' => 'integer',
@@ -172,7 +172,8 @@ class create_assignment extends base_tool {
         $allowonlinetext = $params['allow_online_text'] ?? true;
         $allowfile = $params['allow_file_submissions'] ?? true;
         if (!$allowonlinetext && !$allowfile) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp');
+            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
+                get_string('error_assignment_submission_required', 'tool_teachermcp'));
         }
         $maxfiles = isset($params['max_files']) ? max(1, min(20, (int)$params['max_files'])) : 2;
         $rawmaxgrade = $params['max_grade'] ?? 100;
@@ -204,6 +205,7 @@ class create_assignment extends base_tool {
         $moduleinfo->gradingduedate = $duedate ? ($duedate + (7 * 86400)) : 0;
         $moduleinfo->allowsubmissionsfromdate = time();
         $moduleinfo->grade = $maxgrade;
+        $moduleinfo->assignfeedback_comments_enabled = (int)get_config('assignfeedback_comments', 'default');
         $moduleinfo->assignsubmission_onlinetext_enabled = $allowonlinetext ? 1 : 0;
         $moduleinfo->assignsubmission_file_enabled = $allowfile ? 1 : 0;
         $moduleinfo->assignsubmission_file_maxfiles = $maxfiles;
@@ -228,6 +230,7 @@ class create_assignment extends base_tool {
             'status' => 'success',
             'activity_type' => 'assign',
             'cmid' => $cmid,
+            'visible' => (bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST),
             'assignment_id' => $assignid,
             'title' => $title,
             'course_id' => (int)$course->id,

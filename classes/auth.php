@@ -154,22 +154,24 @@ class auth {
      * Enforce a bounded fixed-window MCP request rate for one token and IP address.
      *
      * @param stdClass $token Authenticated token record.
+     * @param int|null $now Optional sampled timestamp for deterministic window evaluation.
      * @return void
-     * @throws moodle_exception When the configured request limit is exceeded.
+     * @throws moodle_exception When the limit is exceeded, with retry seconds in the exception's a value.
      */
-    public static function enforce_mcp_request_rate_limit(stdClass $token): void {
+    public static function enforce_mcp_request_rate_limit(stdClass $token, ?int $now = null): void {
         $limit = (int)get_config('tool_teachermcp', 'mcp_requests_per_minute');
         if ($limit <= 0) {
             $limit = 60;
         }
         $limit = max(1, min(600, $limit));
 
-        $window = (int)floor(time() / 60);
+        $now = $now ?? time();
+        $window = (int)floor($now / 60);
         $key = 'mcp_' . hash('sha256', $token->id . '|' . getremoteaddr() . '|' . $window);
         $cache = \cache::make('tool_teachermcp', 'ratelimit');
         $count = (int)$cache->get($key);
         if ($count >= $limit) {
-            throw new moodle_exception('error_rate_limited', 'tool_teachermcp');
+            throw new moodle_exception('error_rate_limited', 'tool_teachermcp', '', 60 - ($now % 60));
         }
         $cache->set($key, $count + 1);
     }

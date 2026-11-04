@@ -18,84 +18,47 @@
     @template tool_teachermcp/oauth_authorize
     OAuth 2.0 Consent screen for AI Agent connections.
 }}
-<div class="row justify-content-center my-4">
-    <div class="col-md-8 col-lg-6">
-        <div class="card border shadow-sm">
-            <div class="card-header bg-light py-3 border-bottom">
-                <div class="d-flex align-items-center">
-                    <i class="fa fa-shield-alt text-primary fa-2x mr-3 me-3"></i>
-                    <div>
-                        <h4 class="h5 mb-0 text-dark">{{#str}}oauth_authorize_title, tool_teachermcp{{/str}}</h4>
-                        <small class="text-muted">{{site_name}}</small>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body p-4">
-                <p class="lead mb-3" style="font-size: 1.05rem;">
-                    {{#str}}oauth_prompt, tool_teachermcp, {{client_name}}{{/str}}
-                </p>
+<div class="tool_teachermcp_confirmation tool_teachermcp_consent my-3">
+    <p class="text-muted">{{site_name}}</p>
+    <p>{{#str}}oauth_prompt, tool_teachermcp, {{client_name}}{{/str}}</p>
 
-                {{^is_verified}}
-                <div class="alert alert-warning py-2 px-3 mb-3 small d-flex align-items-center">
-                    <i class="fa fa-exclamation-triangle mr-2 me-2 fa-lg"></i>
-                    <div>
-                        <strong>{{#str}}label_unverified_client, tool_teachermcp{{/str}}:</strong> {{#str}}desc_unverified_client, tool_teachermcp{{/str}}
-                    </div>
-                </div>
-                {{/is_verified}}
+    <p class="alert alert-info">
+        <strong>{{#str}}oauth_third_party_title, tool_teachermcp{{/str}}</strong><br>
+        {{#str}}oauth_third_party_notice, tool_teachermcp{{/str}}
+    </p>
 
-                {{#redirect_host}}
-                <div class="p-2 mb-3 bg-light border rounded small text-muted">
-                    <i class="fa fa-external-link-alt mr-1 me-1"></i>
-                    {{#str}}oauth_redirect_destination, tool_teachermcp, {{redirect_host}}{{/str}}
-                </div>
-                {{/redirect_host}}
+    {{#redirect_host}}
+    <p>{{#str}}oauth_redirect_destination, tool_teachermcp, {{redirect_host}}{{/str}}</p>
+    {{/redirect_host}}
 
-                <div class="p-3 bg-light rounded border mb-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="fa fa-user-circle text-secondary mr-2 me-2"></i>
-                        <span class="font-weight-bold text-dark">{{user_fullname}}</span>
-                        <span class="text-muted small ml-2 ms-2">({{user_email}})</span>
-                    </div>
-                    <div class="small text-muted">
-                        <i class="fa fa-info-circle mr-1 me-1"></i>
-                        {{#str}}oauth_account_scope_notice, tool_teachermcp{{/str}}
-                    </div>
-                </div>
+    <p>
+        <strong>{{user_fullname}}</strong>
+        <span class="tool_teachermcp_email">{{user_email}}</span>
+    </p>
+    <p>{{#str}}oauth_account_scope_notice, tool_teachermcp{{/str}}</p>
 
-                <h6 class="font-weight-bold text-secondary mb-2">
-                    {{#str}}oauth_permissions_header, tool_teachermcp{{/str}}
-                </h6>
-                <ul class="small text-muted pl-3 ps-3 mb-4">
-                    <li class="mb-1">{{#str}}oauth_perm_courses, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_content, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_files, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_assessment, tool_teachermcp{{/str}}</li>
-                    <li class="mb-1">{{#str}}oauth_perm_grading, tool_teachermcp{{/str}}</li>
-                </ul>
+    <h2 class="h6 font-weight-bold mb-2">{{#str}}oauth_permissions_header, tool_teachermcp{{/str}}</h2>
+    <ul class="pl-3 ps-3 mb-3">
+        {{#permissions}}
+        <li class="mb-1" data-scope="{{id}}">{{description}}</li>
+        {{/permissions}}
+        {{^permissions}}
+        <li>{{#str}}oauth_perm_none, tool_teachermcp{{/str}}</li>
+        {{/permissions}}
+    </ul>
 
-                <form method="post" action="">
-                    <input type="hidden" name="sesskey" value="{{sesskey}}">
-                    <input type="hidden" name="client_id" value="{{client_id}}">
-                    <input type="hidden" name="redirect_uri" value="{{redirect_uri}}">
-                    <input type="hidden" name="state" value="{{state}}">
-                    <input type="hidden" name="code_challenge" value="{{code_challenge}}">
-                    <input type="hidden" name="code_challenge_method" value="{{code_challenge_method}}">
-                    <input type="hidden" name="scope" value="{{scope}}">
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <button type="submit" name="decision" value="deny" class="btn btn-outline-secondary">
-                            <i class="fa fa-times mr-1 me-1"></i>{{#str}}oauth_deny, tool_teachermcp{{/str}}
-                        </button>
-                        <button type="submit" name="decision" value="allow" class="btn btn-primary px-4">
-                            <i class="fa fa-check mr-1 me-1"></i>{{#str}}oauth_allow, tool_teachermcp{{/str}}
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer bg-light small text-muted py-2 text-center">
-                {{#str}}oauth_security_footer, tool_teachermcp{{/str}}
-            </div>
+    <form method="post" action="" class="mb-3">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <input type="hidden" name="client_id" value="{{client_id}}">
+        <input type="hidden" name="redirect_uri" value="{{redirect_uri}}">
+        <input type="hidden" name="state" value="{{state}}">
+        <input type="hidden" name="code_challenge" value="{{code_challenge}}">
+        <input type="hidden" name="code_challenge_method" value="{{code_challenge_method}}">
+        <input type="hidden" name="scope" value="{{scope}}">
+        <div class="tool_teachermcp_actions d-flex flex-wrap">
+            <button type="submit" name="decision" value="deny" class="btn btn-outline-secondary">{{#str}}oauth_deny, tool_teachermcp{{/str}}</button>
+            <button type="submit" name="decision" value="allow" class="btn btn-primary">{{#str}}oauth_allow, tool_teachermcp{{/str}}</button>
         </div>
-    </div>
+    </form>
+    <p class="text-muted">{{#str}}oauth_security_footer, tool_teachermcp{{/str}}</p>
 </div>

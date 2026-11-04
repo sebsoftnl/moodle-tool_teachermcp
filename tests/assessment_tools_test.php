@@ -121,6 +121,8 @@ final class assessment_tools_test extends \advanced_testcase {
         $this->assertTrue($res['success']);
         $quizid = $res['quiz_id'];
         $cmid = $res['cmid'];
+        $this->assertFalse($res['visible']);
+        $this->assertSame((bool)$DB->get_field('course_modules', 'visible', ['id' => $cmid], MUST_EXIST), $res['visible']);
 
         // Assert grade item created.
         $gradeitem = $DB->get_record('grade_items', [
@@ -214,18 +216,25 @@ final class assessment_tools_test extends \advanced_testcase {
         $qid = (int)$create1['question_id'];
 
         // Create a question category in course 1 and in course 2.
-        $context1 = \context_course::instance($course1->id);
-        $context2 = \context_course::instance($course2->id);
-
-        $contexts2 = new \core_question\local\bank\question_edit_contexts($context2);
-        $cat2 = question_make_default_categories($contexts2->all());
+        $context1 = \context::instance_by_id($DB->get_field('question_categories', 'contextid',
+            ['id' => $create1['category_id']], MUST_EXIST));
+        $this->setAdminUser();
+        if (class_exists(\core_question\local\bank\question_bank_helper::class)) {
+            $bank2 = $generator->create_module('qbank', ['course' => $course2->id,
+                'type' => \core_question\local\bank\question_bank_helper::TYPE_STANDARD]);
+            $context2 = \context_module::instance($bank2->cmid);
+        } else {
+            $context2 = \context_course::instance($course2->id);
+        }
+        $questiongenerator = $generator->get_plugin_generator('core_question');
+        $cat2 = $questiongenerator->create_question_category(['contextid' => $context2->id, 'name' => 'Foreign category C2']);
 
         // Create a secondary category in course 1.
-        $questiongenerator = $generator->get_plugin_generator('core_question');
         $newcat1 = $questiongenerator->create_question_category([
             'contextid' => $context1->id,
             'name' => 'Subcategory C1',
         ]);
+        $this->setUser($teacher);
 
         // 1. Moving question to category in course2 must be rejected.
         try {

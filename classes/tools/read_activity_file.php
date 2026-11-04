@@ -67,8 +67,10 @@ class read_activity_file extends base_tool {
         global $DB;
 
         $cmid = (int)($params['cmid'] ?? 0);
-        $fileid = !empty($params['fileid']) ? (int)$params['fileid'] : 0;
-        $filenamereq = !empty($params['filename']) ? trim($params['filename']) : '';
+        $hasfileid = array_key_exists('fileid', $params);
+        $hasfilename = array_key_exists('filename', $params);
+        $fileid = $hasfileid ? (int)$params['fileid'] : 0;
+        $filenamereq = $hasfilename ? trim($params['filename']) : '';
         $maxchars = !empty($params['max_length']) ? max(1000, min(150000, (int)$params['max_length'])) : 40000;
 
         if (!$cmid) {
@@ -80,7 +82,7 @@ class read_activity_file extends base_tool {
 
         $allfiles = file_extractor::get_module_files($cm->id);
 
-        if (empty($allfiles)) {
+        if (empty($allfiles) && !$hasfileid && !$hasfilename) {
             return [
                 'status' => 'empty',
                 'cmid' => $cm->id,
@@ -110,15 +112,19 @@ class read_activity_file extends base_tool {
 
             $filelist[] = $fileinfo;
 
-            if ($fileid && $f->get_id() == $fileid) {
+            if ($hasfileid && $f->get_id() == $fileid) {
                 $targetfile = $f;
-            } else if ($filenamereq && strcasecmp($f->get_filename(), $filenamereq) === 0) {
+            } else if (!$hasfileid && $hasfilename && strcasecmp($f->get_filename(), $filenamereq) === 0) {
                 $targetfile = $f;
             }
         }
 
+        if (($hasfileid || $hasfilename) && !$targetfile) {
+            throw new \moodle_exception('filenotfound', 'error');
+        }
+
         // If no specific file was requested but exactly one file exists, select it automatically.
-        if (!$targetfile && count($allfiles) === 1) {
+        if (!$hasfileid && !$hasfilename && count($allfiles) === 1) {
             $targetfile = reset($allfiles);
         }
 
