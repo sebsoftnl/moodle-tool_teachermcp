@@ -29,15 +29,29 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manage_course_completion extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'manage_course_completion';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Inspect course completion criteria, rules, and student completion progress status.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -60,6 +74,11 @@ class manage_course_completion extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB, $USER;
         require_once($CFG->libdir . '/completionlib.php');

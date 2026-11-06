@@ -29,15 +29,29 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_course_contents extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'get_course_contents';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Retrieve structure, sections, and activities (quizzes, assignments, resources, forums) of a specified course.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -56,6 +70,11 @@ class get_course_contents extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         $courseid = (int)($params['course_id'] ?? 0);
         $includedescs = !empty($params['include_descriptions'] ?? true);
@@ -102,7 +121,8 @@ class get_course_contents extends base_tool {
                                     $act['description'] = strip_tags($intro);
                                 }
                             } catch (\Throwable $e) {
-                                // Some modules may not have an intro column.
+                                // Some modules may not have an intro column; a failed lookup leaves $intro false.
+                                $intro = false;
                             }
                         }
                     }

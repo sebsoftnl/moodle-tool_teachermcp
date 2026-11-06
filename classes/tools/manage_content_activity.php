@@ -31,15 +31,31 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manage_content_activity extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'manage_content_activity';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Creates or updates core Moodle content activities: Pages (mod_page) and Books (mod_book with multiple chapters and subchapters). Supports rich HTML formatting, tables, callout boxes, and embedded media assets uploaded via upload_course_asset.';
+        return 'Creates or updates core Moodle content activities: Pages (mod_page) and Books (mod_book with multiple ' .
+            'chapters and subchapters). Supports rich HTML formatting, tables, callout boxes, and embedded media ' .
+            'assets uploaded via upload_course_asset.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -104,6 +120,11 @@ class manage_content_activity extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -215,7 +236,7 @@ class manage_content_activity extends base_tool {
         }
 
         // N1: get_course_and_cm_from_cmid checking 'page' module type followed by require_cm_access.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities', 'page');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'moodle/course:manageactivities', 'page');
         if (isset($params['visible'])) {
             require_capability('moodle/course:activityvisibility', $context);
         }
@@ -358,7 +379,7 @@ class manage_content_activity extends base_tool {
         }
 
         // N1: Module validation via get_course_and_cm_from_cmid('book') and mod/book:edit capability.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'mod/book:edit', 'book');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'mod/book:edit', 'book');
         $book = $DB->get_record('book', ['id' => $cm->instance], '*', MUST_EXIST);
 
         $chaptertitle = isset($params['chapter_title']) ? clean_param($params['chapter_title'], PARAM_TEXT)
@@ -423,7 +444,7 @@ class manage_content_activity extends base_tool {
         }
 
         // N1: Module validation via get_course_and_cm_from_cmid('book') and mod/book:edit capability.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'mod/book:edit', 'book');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'mod/book:edit', 'book');
         $book = $DB->get_record('book', ['id' => $cm->instance], '*', MUST_EXIST);
         $chapter = $DB->get_record('book_chapters', ['id' => $chapterid, 'bookid' => $book->id], '*', MUST_EXIST);
 
@@ -472,7 +493,7 @@ class manage_content_activity extends base_tool {
         }
 
         // N1 & H2: Use require_cm_access with moodle/course:manageactivities (not moodle/course:view).
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
         if ($cm->modname !== 'page' && $cm->modname !== 'book') {
             throw new moodle_exception('invalidcoursemoduleid', 'error', '', $cm->id);
         }

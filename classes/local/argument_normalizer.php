@@ -55,6 +55,14 @@ final class argument_normalizer {
         return $arguments;
     }
 
+    /**
+     * Normalize boolean values in the declared properties.
+     *
+     * @param array $arguments arguments value.
+     * @param array $properties properties value.
+     * @param string $prefix prefix value.
+     * @return array Result of the operation.
+     */
     private static function normalize_properties(array $arguments, array $properties, string $prefix = ''): array {
         foreach ($properties as $name => $property) {
             if (($property['type'] ?? '') !== 'boolean' || !array_key_exists($name, $arguments)) {

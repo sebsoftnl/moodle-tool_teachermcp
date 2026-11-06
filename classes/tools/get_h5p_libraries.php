@@ -29,15 +29,32 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_h5p_libraries extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'get_h5p_libraries';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Lists enabled, runnable H5P content types and installed versions. Selected types include example parameters, not complete schemas for every library. When a filter is used, total_installed_types counts matching types, not the unfiltered site inventory. Call this tool before creating H5P activities and check the installed library\'s requirements.';
+        return 'Lists enabled, runnable H5P content types and installed versions. Selected types include example ' .
+            'parameters, not complete schemas for every library. When a filter is used, total_installed_types counts ' .
+            'matching types, not the unfiltered site inventory. Call this tool before creating H5P activities and ' .
+            'check the installed library\'s requirements.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -60,6 +77,11 @@ class get_h5p_libraries extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB;
 
@@ -95,8 +117,10 @@ class get_h5p_libraries extends base_tool {
             return [
                 'total_installed_types' => 0,
                 'libraries' => [],
-                'usage_guide' => get_string(!empty($filter) ? 'h5p_no_matching_libraries' : 'h5p_no_available_libraries',
-                    'tool_teachermcp'),
+                'usage_guide' => get_string(
+                    !empty($filter) ? 'h5p_no_matching_libraries' : 'h5p_no_available_libraries',
+                    'tool_teachermcp'
+                ),
             ];
         }
 

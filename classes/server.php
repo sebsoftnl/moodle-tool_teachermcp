@@ -36,7 +36,6 @@ use tool_teachermcp\local\tool_registry;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class server {
-
     /** @var base_tool[] Map of registered tool instances by name */
     protected array $tools = [];
 
@@ -792,6 +791,13 @@ class server {
         }
     }
 
+    /**
+     * Normalize and validate arguments before tool execution.
+     *
+     * @param base_tool $tool tool value.
+     * @param array $arguments arguments value.
+     * @return bool|string Result of the operation.
+     */
     private static function prepare_tool_arguments(base_tool $tool, array &$arguments): bool|string {
         $validation = self::validate_tool_arguments($tool, $arguments);
         if ($validation !== true || self::is_external_tool($tool->get_name())) {

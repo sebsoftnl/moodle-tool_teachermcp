@@ -29,15 +29,32 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class delete_activity extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'delete_activity';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return '[DANGEROUS ACTION] Permanently deletes a course activity or module (e.g. quiz, assignment, page, book, h5p, forum) along with all associated student data, grades, and submissions. Safety protocol: When delete_requires_ui_confirmation is enabled, returns a UI confirmation link. When disabled, requires a valid 10-minute HMAC confirmation token generated via a preview call.';
+        return '[DANGEROUS ACTION] Permanently deletes a course activity or module (e.g. quiz, assignment, page, book, ' .
+            'h5p, forum) along with all associated student data, grades, and submissions. Safety protocol: When ' .
+            'delete_requires_ui_confirmation is enabled, returns a UI confirmation link. When disabled, requires a ' .
+            'valid 10-minute HMAC confirmation token generated via a preview call.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -55,6 +72,11 @@ class delete_activity extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -71,7 +93,7 @@ class delete_activity extends base_tool {
         }
 
         // N3: Enforce course module access and moodle/course:manageactivities capability.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
 
         $modulerec = $DB->get_record('modules', ['id' => $cm->module], '*', MUST_EXIST);
         $modname = $modulerec->name;
@@ -107,7 +129,8 @@ class delete_activity extends base_tool {
                     'modname' => $modname,
                     'course_id' => (int)$course->id,
                     'course_name' => $course->fullname,
-                    'warning' => "Deleting '{$activitytitle}' (type: {$modname}, cmid: {$cm->id}) is IRREVERSIBLE and will permanently remove all associated student submissions, grades, and logs.",
+                    'warning' => "Deleting '{$activitytitle}' (type: {$modname}, cmid: {$cm->id}) is IRREVERSIBLE and will permanently " .
+                        "remove all associated student submissions, grades, and logs.",
                     'recycle_bin_enabled' => $recyclebinenabled,
                 ],
                 'confirm_token' => $confirmtoken,
@@ -131,10 +154,12 @@ class delete_activity extends base_tool {
                     'modname' => $modname,
                     'course_id' => (int)$course->id,
                     'course_name' => $course->fullname,
-                    'warning' => "Deleting '{$activitytitle}' (type: {$modname}, cmid: {$cm->id}) is IRREVERSIBLE and will permanently remove all associated student submissions, grades, and logs.",
+                    'warning' => "Deleting '{$activitytitle}' (type: {$modname}, cmid: {$cm->id}) is IRREVERSIBLE and will permanently " .
+                        "remove all associated student submissions, grades, and logs.",
                     'recycle_bin_enabled' => $recyclebinenabled,
                 ],
-                'instructions' => "To permanently delete this activity, call delete_activity again with cmid: {$cm->id} and confirm_token: '{$confirmtoken}'. Token is valid for 10 minutes.",
+                'instructions' => "To permanently delete this activity, call delete_activity again with cmid: {$cm->id} and confirm_token: " .
+                    "'{$confirmtoken}'. Token is valid for 10 minutes.",
             ];
         }
 
@@ -144,7 +169,7 @@ class delete_activity extends base_tool {
             throw new moodle_exception('error_invalid_confirmation_token', 'tool_teachermcp');
         }
 
-        list($tokentime, $tokenhash) = explode(':', $decoded, 2);
+        [$tokentime, $tokenhash] = explode(':', $decoded, 2);
         $tokentime = (int)$tokentime;
 
         // 10 minutes (600s) validity window, allowing 60s future clock drift.

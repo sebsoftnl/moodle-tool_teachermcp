@@ -42,30 +42,42 @@ final class external_tool_adapter extends base_tool {
      * @param array $schema Validated, stable input schema.
      */
     public function __construct(
+        /** @var provider_tool_declaration Validated provider declaration. */
         private readonly provider_tool_declaration $declaration,
+        /** @var external_tool Provider implementation. */
         private readonly external_tool $tool,
+        /** @var string Tool description. */
         private readonly string $description,
+        /** @var array Tool input schema. */
         private readonly array $schema,
     ) {
         parent::__construct();
     }
 
-    /** @inheritDoc */
+    /**
+     * Return the validated tool contract value.
+     */
     public function get_name(): string {
         return $this->declaration->get_name();
     }
 
-    /** @inheritDoc */
+    /**
+     * Return the validated tool contract value.
+     */
     public function get_description(): string {
         return $this->description;
     }
 
-    /** @inheritDoc */
+    /**
+     * Return the validated tool contract value.
+     */
     public function get_input_schema(): array {
         return $this->schema;
     }
 
-    /** @inheritDoc */
+    /**
+     * Return the validated tool contract value.
+     */
     public function execute(array $params): mixed {
         global $USER;
 

@@ -34,15 +34,29 @@ use tool_teachermcp\local\numerical_question;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class scaffold_assessment_unit extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'scaffold_assessment_unit';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Scaffold an assessment unit: creates questions in the question bank, generates a new Quiz activity, and attaches the questions to slots.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -116,6 +130,11 @@ class scaffold_assessment_unit extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -154,8 +173,13 @@ class scaffold_assessment_unit extends base_tool {
         $modinfo = get_fast_modinfo($course);
         $allsections = $modinfo->get_section_info_all();
         if (!array_key_exists($sectionnum, $allsections)) {
-            throw new moodle_exception('error_invalid_request', 'tool_teachermcp', '', null,
-                "Section number {$sectionnum} does not exist in this course.");
+            throw new moodle_exception(
+                'error_invalid_request',
+                'tool_teachermcp',
+                '',
+                null,
+                "Section number {$sectionnum} does not exist in this course."
+            );
         }
 
         // H6: Pre-validate question definitions before starting transaction.
@@ -351,15 +375,25 @@ class scaffold_assessment_unit extends base_tool {
         $text = trim($qdef['text'] ?? '');
 
         if (empty($name) || empty($text)) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                "Question at index {$idx} must have non-empty 'name' and 'text'.");
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                null,
+                "Question at index {$idx} must have non-empty 'name' and 'text'."
+            );
         }
 
         if ($qtype === 'multichoice') {
             $options = $qdef['options'] ?? [];
             if (count($options) < 2) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    "Multichoice question '{$name}' must have at least 2 options.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Multichoice question '{$name}' must have at least 2 options."
+                );
             }
             $hascorrect = false;
             foreach ($options as $opt) {
@@ -370,14 +404,24 @@ class scaffold_assessment_unit extends base_tool {
                 $this->assert_valid_fraction($f, $allowedfractions, $name);
             }
             if (!$hascorrect) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    "Multichoice question '{$name}' must have at least one option with fraction 1.0.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Multichoice question '{$name}' must have at least one option with fraction 1.0."
+                );
             }
         } else if ($qtype === 'shortanswer') {
             $options = $qdef['options'] ?? [];
             if (empty($options)) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    "Shortanswer question '{$name}' must have at least one answer.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Shortanswer question '{$name}' must have at least one answer."
+                );
             }
             $hascorrect = false;
             foreach ($options as $opt) {
@@ -388,15 +432,25 @@ class scaffold_assessment_unit extends base_tool {
                 $this->assert_valid_fraction($f, $allowedfractions, $name);
             }
             if (!$hascorrect) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    "Shortanswer question '{$name}' must have at least one answer with fraction 1.0.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Shortanswer question '{$name}' must have at least one answer with fraction 1.0."
+                );
             }
         } else if ($qtype === 'numerical') {
             numerical_question::validate_options($qdef['options'] ?? []);
         } else if ($qtype === 'truefalse') {
             if (!isset($qdef['correct_truefalse'])) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    "Truefalse question '{$name}' requires 'correct_truefalse' boolean.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Truefalse question '{$name}' requires 'correct_truefalse' boolean."
+                );
             }
         }
     }
@@ -413,8 +467,13 @@ class scaffold_assessment_unit extends base_tool {
             }
         }
         if (!$found) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                "Question '{$qname}' has invalid fraction '{$fraction}'.");
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                null,
+                "Question '{$qname}' has invalid fraction '{$fraction}'."
+            );
         }
     }
 

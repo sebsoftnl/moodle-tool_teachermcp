@@ -29,15 +29,29 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class read_activity_file extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'read_activity_file';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return get_string('tool_read_activity_file_desc', 'tool_teachermcp');
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -63,6 +77,11 @@ class read_activity_file extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB;
 
@@ -78,7 +97,7 @@ class read_activity_file extends base_tool {
         }
 
         // H2: Teachers have course access via enrollment; require manageactivities instead of course:view.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
 
         $allfiles = file_extractor::get_module_files($cm->id);
 

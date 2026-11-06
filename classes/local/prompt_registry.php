@@ -27,7 +27,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class prompt_registry {
-
     /**
      * Get all available prompts for MCP prompts/list.
      *
@@ -76,8 +75,11 @@ final class prompt_registry {
             }
         }
         if ($details) {
-            $text .= "\n\n" . get_string('prompt_supplied_arguments', 'tool_teachermcp',
-                json_encode($details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $text .= "\n\n" . get_string(
+                'prompt_supplied_arguments',
+                'tool_teachermcp',
+                json_encode($details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            );
         }
 
         return [

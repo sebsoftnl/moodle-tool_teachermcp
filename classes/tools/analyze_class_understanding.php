@@ -30,15 +30,29 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class analyze_class_understanding extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'analyze_class_understanding';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Analyze aggregate student performance, question difficulty (facility index), common errors, and learning gaps on a completed Quiz.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -56,13 +70,18 @@ class analyze_class_understanding extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
         $cmid = (int)($params['cmid'] ?? 0);
         $groupid = isset($params['group_id']) ? (int)$params['group_id'] : 0;
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'mod/quiz:viewreports');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'mod/quiz:viewreports');
 
         $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
 
@@ -106,7 +125,7 @@ class analyze_class_understanding extends base_tool {
 
         // Fetch completed attempts (strictly filtered by allowed groups if separate groups or group_id specified).
         if ($targetgroupids !== null) {
-            list($ginsql, $gparams) = $DB->get_in_or_equal($targetgroupids, SQL_PARAMS_NAMED);
+            [$ginsql, $gparams] = $DB->get_in_or_equal($targetgroupids, SQL_PARAMS_NAMED);
             $groupmemberids = $DB->get_fieldset_select('groups_members', 'userid', "groupid $ginsql", $gparams);
             $groupmemberids = array_values(array_unique($groupmemberids));
             if (empty($groupmemberids)) {
@@ -119,7 +138,7 @@ class analyze_class_understanding extends base_tool {
                     'message' => 'No finished student attempts found for this quiz yet.',
                 ];
             }
-            list($uidsql, $uidparams) = $DB->get_in_or_equal($groupmemberids, SQL_PARAMS_NAMED);
+            [$uidsql, $uidparams] = $DB->get_in_or_equal($groupmemberids, SQL_PARAMS_NAMED);
             $attempts = $DB->get_records_select(
                 'quiz_attempts',
                 "quiz = :qid AND state = :st AND preview = 0 AND userid $uidsql",
@@ -218,7 +237,7 @@ class analyze_class_understanding extends base_tool {
         }
 
         // Sort questions to identify biggest learning gaps first.
-        usort($questionsbreakdown, function($a, $b) {
+        usort($questionsbreakdown, function ($a, $b) {
             return $a['facility_index_percent'] <=> $b['facility_index_percent'];
         });
 

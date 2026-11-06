@@ -30,15 +30,31 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class upload_course_asset extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'upload_course_asset';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Uploads an image asset (PNG, JPEG, GIF, WEBP) into a course or target activity (Page or Book) for embedding. Course assets are teacher-only until copied into a student-visible activity. Returns ready-to-use HTML <img> tags, Markdown tags, and native pluginfile URLs.';
+        return 'Uploads an image asset (PNG, JPEG, GIF, WEBP) into a course or target activity (Page or Book) for ' .
+            'embedding. Course assets are teacher-only until copied into a student-visible activity. Returns ' .
+            'ready-to-use HTML <img> tags, Markdown tags, and native pluginfile URLs.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -76,6 +92,11 @@ class upload_course_asset extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB, $USER;
         require_once($CFG->libdir . '/filelib.php');
@@ -125,7 +146,7 @@ class upload_course_asset extends base_tool {
         $targetcontext = \context_course::instance($course->id);
 
         if ($targetcmid > 0) {
-            list($cm, $cmcourse, $modcontext) = $this->require_cm_access($targetcmid);
+            [$cm, $cmcourse, $modcontext] = $this->require_cm_access($targetcmid);
             if ((int)$cmcourse->id !== (int)$course->id) {
                 throw new moodle_exception('invalidcoursemoduleid', 'error', '', $targetcmid);
             }
