@@ -2,14 +2,13 @@
 
 ## Plugin checks
 
-From the plugin checkout, with PHP, Bash, Python 3 and Node.js available:
+GitLab CI runs the bridge suite and the Moodle plugin PHPUnit suite against Moodle 4.5 and current Moodle main. To check the bridge locally, use Node.js 22.11 or later:
 
 ```sh
-bash verify.sh
 node --test bridge/*.test.mjs
 ```
 
-`verify.sh` checks PHP syntax, XMLDB XML, language-key parity, retained regression-file discovery, existing static policies, bridge syntax/tests and a local bearer smoke exchange. It discovers additional test files instead of requiring an exact file count. These checks do not replace Moodle integration tests or a browser workflow.
+The Moodle jobs install the plugin in a disposable Moodle checkout with a separate database. A passing bridge suite does not replace Moodle integration tests or a browser workflow.
 
 The bridge suite includes `chatgpt-package.test.mjs`: explicit MCP declaration, safe rejection of invalid endpoints and existing output, and launching the generated stdio command from a relocated cache-like directory without substituting path placeholders. The fixture uses a synthetic cached OAuth credential; it does not exercise ChatGPT or fresh browser consent. A separate user-operated check on ChatGPT desktop 26.1021.31345/macOS Apple Silicon and Moodle 5.3/PHP 8.4 verified fresh OAuth, native teacher/course reads, one hidden Page creation/read-back and cached reconnection. Independent browser checks confirmed teacher access and student non-visibility. Follow the [desktop guide's real-app checks](../chatgpt-desktop.md#verify-in-the-real-app) for other installations; this is not all-tool or cross-platform certification.
 
@@ -34,7 +33,7 @@ The stabilization matrix uses these exact development checkouts:
 
 Both use MariaDB 11.4.13. The local matrix runs isolated fixtures and native teacher/student browser, HTTP and stdio workflows. Its fixed catalog contains 24 built-ins, 24 advertised actions, 15 prompts, one static resource and three resource templates. Actions require positive and relevant negative assertions. The full PHPUnit suite contains 280 methods, including eight numerical-authoring regressions. The pinned 5.3 runner reports 10 inherited PHPUnit deprecations and one notice. Preserve those diagnostics rather than suppressing them.
 
-The plugin checkout's standalone verifier does not contain the maintainer's complete Docker/browser orchestration. A successful verifier or doctor command alone is not that matrix. Qualification applies only to the tested source and environment; changes require fresh relevant evidence.
+The GitLab pipeline does not contain the maintainer's complete Docker/browser orchestration. A successful pipeline or doctor command alone is not that matrix. Qualification applies only to the tested source and environment; changes require fresh relevant evidence.
 
 ## Workflow checks
 
