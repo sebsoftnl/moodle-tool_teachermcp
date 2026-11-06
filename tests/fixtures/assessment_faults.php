@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Assessment failure injection and rollback observation fixtures.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_teachermcp\tests\fixtures;
 
 defined('MOODLE_INTERNAL') || die();
@@ -26,6 +34,7 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class assessment_faults {
+    /** Native entity tables retained in detail for rollback comparisons. */
     private const ENTITY_TABLES = [
         'course', 'course_sections', 'course_modules', 'context', 'course_format_options',
         'question_categories', 'question', 'question_answers', 'question_truefalse', 'question_bank_entries',
@@ -36,9 +45,13 @@ final class assessment_faults {
         'tag_instance', 'logstore_standard_log',
     ];
 
+    /** @var array|null Currently observed operation and failure phase. */
     private static ?array $scope = null;
+    /** @var array Invocation counts per phase. */
     private static array $hits = [];
+    /** @var array Native boundary observations. */
     private static array $observations = [];
+    /** @var assessment_injected_failure|null Exception to inject at the requested phase. */
     private static ?assessment_injected_failure $failure = null;
 
     /**
@@ -50,8 +63,12 @@ final class assessment_faults {
      * @param int $occurrence Phase invocation at which to fail.
      * @return assessment_injected_failure|null The exact exception instance that will be thrown.
      */
-    public static function arm(string $operation, int $courseid, ?string $phase = null,
-            int $occurrence = 1): ?assessment_injected_failure {
+    public static function arm(
+        string $operation,
+        int $courseid,
+        ?string $phase = null,
+        int $occurrence = 1
+    ): ?assessment_injected_failure {
         self::$scope = ['operation' => $operation, 'courseid' => $courseid, 'phase' => $phase, 'occurrence' => $occurrence];
         self::$hits = [];
         self::$observations = [];
@@ -59,6 +76,11 @@ final class assessment_faults {
         return self::$failure;
     }
 
+    /**
+     * Disarm the failure scope and discard observations.
+     *
+     * @return void
+     */
     public static function clear(): void {
         self::$scope = null;
         self::$hits = [];
@@ -66,22 +88,51 @@ final class assessment_faults {
         self::$failure = null;
     }
 
+    /**
+     * Whether an observation or failure scope is active.
+     *
+     * @return bool Whether a scope is active.
+     */
     public static function is_armed(): bool {
         return self::$scope !== null;
     }
 
+    /**
+     * Whether the active scope observes the given operation.
+     *
+     * @param string $operation Operation under observation.
+     * @return bool Whether it is observed.
+     */
     public static function observes(string $operation): bool {
         return self::$scope !== null && self::$scope['operation'] === $operation;
     }
 
+    /**
+     * Return observations recorded at native boundaries.
+     *
+     * @return array Native boundary observations.
+     */
     public static function observations(): array {
         return self::$observations;
     }
 
+    /**
+     * Return invocation counts per native boundary.
+     *
+     * @return array Boundary invocation counts.
+     */
     public static function hits(): array {
         return self::$hits;
     }
 
+    /**
+     * Record a native boundary and optionally inject a failure.
+     *
+     * @param string $phase Native boundary phase.
+     * @param int $courseid Course being modified.
+     * @param array $ids Native entity identifiers.
+     * @return void
+     */
     public static function hit(string $phase, int $courseid, array $ids): void {
         global $DB;
         if (self::$scope === null || self::$scope['courseid'] !== $courseid) {
@@ -99,12 +150,24 @@ final class assessment_faults {
         self::$observations[] = $observation;
     }
 
+    /**
+     * Find the course owning a question category.
+     *
+     * @param int $categoryid Question category ID.
+     * @return int Owning course ID.
+     */
     public static function category_course(int $categoryid): int {
         global $DB;
         $contextid = $DB->get_field('question_categories', 'contextid', ['id' => $categoryid], MUST_EXIST);
         return (int)\context::instance_by_id($contextid)->get_course_context()->instanceid;
     }
 
+    /**
+     * Observe an authorized question in the create flow.
+     *
+     * @param int $questionid Authorized question ID.
+     * @return void
+     */
     public static function question_authorized(int $questionid): void {
         global $DB;
         if (!self::observes('create')) {
@@ -153,6 +216,12 @@ final class assessment_faults {
         return $result;
     }
 
+    /**
+     * Snapshot course module IDs and section sequences.
+     *
+     * @param int $courseid Course ID.
+     * @return array Module IDs and section sequences.
+     */
     public static function modinfo(int $courseid): array {
         $info = get_fast_modinfo($courseid);
         $cmids = array_map('intval', array_keys($info->cms));
@@ -167,32 +236,5 @@ final class assessment_faults {
     }
 }
 
-/**
- * Distinguishes an intended post-write failure from any native failure.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class assessment_injected_failure extends \RuntimeException {
-}
-
-/**
- * Observes real bank/child work before saving, or real question work after the native save.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class faulting_scaffold extends \tool_teachermcp\tools\scaffold_assessment_unit {
-    protected function build_and_save_question(int $categoryid, array $qdef): \stdClass {
-        if (!assessment_faults::observes('scaffold')) {
-            return parent::build_and_save_question($categoryid, $qdef);
-        }
-        $courseid = assessment_faults::category_course($categoryid);
-        assessment_faults::hit('bank', $courseid, ['categoryid' => $categoryid]);
-        $question = parent::build_and_save_question($categoryid, $qdef);
-        assessment_faults::hit('question', $courseid, ['categoryid' => $categoryid, 'questionid' => (int)$question->id]);
-        return $question;
-    }
-}
+require_once(__DIR__ . '/assessment_injected_failure.php');
+require_once(__DIR__ . '/faulting_scaffold.php');

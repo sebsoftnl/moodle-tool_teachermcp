@@ -5,6 +5,22 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * H5P package and native-state test fixtures.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 namespace tool_teachermcp\tests\fixtures;
 
@@ -18,12 +34,22 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class h5p_fixtures {
+    /**
+     * Install the pinned local H5P fixture using native H5P APIs.
+     *
+     * @return array Installed H5P IDs, metadata and package.
+     */
     public static function install(): array {
         global $CFG, $DB, $USER;
         $path = $CFG->dirroot . '/h5p/tests/fixtures/filltheblanks.h5p';
         $file = \core_h5p\helper::create_fake_stored_file_from_path($path, (int)$USER->id, \context_system::instance());
-        $id = \core_h5p\helper::save_h5p(new \core_h5p\factory(), $file,
-            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1], false, false);
+        $id = \core_h5p\helper::save_h5p(
+            new \core_h5p\factory(),
+            $file,
+            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1],
+            false,
+            false
+        );
         if (!$id) {
             throw new \RuntimeException('The pinned local H5P fixture did not install');
         }
@@ -33,6 +59,12 @@ final class h5p_fixtures {
             'source_sha256' => hash_file('sha256', $path), 'package' => self::package($file)];
     }
 
+    /**
+     * Build or inspect a fixture ZIP package.
+     *
+     * @param \stored_file $file Stored H5P package.
+     * @return array Decoded manifest and content.
+     */
     public static function package(\stored_file $file): array {
         $path = $file->copy_content_to_temp('teachermcp', 'h5p-fixture-');
         try {
@@ -56,6 +88,12 @@ final class h5p_fixtures {
         }
     }
 
+    /**
+     * Read the native H5P activity, package and file state.
+     *
+     * @param int $cmid Course module ID.
+     * @return array Native activity state.
+     */
     public static function activity(int $cmid): array {
         global $DB;
         $cm = get_coursemodule_from_id('h5pactivity', $cmid, 0, false, MUST_EXIST);
@@ -73,13 +111,20 @@ final class h5p_fixtures {
             'package' => self::package($file)];
     }
 
+    /**
+     * Capture native table state for boundary assertions.
+     *
+     * @return array Native state snapshot.
+     */
     public static function snapshot(int $courseid): array {
         global $DB;
         $cmids = array_map('intval', array_keys(get_fast_modinfo($courseid)->get_cms()));
         $result = [];
-        foreach (['course', 'course_modules', 'course_sections', 'context', 'grade_items', 'h5pactivity',
+        foreach (
+            ['course', 'course_modules', 'course_sections', 'context', 'grade_items', 'h5pactivity',
                 'contentbank_content', 'files', 'h5p', 'h5p_contents_libraries', 'h5p_libraries',
-                'h5p_library_dependencies'] as $table) {
+                'h5p_library_dependencies'] as $table
+        ) {
             $result[$table] = array_values($DB->get_records($table, [], 'id ASC'));
         }
         $result['modinfo_cmids'] = $cmids;
@@ -87,22 +132,4 @@ final class h5p_fixtures {
     }
 }
 
-final class failed_h5p_save extends \tool_teachermcp\tools\create_h5p_activity {
-    public bool $returnnull = false;
-    public ?array $nativewrite = null;
-
-    protected function save_activity_content(\core_h5p\factory $factory, \stored_file $file): int|false|null {
-        global $DB;
-        $id = parent::save_activity_content($factory, $file);
-        if (!$id) {
-            throw new \RuntimeException('Native H5P positive save must complete before the injected result');
-        }
-        $context = \context::instance_by_id($file->get_contextid());
-        $cm = $DB->get_record('course_modules', ['id' => $context->instanceid], '*', MUST_EXIST);
-        $this->nativewrite = ['h5p_id' => $id, 'cmid' => (int)$cm->id, 'instance_id' => (int)$cm->instance,
-            'h5p_exists' => $DB->record_exists('h5p', ['id' => $id]),
-            'instance_exists' => $DB->record_exists('h5pactivity', ['id' => $cm->instance]),
-            'file_exists' => $DB->record_exists('files', ['id' => $file->get_id()])];
-        return $this->returnnull ? null : false;
-    }
-}
+require_once(__DIR__ . '/failed_h5p_save.php');

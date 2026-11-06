@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp\tests\fixtures;
 
@@ -18,8 +26,21 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class teaching_fixtures {
-    public static function groups(\testing_data_generator $generator, \stdClass $course,
-            \stdClass $teacher, array $students): array {
+    /**
+     * Create allowed and denied course groups for teaching tests.
+     *
+     * @param \testing_data_generator $generator Moodle test generator.
+     * @param \stdClass $course Course record.
+     * @param \stdClass $teacher Teacher record.
+     * @param array $students Student records.
+     * @return array Created groups.
+     */
+    public static function groups(
+        \testing_data_generator $generator,
+        \stdClass $course,
+        \stdClass $teacher,
+        array $students
+    ): array {
         global $DB;
         $allowed = $generator->create_group(['courseid' => $course->id, 'name' => 'Teaching Group A']);
         $denied = $generator->create_group(['courseid' => $course->id, 'name' => 'Teaching Group B']);
@@ -33,6 +54,14 @@ final class teaching_fixtures {
         return ['allowed' => $allowed, 'denied' => $denied];
     }
 
+    /**
+     * Create a native assignment with teaching fixture defaults.
+     *
+     * @param \testing_data_generator $generator Moodle test generator.
+     * @param \stdClass $course Course record.
+     * @param array $params Module overrides.
+     * @return \assign Created assignment.
+     */
     public static function assignment(\testing_data_generator $generator, \stdClass $course, array $params = []): \assign {
         global $CFG;
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
@@ -47,6 +76,14 @@ final class teaching_fixtures {
         return new \assign(\context_module::instance($cm->id), $cm, $course);
     }
 
+    /**
+     * Submit an assignment as the given student.
+     *
+     * @param \assign $assign Assignment.
+     * @param \stdClass $student Student record.
+     * @param string $text Submission text.
+     * @return \stdClass Native submission record.
+     */
     public static function submit(\assign $assign, \stdClass $student, string $text): \stdClass {
         global $USER;
         $original = $USER;
@@ -70,6 +107,13 @@ final class teaching_fixtures {
         }
     }
 
+    /**
+     * Configure and save an assignment rubric.
+     *
+     * @param \assign $assign Assignment.
+     * @param \stdClass $teacher Teacher record.
+     * @return \stdClass Saved rubric definition.
+     */
     public static function rubric(\assign $assign, \stdClass $teacher): \stdClass {
         global $CFG;
         require_once($CFG->dirroot . '/grade/grading/lib.php');
@@ -93,6 +137,14 @@ final class teaching_fixtures {
         return $controller->get_definition(true);
     }
 
+    /**
+     * Create a stored analytics prediction without training a model.
+     *
+     * @param \stdClass $course Course record.
+     * @param \stdClass $student Student record.
+     * @param int $now Creation timestamp.
+     * @return \stdClass Analytics model record.
+     */
     public static function prediction(\stdClass $course, \stdClass $student, int $now): \stdClass {
         global $DB;
         $model = \core_analytics\model::create(
@@ -110,8 +162,21 @@ final class teaching_fixtures {
         return $record;
     }
 
-    public static function quiz(\testing_data_generator $generator, \stdClass $course, \stdClass $teacher,
-            array $types): \stdClass {
+    /**
+     * Build a native quiz with the requested question types.
+     *
+     * @param \testing_data_generator $generator Moodle test generator.
+     * @param \stdClass $course Course record.
+     * @param \stdClass $teacher Teacher record.
+     * @param array $types Question types.
+     * @return \stdClass Quiz record.
+     */
+    public static function quiz(
+        \testing_data_generator $generator,
+        \stdClass $course,
+        \stdClass $teacher,
+        array $types
+    ): \stdClass {
         global $CFG;
         require_once($CFG->libdir . '/questionlib.php');
         require_once($CFG->dirroot . '/mod/quiz/locallib.php');
@@ -147,15 +212,34 @@ final class teaching_fixtures {
                 throw new \InvalidArgumentException('Unsupported teaching fixture question type');
             }
             $question = \question_bank::get_qtype($type)->save_question(
-                (object)['qtype' => $type, 'createdby' => $teacher->id, 'idnumber' => null], $form);
+                (object)['qtype' => $type, 'createdby' => $teacher->id, 'idnumber' => null],
+                $form
+            );
             quiz_add_quiz_question($question->id, $quiz);
         }
         \mod_quiz\quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();
         return $quiz;
     }
 
-    public static function attempt(\testing_data_generator $generator, \stdClass $quiz, \stdClass $student,
-            array $responses, bool $finish = true, array $previous = []): \mod_quiz\quiz_attempt {
+    /**
+     * Submit a quiz attempt as a student, optionally finishing it.
+     *
+     * @param \testing_data_generator $generator Moodle test generator.
+     * @param \stdClass $quiz Quiz record.
+     * @param \stdClass $student Student record.
+     * @param array $responses Student responses.
+     * @param bool $finish Whether to finish the attempt.
+     * @param array $previous Earlier responses.
+     * @return \mod_quiz\quiz_attempt Quiz attempt.
+     */
+    public static function attempt(
+        \testing_data_generator $generator,
+        \stdClass $quiz,
+        \stdClass $student,
+        array $responses,
+        bool $finish = true,
+        array $previous = []
+    ): \mod_quiz\quiz_attempt {
         global $USER;
         $original = $USER;
         \core\session\manager::set_user($student);
@@ -183,6 +267,12 @@ final class teaching_fixtures {
         }
     }
 
+    /**
+     * Configure local messaging for the supplied recipients.
+     *
+     * @param array $recipients Recipient users.
+     * @return void
+     */
     public static function local_messages(array $recipients): void {
         global $CFG, $DB;
         require_once($CFG->libdir . '/messagelib.php');
@@ -197,12 +287,19 @@ final class teaching_fixtures {
         }
     }
 
+    /**
+     * Capture native table state for boundary assertions.
+     *
+     * @return array Native state snapshot.
+     */
     public static function snapshot(): array {
         global $DB;
         $result = [];
-        foreach (['assign', 'assign_submission', 'assign_grades', 'assign_user_flags', 'assignfeedback_comments',
+        foreach (
+            ['assign', 'assign_submission', 'assign_grades', 'assign_user_flags', 'assignfeedback_comments',
                 'assignfeedback_file', 'grade_items', 'grade_grades', 'files', 'course_modules_completion', 'event',
-                'messages', 'message_conversations', 'message_conversation_members'] as $table) {
+                'messages', 'message_conversations', 'message_conversation_members'] as $table
+        ) {
             $result[$table] = array_values($DB->get_records($table, [], 'id ASC'));
         }
         return $result;
