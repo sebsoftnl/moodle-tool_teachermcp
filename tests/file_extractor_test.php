@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -61,8 +69,10 @@ final class file_extractor_test extends \advanced_testcase {
 
     public function test_office_and_complete_pdf_fixtures_extract_known_text(): void {
         $context = $this->fixture_context();
-        foreach (['docx' => 'This is a test', 'pptx' => 'Sample presentation',
-                'odt' => "Local ODT caf\u{00e9} \u{03a9}"] as $extension => $expected) {
+        foreach (
+            ['docx' => 'This is a test', 'pptx' => 'Sample presentation',
+                'odt' => "Local ODT caf\u{00e9} \u{03a9}"] as $extension => $expected
+        ) {
             $file = $this->file($context, 'document.' . $extension, content_files::office($extension));
             $result = file_extractor::extract_text($file);
             $this->assertTrue($result['success'], $extension . ': ' . ($result['notice'] ?? ''));
@@ -112,8 +122,10 @@ final class file_extractor_test extends \advanced_testcase {
         content_files::store($context, 'feedback.txt', 'Private feedback', 'assignfeedback_file', 'feedback_files', 1);
         $files = file_extractor::get_module_files($assignment->cmid);
         $this->assertSame([(int)$intro->get_id()], array_map(static fn($file) => (int)$file->get_id(), $files));
-        foreach ([['question', 'questiontext'], ['question', 'generalfeedback'], ['mod_page', 'content'],
-                ['mod_book', 'chapter'], ['mod_resource', 'content'], ['mod_folder', 'content']] as [$component, $area]) {
+        foreach (
+            [['question', 'questiontext'], ['question', 'generalfeedback'], ['mod_page', 'content'],
+                ['mod_book', 'chapter'], ['mod_resource', 'content'], ['mod_folder', 'content']] as [$component, $area]
+        ) {
             $this->assertTrue(file_extractor::is_allowed_filearea($component, $area));
         }
         $this->assertFalse(file_extractor::is_allowed_filearea('mod_forum', 'attachment'));
@@ -138,8 +150,10 @@ final class file_extractor_test extends \advanced_testcase {
     }
 
     public function test_question_response_areas_are_not_teaching_material(): void {
-        $this->assertFalse(file_extractor::is_allowed_filearea('question', 'response_attachments'),
-            'Student answer attachments must not enter the learning-material whitelist.');
+        $this->assertFalse(
+            file_extractor::is_allowed_filearea('question', 'response_attachments'),
+            'Student answer attachments must not enter the learning-material whitelist.'
+        );
         $this->assertFalse(file_extractor::is_allowed_filearea('question', 'response_answer'));
         $this->assertTrue(file_extractor::is_allowed_filearea('question', 'questiontext'));
         $this->assertTrue(file_extractor::is_allowed_filearea('question', 'generalfeedback'));
@@ -176,8 +190,11 @@ final class file_extractor_test extends \advanced_testcase {
         }
         $this->setUser($teacher);
         $files = file_extractor::get_module_files($quiz->cmid);
-        $this->assertSame([(int)$teaching->get_id()], array_map(static fn($file) => (int)$file->get_id(), $files),
-            'Discover actual teaching files, never files belonging to the student response step.');
+        $this->assertSame(
+            [(int)$teaching->get_id()],
+            array_map(static fn($file) => (int)$file->get_id(), $files),
+            'Discover actual teaching files, never files belonging to the student response step.'
+        );
         $result = (new \tool_teachermcp\tools\read_activity_file())->execute(['cmid' => (int)$quiz->cmid]);
         $this->assertArrayHasKey('selected_file', $result);
         $this->assertSame('Public teaching text', $result['selected_file']['content_text']);
@@ -336,8 +353,11 @@ final class file_extractor_test extends \advanced_testcase {
         foreach ([false, true] as $compressed) {
             foreach ($fixtures as $kind => $streams) {
                 $key = (int)$compressed . '/' . $kind;
-                $file = $this->file($context, 'textless-' . (int)$compressed . '-' . $kind . '.pdf',
-                    content_files::pdf($streams, $compressed));
+                $file = $this->file(
+                    $context,
+                    'textless-' . (int)$compressed . '-' . $kind . '.pdf',
+                    content_files::pdf($streams, $compressed)
+                );
                 $result = file_extractor::extract_text($file);
                 $actual[$key] = ['success' => $result['success'], 'content' => $result['content'],
                     'notice' => is_string($result['notice']) && $result['notice'] !== ''];

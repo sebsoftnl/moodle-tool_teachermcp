@@ -14,12 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Built-in argument preparation and provider compatibility tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_teachermcp;
 
 defined('MOODLE_INTERNAL') || die();
 
-use tool_teachermcp\local\execution_context;
-use tool_teachermcp\local\external_tool;
+require_once(__DIR__ . '/argument_normalizer_provider_fixture.php');
+
 use tool_teachermcp\local\tool_registry;
 use tool_teachermcp\tools\base_tool;
 
@@ -94,8 +102,10 @@ final class argument_normalizer_test extends \advanced_testcase {
             $name = 'create_h5p_activity';
             $schema = $tools[$name]->get_input_schema();
             [$server] = $this->server_with_probe($name, $schema);
-            foreach ([['visible' => 'false', 'correct' => 'true', 'items' => [['flag' => '0']]],
-                    '{"visible":"false","correct":false}'] as $payload) {
+            foreach (
+                [['visible' => 'false', 'correct' => 'true', 'items' => [['flag' => '0']]],
+                    '{"visible":"false","correct":false}'] as $payload
+            ) {
                 $arguments = $this->required_arguments($schema);
                 $arguments['params'] = $payload;
                 $arguments['intro'] = '<p>false</p>';
@@ -120,8 +130,11 @@ final class argument_normalizer_test extends \advanced_testcase {
                 ];
                 $wanted = $arguments;
                 $wanted['questions'][0]['correct_truefalse'] = $expected;
-                $this->assertSame($wanted, $this->dispatch($server, $transport, $name, $arguments),
-                    $transport . ' must normalize only questions[].correct_truefalse');
+                $this->assertSame(
+                    $wanted,
+                    $this->dispatch($server, $transport, $name, $arguments),
+                    $transport . ' must normalize only questions[].correct_truefalse'
+                );
             }
         }
     }
@@ -186,8 +199,11 @@ final class argument_normalizer_test extends \advanced_testcase {
             foreach (self::VALUES as [$input]) {
                 $arguments = ['flag' => $input, 'restricted' => false,
                     'payload' => ['visible' => 'false', 'questions' => [['correct_truefalse' => 'false']]]];
-                $this->assertSame($arguments, $this->dispatch($server, $transport, $name, $arguments),
-                    'Provider v1 must receive original argument values and types');
+                $this->assertSame(
+                    $arguments,
+                    $this->dispatch($server, $transport, $name, $arguments),
+                    'Provider v1 must receive original argument values and types'
+                );
             }
             $before = argument_normalizer_provider_fixture::$calls;
             $this->assert_rejected($server, $transport, $name, ['flag' => true, 'restricted' => 'false']);
@@ -229,8 +245,11 @@ final class argument_normalizer_test extends \advanced_testcase {
                     $arguments[$field] = $input;
                     $wanted = $arguments;
                     $wanted[$field] = $expected;
-                    $this->assertSame($wanted, $this->dispatch($server, $transport, $name, $arguments),
-                        $transport . ' ' . $name . '.' . $field . ' must receive native boolean for ' . json_encode($input));
+                    $this->assertSame(
+                        $wanted,
+                        $this->dispatch($server, $transport, $name, $arguments),
+                        $transport . ' ' . $name . '.' . $field . ' must receive native boolean for ' . json_encode($input)
+                    );
                 }
             }
         }
@@ -251,10 +270,19 @@ final class argument_normalizer_test extends \advanced_testcase {
     }
 
     private function server_with_probe(string $name, array $schema): array {
-        $probe = new class($name, $schema) extends base_tool {
+        $probe = new class ($name, $schema) extends base_tool {
+            /** @var int Number of calls reaching the probe. */
             public int $calls = 0;
 
-            public function __construct(private string $toolname, private array $schema) {
+            /** @var string Tool name. */
+            private string $toolname;
+
+            /** @var array Tool schema. */
+            private array $schema;
+
+            public function __construct(string $toolname, array $schema) {
+                $this->toolname = $toolname;
+                $this->schema = $schema;
                 parent::__construct();
             }
 
@@ -292,7 +320,14 @@ final class argument_normalizer_test extends \advanced_testcase {
         return json_decode($response['result']['content'][0]['text'], true, 512, JSON_THROW_ON_ERROR);
     }
 
-    /** Keep floating point invalid inputs distinct from accepted integers on the JSON path. */
+    /**
+     * Keep floating point invalid inputs distinct from accepted integers on the JSON path.
+     *
+     * @param server $server Server being exercised.
+     * @param string $name Tool name.
+     * @param array $arguments Request arguments.
+     * @return array RPC response.
+     */
     private function rpc(server $server, string $name, array $arguments): array {
         return $server->handle_payload(json_encode(['jsonrpc' => '2.0', 'id' => 42, 'method' => 'tools/call',
             'params' => ['name' => $name, 'arguments' => $arguments]], JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
@@ -317,43 +352,5 @@ final class argument_normalizer_test extends \advanced_testcase {
         $property = new \ReflectionProperty(auth::class, 'currenttoken');
         $property->setAccessible(true);
         $property->setValue(null, $token);
-    }
-}
-
-/**
- * Real provider-v1 adapter fixture with observable execution and strict enum validation.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class argument_normalizer_provider_fixture implements external_tool {
-    /** @var int Number of calls reaching provider execution. */
-    public static int $calls = 0;
-
-    public static function provider(): array {
-        return [['api_version' => 1, 'provider_id' => 'tool_teachermcp', 'tools' => [[
-            'id' => 'boolean_probe', 'class' => self::class, 'scope' => 'read',
-            'capability' => 'tool/teachermcp:manageall',
-            'enabled_setting' => 'tool_teachermcp/enable_boolean_probe',
-        ]]]];
-    }
-
-    public function get_description(): string {
-        return 'Provider-v1 argument preservation fixture.';
-    }
-
-    public function get_input_schema(): array {
-        return ['type' => 'object', 'properties' => [
-            'flag' => ['type' => 'boolean'],
-            'restricted' => ['type' => 'boolean', 'enum' => [false]],
-            'payload' => ['type' => 'array'],
-        ], 'required' => ['flag'], 'additionalProperties' => false];
-    }
-
-    public function execute(array $arguments, execution_context $context): array {
-        require_capability('tool/teachermcp:manageall', \context_system::instance(), $context->get_userid());
-        self::$calls++;
-        return $arguments;
     }
 }

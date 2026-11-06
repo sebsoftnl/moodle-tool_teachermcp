@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -84,8 +92,12 @@ final class activity_publication_test extends \advanced_testcase {
         get_fast_modinfo($course->id, $student->id, true);
         $this->assertFalse(get_fast_modinfo($course->id, $student->id)->get_cm($activity->cmid)->uservisible);
         $role = $DB->get_field('role', 'id', ['shortname' => 'editingteacher'], MUST_EXIST);
-        assign_capability('moodle/course:activityvisibility', CAP_PROHIBIT, $role,
-            \context_module::instance($activity->cmid)->id);
+        assign_capability(
+            'moodle/course:activityvisibility',
+            CAP_PROHIBIT,
+            $role,
+            \context_module::instance($activity->cmid)->id
+        );
         accesslib_clear_all_caches(true);
         $this->setUser($teacher);
         $before = $DB->get_record('course_modules', ['id' => $activity->cmid]);

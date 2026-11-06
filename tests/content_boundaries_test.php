@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -34,20 +42,31 @@ final class content_boundaries_test extends \advanced_testcase {
         $assignment = $generator->create_module('assign', ['course' => $course->id]);
         $context = \context_module::instance($assignment->cmid);
         content_files::store($context, 'brief.txt', 'Public brief', 'mod_assign', 'introattachment');
-        $private = content_files::store($context, 'submission.txt', 'Private submission',
-            'assignsubmission_file', 'submission_files', 1);
+        $private = content_files::store(
+            $context,
+            'submission.txt',
+            'Private submission',
+            'assignsubmission_file',
+            'submission_files',
+            1
+        );
         $this->setAdminUser();
         $othercourse = $generator->create_course();
         $otherfolder = $generator->create_module('folder', ['course' => $othercourse->id]);
         $foreign = content_files::store(\context_module::instance($otherfolder->cmid), 'foreign.txt', 'Foreign content', 'mod_folder');
         $this->setUser($teacher);
         $outcomes = [];
-        foreach (['zero' => 0, 'negative' => -1, 'missing' => (int)$foreign->get_id() + 1000,
-                'foreign' => (int)$foreign->get_id(), 'disallowed' => (int)$private->get_id()] as $name => $fileid) {
+        foreach (
+            ['zero' => 0, 'negative' => -1, 'missing' => (int)$foreign->get_id() + 1000,
+                'foreign' => (int)$foreign->get_id(), 'disallowed' => (int)$private->get_id()] as $name => $fileid
+        ) {
             $outcomes[$name] = $this->selection((int)$assignment->cmid, ['fileid' => $fileid]);
         }
-        $this->assertSame(array_fill_keys(array_keys($outcomes), 'filenotfound'), $outcomes,
-            'An explicit invalid ID must reject, never substitute the sole allowed file.');
+        $this->assertSame(
+            array_fill_keys(array_keys($outcomes), 'filenotfound'),
+            $outcomes,
+            'An explicit invalid ID must reject, never substitute the sole allowed file.'
+        );
     }
 
     public function test_explicit_filename_requires_a_match_even_with_zero_or_one_file(): void {
@@ -80,11 +99,15 @@ final class content_boundaries_test extends \advanced_testcase {
         $folder = $this->getDataGenerator()->create_module('folder', ['course' => $course->id]);
         $text = str_repeat("\u{03a9}", 160001);
         content_files::store(\context_module::instance($folder->cmid), 'unicode.txt', $text, 'mod_folder');
-        foreach ([[[], 40000], [['max_length' => 0], 40000], [['max_length' => 1], 1000],
-                [['max_length' => -1], 1000], [['max_length' => 200000], 150000]] as [$params, $limit]) {
+        foreach (
+            [[[], 40000], [['max_length' => 0], 40000], [['max_length' => 1], 1000],
+                [['max_length' => -1], 1000], [['max_length' => 200000], 150000]] as [$params, $limit]
+        ) {
             $result = (new read_activity_file())->execute(['cmid' => (int)$folder->cmid] + $params);
-            $this->assertSame(mb_substr($text, 0, $limit) . "\n\n... [Content truncated at {$limit} characters]",
-                $result['selected_file']['content_text']);
+            $this->assertSame(
+                mb_substr($text, 0, $limit) . "\n\n... [Content truncated at {$limit} characters]",
+                $result['selected_file']['content_text']
+            );
         }
     }
 
@@ -129,8 +152,11 @@ final class content_boundaries_test extends \advanced_testcase {
         $this->assertGreaterThan($hardlimit, get_max_upload_file_size($CFG->maxbytes, $hardlimit * 2));
         $actual = [];
         foreach ([-1, 0, 1] as $offset) {
-            $actual[$offset] = $this->upload_result((int)$course->id, "hard-{$offset}.png",
-                content_files::png_at_size($hardlimit + $offset));
+            $actual[$offset] = $this->upload_result(
+                (int)$course->id,
+                "hard-{$offset}.png",
+                content_files::png_at_size($hardlimit + $offset)
+            );
         }
         $this->assertSame([-1 => 'success', 0 => 'success', 1 => 'error_file_too_large'], $actual);
     }
@@ -199,12 +225,12 @@ final class content_boundaries_test extends \advanced_testcase {
         $page = $this->getDataGenerator()->create_module('page', ['course' => $course->id,
             'printintro' => 1, 'printlastmodified' => 1]);
         $before = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
-        $options = unserialize($before->displayoptions, ['allowed_classes' => false]);
+        $options = unserialize_array($before->displayoptions);
         $this->assertSame(1, (int)$options['printintro']);
         $this->assertSame(1, (int)$options['printlastmodified']);
         (new manage_activity())->execute(['action' => 'update_settings', 'cmid' => (int)$page->cmid, 'name' => 'Renamed only']);
         $after = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
-        $this->assertSame($options, unserialize($after->displayoptions, ['allowed_classes' => false]));
+        $this->assertSame($options, unserialize_array($after->displayoptions));
         $this->assertSame($before->content, $after->content);
         $this->assertSame((int)$before->revision + 1, (int)$after->revision);
     }
@@ -217,12 +243,12 @@ final class content_boundaries_test extends \advanced_testcase {
             'display' => RESOURCELIB_DISPLAY_POPUP, 'popupwidth' => 420, 'popupheight' => 320,
             'printintro' => 1, 'printlastmodified' => 1]);
         $before = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
-        $options = unserialize($before->displayoptions, ['allowed_classes' => false]);
+        $options = unserialize_array($before->displayoptions);
         $this->assertSame(420, (int)$options['popupwidth']);
         $this->assertSame(320, (int)$options['popupheight']);
         (new manage_activity())->execute(['action' => 'update_settings', 'cmid' => (int)$page->cmid, 'name' => 'Popup renamed']);
         $after = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
-        $this->assertSame($options, unserialize($after->displayoptions, ['allowed_classes' => false]));
+        $this->assertSame($options, unserialize_array($after->displayoptions));
         $this->assertSame($before->display, $after->display);
     }
 
@@ -367,8 +393,14 @@ final class content_boundaries_test extends \advanced_testcase {
             'section_number' => 1, 'title' => 'Placement source',
             'content' => '<p>Preserved source</p><img src="@@PLUGINFILE@@/copy.png" alt="Copy">']);
         $itemid = $type === 'book' ? $source['first_chapter_id'] : 0;
-        $file = content_files::store(\context_module::instance($source['cmid']), 'copy.png', content_files::image(),
-            'mod_' . $type, $type === 'book' ? 'chapter' : 'content', $itemid);
+        $file = content_files::store(
+            \context_module::instance($source['cmid']),
+            'copy.png',
+            content_files::image(),
+            'mod_' . $type,
+            $type === 'book' ? 'chapter' : 'content',
+            $itemid
+        );
         $sourcecm = $DB->get_record('course_modules', ['id' => $source['cmid']], '*', MUST_EXIST);
         $instance = $DB->get_record($type, ['id' => $sourcecm->instance], '*', MUST_EXIST);
         foreach ([3, 0] as $section) {

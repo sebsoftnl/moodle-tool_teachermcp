@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -105,8 +113,10 @@ final class token_history_test extends \advanced_testcase {
     public function test_status_uses_expiry_even_before_scheduled_cleanup(): void {
         $this->resetAfterTest(true);
         $now = 2000000000;
-        foreach ([[1, 0, true, 'active'], [1, $now, true, 'active'], [1, $now - 1, false, 'expired'],
-                [0, $now + 1, false, 'revoked'], [0, $now - 1, false, 'expired']] as [$status, $expiry, $active, $label]) {
+        foreach (
+            [[1, 0, true, 'active'], [1, $now, true, 'active'], [1, $now - 1, false, 'expired'],
+                [0, $now + 1, false, 'revoked'], [0, $now - 1, false, 'expired']] as [$status, $expiry, $active, $label]
+        ) {
             $token = (object)['status' => $status, 'timeexpires' => $expiry];
             $this->assertSame($active, token_history::is_active($token, $now));
             $this->assertSame($label, token_history::status($token, $now));

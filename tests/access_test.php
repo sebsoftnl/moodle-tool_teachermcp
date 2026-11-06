@@ -76,31 +76,31 @@ final class access_test extends \advanced_testcase {
         // 1. Editing teacher succeeds across all 5 tools.
         $this->setUser($teacher);
 
-        $tExport = new \tool_teachermcp\tools\export_course_learning_material();
-        $resExport = $tExport->execute(['course_id' => (int)$course->id]);
-        $this->assertEquals($course->id, $resExport['course_id']);
+        $texport = new \tool_teachermcp\tools\export_course_learning_material();
+        $resexport = $texport->execute(['course_id' => (int)$course->id]);
+        $this->assertEquals($course->id, $resexport['course_id']);
 
-        $tContents = new \tool_teachermcp\tools\get_course_contents();
-        $resContents = $tContents->execute(['course_id' => (int)$course->id]);
-        $this->assertEquals($course->id, $resContents['course_id']);
+        $tcontents = new \tool_teachermcp\tools\get_course_contents();
+        $rescontents = $tcontents->execute(['course_id' => (int)$course->id]);
+        $this->assertEquals($course->id, $rescontents['course_id']);
 
-        $tStudents = new \tool_teachermcp\tools\get_group_students();
-        $resStudents = $tStudents->execute(['course_id' => (int)$course->id]);
-        $this->assertEquals($course->id, $resStudents['course_id']);
+        $tstudents = new \tool_teachermcp\tools\get_group_students();
+        $resstudents = $tstudents->execute(['course_id' => (int)$course->id]);
+        $this->assertEquals($course->id, $resstudents['course_id']);
 
-        $tReadFile = new \tool_teachermcp\tools\read_activity_file();
-        $resReadFile = $tReadFile->execute(['cmid' => (int)$page->cmid]);
-        $this->assertSame('empty', $resReadFile['status']);
-        $this->assertSame([], $resReadFile['files']);
+        $treadfile = new \tool_teachermcp\tools\read_activity_file();
+        $resreadfile = $treadfile->execute(['cmid' => (int)$page->cmid]);
+        $this->assertSame('empty', $resreadfile['status']);
+        $this->assertSame([], $resreadfile['files']);
 
-        $tContentAct = new \tool_teachermcp\tools\manage_content_activity();
-        $resContentAct = $tContentAct->execute(['action' => 'get_content', 'cmid' => (int)$page->cmid]);
-        $this->assertEquals('page', $resContentAct['type']);
+        $tcontentact = new \tool_teachermcp\tools\manage_content_activity();
+        $rescontentact = $tcontentact->execute(['action' => 'get_content', 'cmid' => (int)$page->cmid]);
+        $this->assertEquals('page', $rescontentact['type']);
 
         // 2. Suspended teacher must fail with error_not_enrolled on require_course_access.
         $this->setUser($suspendedteacher);
         try {
-            $tContents->execute(['course_id' => (int)$course->id]);
+            $tcontents->execute(['course_id' => (int)$course->id]);
             $this->fail('Expected exception for suspended teacher');
         } catch (\moodle_exception $e) {
             $this->assertEquals('error_not_enrolled', $e->errorcode);
@@ -108,7 +108,7 @@ final class access_test extends \advanced_testcase {
 
         // Module-scoped tools must reject the same suspended enrolment.
         try {
-            $tContentAct->execute(['action' => 'get_content', 'cmid' => (int)$page->cmid]);
+            $tcontentact->execute(['action' => 'get_content', 'cmid' => (int)$page->cmid]);
             $this->fail('Expected exception for suspended teacher on module tool');
         } catch (\moodle_exception $e) {
             $this->assertEquals('error_not_enrolled', $e->errorcode);
@@ -117,14 +117,14 @@ final class access_test extends \advanced_testcase {
         // 3. Student has enrollment but lacks capabilities.
         $this->setUser($student);
         try {
-            $tExport->execute(['course_id' => (int)$course->id]);
+            $texport->execute(['course_id' => (int)$course->id]);
             $this->fail('Expected required_capability_exception for student calling export_course_learning_material');
         } catch (\required_capability_exception $e) {
             $this->assertNotEmpty($e->getMessage());
         }
 
         try {
-            $tStudents->execute(['course_id' => (int)$course->id]);
+            $tstudents->execute(['course_id' => (int)$course->id]);
             $this->fail('Expected required_capability_exception for student calling get_group_students');
         } catch (\required_capability_exception $e) {
             $this->assertNotEmpty($e->getMessage());
@@ -148,15 +148,15 @@ final class access_test extends \advanced_testcase {
         $generator->enrol_user($student2->id, $course->id, 'student');
 
         // Create Group A and Group B.
-        $groupA = $generator->create_group(['courseid' => $course->id, 'name' => 'Group A']);
-        $groupB = $generator->create_group(['courseid' => $course->id, 'name' => 'Group B']);
+        $groupa = $generator->create_group(['courseid' => $course->id, 'name' => 'Group A']);
+        $groupb = $generator->create_group(['courseid' => $course->id, 'name' => 'Group B']);
 
         // Put teacher and student1 in Group A.
-        $generator->create_group_member(['groupid' => $groupA->id, 'userid' => $teacher->id]);
-        $generator->create_group_member(['groupid' => $groupA->id, 'userid' => $student1->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $student1->id]);
 
         // Put student2 in Group B.
-        $generator->create_group_member(['groupid' => $groupB->id, 'userid' => $student2->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $student2->id]);
 
         // Create quiz in course.
         $quiz = $generator->create_module('quiz', ['course' => $course->id, 'name' => 'Group Quiz']);
@@ -193,30 +193,30 @@ final class access_test extends \advanced_testcase {
         $this->setUser($teacher);
 
         // 1. analyze_class_understanding must only see attempts from Group A (1 attempt, not 2).
-        $toolAnalyze = new \tool_teachermcp\tools\analyze_class_understanding();
-        $resAnalyze = $toolAnalyze->execute(['cmid' => (int)$quiz->cmid]);
-        $this->assertEquals(1, $resAnalyze['total_finished_attempts']);
+        $toolanalyze = new \tool_teachermcp\tools\analyze_class_understanding();
+        $resanalyze = $toolanalyze->execute(['cmid' => (int)$quiz->cmid]);
+        $this->assertEquals(1, $resanalyze['total_finished_attempts']);
 
         // Teacher attempting to pass group_id of Group B (not member) must be denied.
         try {
-            $toolAnalyze->execute(['cmid' => (int)$quiz->cmid, 'group_id' => (int)$groupB->id]);
+            $toolanalyze->execute(['cmid' => (int)$quiz->cmid, 'group_id' => (int)$groupb->id]);
             $this->fail('Expected error_group_access_denied for unauthorized group');
         } catch (\moodle_exception $e) {
             $this->assertEquals('error_group_access_denied', $e->errorcode);
         }
 
         // 2. detect_at_risk_students must only evaluate student1 from Group A.
-        $toolRisk = new \tool_teachermcp\tools\detect_at_risk_students();
-        $resRisk = $toolRisk->execute(['course_id' => (int)$course->id]);
-        $this->assertEquals(1, $resRisk['total_students_evaluated']);
+        $toolrisk = new \tool_teachermcp\tools\detect_at_risk_students();
+        $resrisk = $toolrisk->execute(['course_id' => (int)$course->id]);
+        $this->assertEquals(1, $resrisk['total_students_evaluated']);
 
         // Explicitly passing Group A (which teacher belongs to) succeeds.
-        $resRiskGroupA = $toolRisk->execute(['course_id' => (int)$course->id, 'group_id' => (int)$groupA->id]);
-        $this->assertEquals(1, $resRiskGroupA['total_students_evaluated']);
+        $resriskgroupa = $toolrisk->execute(['course_id' => (int)$course->id, 'group_id' => (int)$groupa->id]);
+        $this->assertEquals(1, $resriskgroupa['total_students_evaluated']);
 
         // Passing Group B must fail with error_group_access_denied.
         try {
-            $toolRisk->execute(['course_id' => (int)$course->id, 'group_id' => (int)$groupB->id]);
+            $toolrisk->execute(['course_id' => (int)$course->id, 'group_id' => (int)$groupb->id]);
             $this->fail('Expected error_group_access_denied when passing unauthorized group');
         } catch (\moodle_exception $e) {
             $this->assertEquals('error_group_access_denied', $e->errorcode);

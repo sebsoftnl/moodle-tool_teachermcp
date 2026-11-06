@@ -14,12 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * OAuth consent display and PKCE validation tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_teachermcp;
 
 defined('MOODLE_INTERNAL') || die();
 
-use tool_teachermcp\local\execution_context;
-use tool_teachermcp\local\external_tool;
+require_once(__DIR__ . '/oauth_consent_provider_fixture.php');
+
 use tool_teachermcp\local\tool_registry;
 
 /**
@@ -45,8 +53,10 @@ final class oauth_consent_test extends \advanced_testcase {
     }
 
     public function test_consent_permissions_follow_requested_native_grants(): void {
-        foreach (['read' => ['read'], 'read grade' => ['read', 'grade'],
-                'write message' => ['write', 'message']] as $scope => $expected) {
+        foreach (
+            ['read' => ['read'], 'read grade' => ['read', 'grade'],
+                'write message' => ['write', 'message']] as $scope => $expected
+        ) {
             $config = oauth_server::normalise_scope($scope);
             $before = $config['permissions'];
             $rows = oauth_server::get_consent_permissions($config['permissions']);
@@ -61,8 +71,10 @@ final class oauth_consent_test extends \advanced_testcase {
 
     public function test_consent_respects_admin_gates_without_changing_issued_grants(): void {
         $full = oauth_server::normalise_scope('teachermcp');
-        $this->assertSame(['read', 'write', 'grade', 'message', 'delete'],
-            array_column(oauth_server::get_consent_permissions($full['permissions']), 'id'));
+        $this->assertSame(
+            ['read', 'write', 'grade', 'message', 'delete'],
+            array_column(oauth_server::get_consent_permissions($full['permissions']), 'id')
+        );
         foreach (['enable_write_tools', 'enable_grade_tools', 'enable_messaging_tool', 'enable_delete_tool'] as $setting) {
             set_config($setting, 0, 'tool_teachermcp');
         }
@@ -96,46 +108,27 @@ final class oauth_consent_test extends \advanced_testcase {
         set_config('oauth_registration_enabled', 1, 'tool_teachermcp');
         $registered = oauth_server::register_client('Exact PKCE fixture', ['http://127.0.0.1/callback'], '127.0.0.1');
         $challenge = 'E9Melhoa2OwvFrGMTJguCH50lK6Zw1F3-EV38YZ2_50';
-        $client = oauth_server::validate_authorization_params($registered['client_id'],
-            'http://127.0.0.1:49152/callback', 'code', $challenge, 'S256');
+        $client = oauth_server::validate_authorization_params(
+            $registered['client_id'],
+            'http://127.0.0.1:49152/callback',
+            'code',
+            $challenge,
+            'S256'
+        );
         $this->assertSame($registered['client_id'], $client->clientid);
         foreach (['plain', 'S', 's256', 'S256 ', ' S256', 'S_256', 'S2-56', 'S256<script>'] as $method) {
             try {
-                oauth_server::validate_authorization_params($registered['client_id'],
-                    'http://127.0.0.1:49152/callback', 'code', $challenge, $method);
+                oauth_server::validate_authorization_params(
+                    $registered['client_id'],
+                    'http://127.0.0.1:49152/callback',
+                    'code',
+                    $challenge,
+                    $method
+                );
                 $this->fail('Only the exact S256 method may pass PKCE validation');
             } catch (\moodle_exception $error) {
                 $this->assertSame('error_invalid_request', $error->errorcode);
             }
         }
-    }
-}
-
-/**
- * Consent-only provider fixture using the unchanged external API v1.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class oauth_consent_provider_fixture implements external_tool {
-    public static function provider(): array {
-        return [['api_version' => 1, 'provider_id' => 'tool_teachermcp', 'tools' => [[
-            'id' => 'consent_probe', 'class' => self::class, 'scope' => 'read',
-            'capability' => 'tool/teachermcp:manageall',
-            'enabled_setting' => 'tool_teachermcp/enable_consent_probe',
-        ]]]];
-    }
-
-    public function get_description(): string {
-        return 'Consent-only external tool fixture.';
-    }
-
-    public function get_input_schema(): array {
-        return ['type' => 'object', 'properties' => []];
-    }
-
-    public function execute(array $arguments, execution_context $context): array {
-        throw new \LogicException('The consent-only fixture must not execute.');
     }
 }

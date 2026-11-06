@@ -47,10 +47,15 @@ final class question_category_resolver_test extends \advanced_testcase {
             $this->assertSame(CONTEXT_MODULE, $context->contextlevel);
             $cm = get_fast_modinfo($course)->get_cm($context->instanceid);
             $this->assertSame('qbank', $cm->modname);
-            $this->assertSame(question_bank_helper::TYPE_STANDARD,
-                $DB->get_field('qbank', 'type', ['id' => $cm->instance], MUST_EXIST));
-            $this->assertSame(question_bank_helper::get_bank_name_string('defaultbank', 'core_question',
-                ['coursename' => $course->fullname]), $cm->name);
+            $this->assertSame(
+                question_bank_helper::TYPE_STANDARD,
+                $DB->get_field('qbank', 'type', ['id' => $cm->instance], MUST_EXIST)
+            );
+            $this->assertSame(question_bank_helper::get_bank_name_string(
+                'defaultbank',
+                'core_question',
+                ['coursename' => $course->fullname]
+            ), $cm->name);
             $this->assertSame(0, (int)$cm->visible);
             $this->assertSame(0, (int)$DB->get_field('course_modules', 'visibleoncoursepage', ['id' => $cm->id], MUST_EXIST));
             $this->assertSame(1, $DB->count_records('course_modules', ['course' => $course->id]));
@@ -228,8 +233,10 @@ final class question_category_resolver_test extends \advanced_testcase {
         if ($this->is_modern()) {
             $cm = get_fast_modinfo($course)->get_cm($context->instanceid);
             $this->assertSame('qbank', $cm->modname);
-            $this->assertSame(question_bank_helper::TYPE_STANDARD,
-                $DB->get_field('qbank', 'type', ['id' => $cm->instance], MUST_EXIST));
+            $this->assertSame(
+                question_bank_helper::TYPE_STANDARD,
+                $DB->get_field('qbank', 'type', ['id' => $cm->instance], MUST_EXIST)
+            );
         }
 
         $second = $tool->execute($this->scaffold_params($course, 'Second pool question'));

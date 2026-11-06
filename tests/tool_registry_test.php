@@ -14,123 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Unified tool registry tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_teachermcp;
 
 defined('MOODLE_INTERNAL') || die();
 
-use tool_teachermcp\local\execution_context;
-use tool_teachermcp\local\external_tool;
+require_once(__DIR__ . '/tool_registry_test_callbacks.php');
+require_once(__DIR__ . '/tool_registry_fake_external_tool.php');
+require_once(__DIR__ . '/tool_registry_invalid_schema_tool.php');
+require_once(__DIR__ . '/tool_registry_throwing_description_tool.php');
+
 use tool_teachermcp\local\tool_registry;
-
-/**
- * Injectable external provider declaration source for registry tests.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class tool_registry_test_callbacks {
-    /** @var array */
-    public static array $declarations = [];
-
-    /**
-     * Return test declarations.
-     *
-     * @return array
-     */
-    public static function get(): array {
-        return self::$declarations;
-    }
-}
-
-/**
- * External tool implementation used by the registry test.
- *
- * Providers must derive a resource context and call require_capability() there;
- * declaration capability metadata is not an authorisation decision.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class tool_registry_fake_external_tool implements external_tool {
-    /** @inheritDoc */
-    public function get_description(): string {
-        return 'A test external tool.';
-    }
-
-    /** @inheritDoc */
-    public function get_input_schema(): array {
-        return [
-            'type' => 'object',
-            'properties' => ['value' => ['type' => 'string']],
-            'required' => ['value'],
-        ];
-    }
-
-    /** @inheritDoc */
-    public function execute(array $arguments, execution_context $context): array {
-        return [
-            'userid' => $context->get_userid(),
-            'value' => $arguments['value'],
-            'courseid' => $context->get_courseid(),
-            'cmid' => $context->get_cmid(),
-        ];
-    }
-}
-
-
-/**
- * Provider with an unsupported argument schema, used to prove publication validation.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class tool_registry_invalid_schema_tool implements external_tool {
-    /** @inheritDoc */
-    public function get_description(): string {
-        return 'This provider has an invalid schema.';
-    }
-
-    /** @inheritDoc */
-    public function get_input_schema(): array {
-        return ['type' => 'string'];
-    }
-
-    /** @inheritDoc */
-    public function execute(array $arguments, execution_context $context): array {
-        return [];
-    }
-}
-
-/**
- * Provider whose metadata accessor fails, used to prove discovery isolation.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class tool_registry_throwing_description_tool implements external_tool {
-    /** @inheritDoc */
-    public function get_description(): string {
-        throw new \RuntimeException('Provider description must not reach the MCP client.');
-    }
-
-    /** @inheritDoc */
-    public function get_input_schema(): array {
-        return ['type' => 'object', 'properties' => []];
-    }
-
-    /** @inheritDoc */
-    public function execute(array $arguments, execution_context $context): array {
-        return [];
-    }
-}
 
 /**
  * Tests for the unified Teacher MCP tool registry.

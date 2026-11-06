@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -87,15 +95,19 @@ final class teaching_boundaries_test extends \advanced_testcase {
             $this->assertSame((float)$grade, $saved['grade_saved']);
         }
         foreach ([-1, 101] as $grade) {
-            $this->assert_unchanged(fn() => $tool->execute($args + ['grade' => $grade, 'feedback_comment' => 'Denied']),
-                'error_grade_out_of_range');
+            $this->assert_unchanged(
+                fn() => $tool->execute($args + ['grade' => $grade, 'feedback_comment' => 'Denied']),
+                'error_grade_out_of_range'
+            );
         }
         $item = $this->manual_item($course);
         $bookargs = ['course_id' => (int)$course->id, 'action' => 'update_grade', 'grade_item_id' => (int)$item->id,
             'student_user_id' => (int)$students['alpha']->id];
         foreach ([19, 81] as $grade) {
-            $this->assert_unchanged(fn() => (new manage_grades())->execute($bookargs + ['final_grade' => $grade]),
-                'error_grade_out_of_range');
+            $this->assert_unchanged(
+                fn() => (new manage_grades())->execute($bookargs + ['final_grade' => $grade]),
+                'error_grade_out_of_range'
+            );
         }
     }
 
@@ -126,8 +138,14 @@ final class teaching_boundaries_test extends \advanced_testcase {
             'gamma' => ['half', 'unmatched', 'full']];
         $totals = [];
         foreach ($answers as $name => $values) {
-            $attempt = fixtures::attempt($generator, $quiz, $students[$name], $this->responses($values), true,
-                $name === 'alpha' ? [1 => ['answer' => 'unmatched']] : []);
+            $attempt = fixtures::attempt(
+                $generator,
+                $quiz,
+                $students[$name],
+                $this->responses($values),
+                true,
+                $name === 'alpha' ? [1 => ['answer' => 'unmatched']] : []
+            );
             $this->assertSame(0, (int)$attempt->get_attempt()->preview);
             $totals[] = (float)$attempt->get_attempt()->sumgrades;
         }
@@ -143,8 +161,10 @@ final class teaching_boundaries_test extends \advanced_testcase {
         $this->assertSame(3.0, $result['grade_scale_maximum']);
         $this->assertSame(['average_score' => 2.17, 'highest_score' => 3.0, 'lowest_score' => 1.5], $result['metrics']);
         $rows = array_column($result['questions_analysis'], null, 'slot');
-        foreach ([1 => [1, 1, 1, 33.3, 'DIFFICULT_NEEDS_ATTENTION'],
-                2 => [2, 0, 1, 66.7, 'MODERATE'], 3 => [3, 0, 0, 100.0, 'WELL_UNDERSTOOD']] as $slot => $expected) {
+        foreach (
+            [1 => [1, 1, 1, 33.3, 'DIFFICULT_NEEDS_ATTENTION'],
+                2 => [2, 0, 1, 66.7, 'MODERATE'], 3 => [3, 0, 0, 100.0, 'WELL_UNDERSTOOD']] as $slot => $expected
+        ) {
             $actual = $rows[$slot];
             $this->assertSame($expected, [$actual['correct_answers'], $actual['partial_answers'],
                 $actual['wrong_answers'], $actual['facility_index_percent'], $actual['status']]);
@@ -249,8 +269,12 @@ final class teaching_boundaries_test extends \advanced_testcase {
         $this->assert_unchanged(fn() => (new grade_submission())->execute($args + ['action' => 'save_grade',
             'student_user_id' => (int)$outsider->id, 'grade' => 73]), 'error_not_enrolled');
         $enrolid = $DB->get_field('enrol', 'id', ['courseid' => $course->id, 'enrol' => 'manual'], MUST_EXIST);
-        $DB->set_field('user_enrolments', 'status', ENROL_USER_SUSPENDED,
-            ['enrolid' => $enrolid, 'userid' => $students['alpha']->id]);
+        $DB->set_field(
+            'user_enrolments',
+            'status',
+            ENROL_USER_SUSPENDED,
+            ['enrolid' => $enrolid, 'userid' => $students['alpha']->id]
+        );
         $this->assert_unchanged(fn() => (new grade_submission())->execute($args + ['action' => 'save_grade',
             'student_user_id' => (int)$students['alpha']->id, 'grade' => 73]), 'error_not_enrolled');
         $this->setUser($outsider);
@@ -267,8 +291,10 @@ final class teaching_boundaries_test extends \advanced_testcase {
             $token = (object)['permissions' => json_encode(['scopes' => $scopes])];
             $roster = $server->execute_tool('get_group_students', ['course_id' => (int)$course->id], $token);
             $this->assertSame(1, $roster['total_groups']);
-            foreach (['prepare_grading_session' => 'grade', 'grade_submission' => 'grade', 'manage_grades' => 'grade',
-                    'send_student_message' => 'message', 'manage_course_calendar' => 'write'] as $tool => $required) {
+            foreach (
+                ['prepare_grading_session' => 'grade', 'grade_submission' => 'grade', 'manage_grades' => 'grade',
+                    'send_student_message' => 'message', 'manage_course_calendar' => 'write'] as $tool => $required
+            ) {
                 if (!in_array($required, $scopes, true)) {
                     $this->assert_unchanged(fn() => $server->execute_tool($tool, [], $token), 'error_tool_not_permitted');
                 }
@@ -405,9 +431,11 @@ final class teaching_boundaries_test extends \advanced_testcase {
         }
         $item = $this->assignment_item($assign);
         $this->assertTrue($item->is_locked($lockeduser), 'The native fixture lock must be effective before the tool call.');
-        $this->assert_unchanged(fn() => $tool->execute($args + ['grade' => 73, 'feedback_comment' => 'Denied feedback',
+        $this->assert_unchanged(
+            fn() => $tool->execute($args + ['grade' => 73, 'feedback_comment' => 'Denied feedback',
             'feedback_files' => [['filename' => 'denied.txt', 'content_base64' => base64_encode('Denied feedback bytes')]]]),
-            'error_grade_locked');
+            'error_grade_locked'
+        );
         if ($kind === 'team') {
             $before = $DB->get_records('assign_grades', ['assignment' => $assign->get_instance()->id, 'userid' => $lockeduser]);
             $tool->execute($args + ['grade' => 73, 'applytoall' => false]);

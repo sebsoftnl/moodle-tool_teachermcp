@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -20,7 +28,8 @@ defined('MOODLE_INTERNAL') || die();
 final class settings_test extends \advanced_testcase {
     public function test_limits_reject_invalid_values_without_saving(): void {
         $settings = $this->settings();
-        foreach ([
+        foreach (
+            [
             'max_token_validity' => [90, ['0', '-1', '', '1.5']],
             'max_oauth_tokens_per_client' => [5, ['0', '-1', 'abc']],
             'message_ratelimit_per_hour' => [50, ['0', '-1']],
@@ -28,7 +37,8 @@ final class settings_test extends \advanced_testcase {
             'max_mcp_batch_size' => [10, ['0', '-1', '51', '999999']],
             'max_mcp_response_bytes' => [262144, ['0', '1023', '5242881']],
             'mcp_requests_per_minute' => [60, ['0', '-1', '601']],
-        ] as $name => [$default, $invalid]) {
+            ] as $name => [$default, $invalid]
+        ) {
             set_config($name, $default, 'tool_teachermcp');
             $this->assertEquals($default, $settings[$name]->get_defaultsetting());
             foreach ($invalid as $value) {
@@ -40,7 +50,8 @@ final class settings_test extends \advanced_testcase {
 
     public function test_supported_boundaries_are_saved(): void {
         $settings = $this->settings();
-        foreach ([
+        foreach (
+            [
             'max_token_validity' => [1, 365],
             'max_oauth_tokens_per_client' => [1, 20],
             'message_ratelimit_per_hour' => [1, 100],
@@ -48,7 +59,8 @@ final class settings_test extends \advanced_testcase {
             'max_mcp_batch_size' => [1, 50],
             'max_mcp_response_bytes' => [1024, 5242880],
             'mcp_requests_per_minute' => [1, 600],
-        ] as $name => $values) {
+            ] as $name => $values
+        ) {
             foreach ($values as $value) {
                 $this->assertSame('', $settings[$name]->write_setting((string)$value));
                 $this->assertEquals($value, get_config('tool_teachermcp', $name));
@@ -64,14 +76,18 @@ final class settings_test extends \advanced_testcase {
         $this->assertInstanceOf(\admin_settingpage::class, $advanced, 'Technical controls need a separate Advanced page');
         $mainnames = array_map(static fn($setting) => $setting->name, (array)$main->settings);
         $advancednames = array_map(static fn($setting) => $setting->name, (array)$advanced->settings);
-        foreach (['message_ratelimit_per_hour', 'max_mcp_request_bytes', 'max_mcp_batch_size',
-                'max_mcp_response_bytes', 'mcp_requests_per_minute', 'allowed_cors_origins', 'enable_external_tools'] as $name) {
+        foreach (
+            ['message_ratelimit_per_hour', 'max_mcp_request_bytes', 'max_mcp_batch_size',
+                'max_mcp_response_bytes', 'mcp_requests_per_minute', 'allowed_cors_origins', 'enable_external_tools'] as $name
+        ) {
             $this->assertNotContains($name, $mainnames);
             $this->assertContains($name, $advancednames);
         }
-        foreach (['enable_write_tools', 'enable_grade_tools', 'enable_messaging_tool', 'enable_delete_tool',
+        foreach (
+            ['enable_write_tools', 'enable_grade_tools', 'enable_messaging_tool', 'enable_delete_tool',
                 'allow_delete_questions', 'delete_requires_ui_confirmation', 'oauth_registration_enabled',
-                'max_token_validity', 'max_oauth_tokens_per_client'] as $name) {
+                'max_token_validity', 'max_oauth_tokens_per_client'] as $name
+        ) {
             $this->assertContains($name, $mainnames);
         }
     }

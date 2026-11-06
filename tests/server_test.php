@@ -98,9 +98,9 @@ final class server_test extends \advanced_testcase {
 
         // 1. Disable delete tool -> removed from get_tools() catalog.
         set_config('enable_delete_tool', 0, 'tool_teachermcp');
-        $toolsDisabled = server::get_tools();
-        $namesDisabled = array_keys($toolsDisabled);
-        $this->assertNotContains('delete_activity', $namesDisabled);
+        $toolsdisabled = server::get_tools();
+        $namesdisabled = array_keys($toolsdisabled);
+        $this->assertNotContains('delete_activity', $namesdisabled);
 
         // Attempting to execute disabled tool directly via server throws error_tool_disabled.
         try {
@@ -115,14 +115,14 @@ final class server_test extends \advanced_testcase {
 
         // 2. Disable write tools -> authoring tools removed.
         set_config('enable_write_tools', 0, 'tool_teachermcp');
-        $toolsNoWrite = server::get_tools();
-        $namesNoWrite = array_keys($toolsNoWrite);
-        $this->assertNotContains('manage_content_activity', $namesNoWrite);
-        $this->assertNotContains('create_h5p_activity', $namesNoWrite);
-        $this->assertNotContains('scaffold_assessment_unit', $namesNoWrite);
+        $toolsnowrite = server::get_tools();
+        $namesnowrite = array_keys($toolsnowrite);
+        $this->assertNotContains('manage_content_activity', $namesnowrite);
+        $this->assertNotContains('create_h5p_activity', $namesnowrite);
+        $this->assertNotContains('scaffold_assessment_unit', $namesnowrite);
         // Read tools should still be present.
-        $this->assertContains('get_my_profile', $namesNoWrite);
-        $this->assertContains('get_course_contents', $namesNoWrite);
+        $this->assertContains('get_my_profile', $namesnowrite);
+        $this->assertContains('get_course_contents', $namesnowrite);
 
         try {
             $server->execute_tool('create_h5p_activity', ['course_id' => 1, 'title' => 'T', 'library_name' => 'L', 'params' => []]);
@@ -134,16 +134,16 @@ final class server_test extends \advanced_testcase {
         // 3. Disable grade tools.
         set_config('enable_write_tools', 1, 'tool_teachermcp');
         set_config('enable_grade_tools', 0, 'tool_teachermcp');
-        $toolsNoGrade = server::get_tools();
-        $namesNoGrade = array_keys($toolsNoGrade);
-        $this->assertNotContains('prepare_grading_session', $namesNoGrade);
+        $toolsnograde = server::get_tools();
+        $namesnograde = array_keys($toolsnograde);
+        $this->assertNotContains('prepare_grading_session', $namesnograde);
 
         // 4. Disable messaging tool.
         set_config('enable_grade_tools', 1, 'tool_teachermcp');
         set_config('enable_messaging_tool', 0, 'tool_teachermcp');
-        $toolsNoMsg = server::get_tools();
-        $namesNoMsg = array_keys($toolsNoMsg);
-        $this->assertNotContains('send_student_message', $namesNoMsg);
+        $toolsnomsg = server::get_tools();
+        $namesnomsg = array_keys($toolsnomsg);
+        $this->assertNotContains('send_student_message', $namesnomsg);
     }
 
     public function test_question_deletion_requires_delete_policy_and_token_grant(): void {
@@ -166,8 +166,10 @@ final class server_test extends \advanced_testcase {
         } catch (\moodle_exception $error) {
             $this->assertSame('error_tool_not_permitted', $error->errorcode);
         }
-        $this->assertTrue(server::is_tool_allowed_by_token('delete_activity',
-            (object)['permissions' => json_encode(['write', 'delete'])]));
+        $this->assertTrue(server::is_tool_allowed_by_token(
+            'delete_activity',
+            (object)['permissions' => json_encode(['write', 'delete'])]
+        ));
     }
 
     public function test_mcp_limits_are_bounded_and_configurable(): void {
@@ -270,39 +272,39 @@ final class server_test extends \advanced_testcase {
         $this->resetAfterTest(true);
 
         // 1. Token restricted to read and grade scopes.
-        $tokenReadGrade = (object)[
+        $tokenreadgrade = (object)[
             'permissions' => json_encode(['scopes' => ['read', 'grade']]),
         ];
-        $this->assertTrue(server::is_tool_allowed_by_token('get_my_profile', $tokenReadGrade));
-        $this->assertTrue(server::is_tool_allowed_by_token('prepare_grading_session', $tokenReadGrade));
-        $this->assertFalse(server::is_tool_allowed_by_token('manage_activity', $tokenReadGrade));
-        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenReadGrade));
-        $this->assertFalse(server::is_tool_allowed_by_token('send_student_message', $tokenReadGrade));
+        $this->assertTrue(server::is_tool_allowed_by_token('get_my_profile', $tokenreadgrade));
+        $this->assertTrue(server::is_tool_allowed_by_token('prepare_grading_session', $tokenreadgrade));
+        $this->assertFalse(server::is_tool_allowed_by_token('manage_activity', $tokenreadgrade));
+        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenreadgrade));
+        $this->assertFalse(server::is_tool_allowed_by_token('send_student_message', $tokenreadgrade));
 
         // 2. Token restricted to flat array of scopes.
-        $tokenRead = (object)[
+        $tokenread = (object)[
             'permissions' => json_encode(['read']),
         ];
-        $this->assertTrue(server::is_tool_allowed_by_token('export_course_learning_material', $tokenRead));
-        $this->assertTrue(server::is_tool_allowed_by_token('read_activity_file', $tokenRead));
-        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenRead));
-        $this->assertFalse(server::is_tool_allowed_by_token('create_h5p_activity', $tokenRead));
+        $this->assertTrue(server::is_tool_allowed_by_token('export_course_learning_material', $tokenread));
+        $this->assertTrue(server::is_tool_allowed_by_token('read_activity_file', $tokenread));
+        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenread));
+        $this->assertFalse(server::is_tool_allowed_by_token('create_h5p_activity', $tokenread));
 
         // 3. Token restricted to specific tool names.
-        $tokenSpecific = (object)[
+        $tokenspecific = (object)[
             'permissions' => json_encode(['delete_activity']),
         ];
-        $this->assertTrue(server::is_tool_allowed_by_token('delete_activity', $tokenSpecific));
-        $this->assertFalse(server::is_tool_allowed_by_token('get_my_profile', $tokenSpecific));
+        $this->assertTrue(server::is_tool_allowed_by_token('delete_activity', $tokenspecific));
+        $this->assertFalse(server::is_tool_allowed_by_token('get_my_profile', $tokenspecific));
 
         // 4. Token restricted to curriculum preset (read, write).
-        $tokenCurriculum = (object)[
+        $tokencurriculum = (object)[
             'permissions' => json_encode(['scopes' => ['read', 'write']]),
         ];
-        $this->assertTrue(server::is_tool_allowed_by_token('create_assignment', $tokenCurriculum));
-        $this->assertTrue(server::is_tool_allowed_by_token('manage_content_activity', $tokenCurriculum));
-        $this->assertFalse(server::is_tool_allowed_by_token('grade_submission', $tokenCurriculum));
-        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokenCurriculum));
+        $this->assertTrue(server::is_tool_allowed_by_token('create_assignment', $tokencurriculum));
+        $this->assertTrue(server::is_tool_allowed_by_token('manage_content_activity', $tokencurriculum));
+        $this->assertFalse(server::is_tool_allowed_by_token('grade_submission', $tokencurriculum));
+        $this->assertFalse(server::is_tool_allowed_by_token('delete_activity', $tokencurriculum));
     }
 
     public function test_resources_require_a_read_grant(): void {

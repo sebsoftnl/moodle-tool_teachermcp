@@ -126,9 +126,10 @@ final class privacy_test extends \advanced_testcase {
         ]);
         $fs = get_file_storage();
         $files = [];
-        foreach ([['mod_page', 'content', 0, \context_module::instance($page->cmid)],
-                ['mod_book', 'chapter', (int)$chapterid, \context_module::instance($book->cmid)]]
-                as [$component, $area, $itemid, $context]) {
+        foreach (
+            [['mod_page', 'content', 0, \context_module::instance($page->cmid)],
+                ['mod_book', 'chapter', (int)$chapterid, \context_module::instance($book->cmid)]] as [$component, $area, $itemid, $context]
+        ) {
             $file = $fs->create_file_from_string([
                 'contextid' => $context->id, 'component' => $component, 'filearea' => $area,
                 'itemid' => $itemid, 'filepath' => '/', 'filename' => 'diagram.png', 'userid' => $user->id,
@@ -141,7 +142,8 @@ final class privacy_test extends \advanced_testcase {
         }
 
         $approved = new \core_privacy\local\request\approved_contextlist(
-            $user, 'tool_teachermcp',
+            $user,
+            'tool_teachermcp',
             [\context_module::instance($page->cmid)->id, \context_module::instance($book->cmid)->id]
         );
         \tool_teachermcp\privacy\provider::delete_data_for_user($approved);

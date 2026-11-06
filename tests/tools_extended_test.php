@@ -29,7 +29,6 @@ defined('MOODLE_INTERNAL') || die();
  * @covers     \tool_teachermcp\tools
  */
 final class tools_extended_test extends \advanced_testcase {
-
     public function test_get_my_profile_tool(): void {
         $this->resetAfterTest(true);
         $generator = $this->getDataGenerator();
@@ -494,14 +493,14 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertStringContainsString('99', $prompt['messages'][0]['content']['text']);
 
         // Test newly added prompts
-        $pAssign = \tool_teachermcp\local\prompt_registry::get_prompt('scaffold_assignment', ['course_id' => 55]);
-        $this->assertNotNull($pAssign);
-        $this->assertStringContainsString('create_assignment', $pAssign['messages'][0]['content']['text']);
-        $this->assertStringContainsString('55', $pAssign['messages'][0]['content']['text']);
+        $passign = \tool_teachermcp\local\prompt_registry::get_prompt('scaffold_assignment', ['course_id' => 55]);
+        $this->assertNotNull($passign);
+        $this->assertStringContainsString('create_assignment', $passign['messages'][0]['content']['text']);
+        $this->assertStringContainsString('55', $passign['messages'][0]['content']['text']);
 
-        $pCal = \tool_teachermcp\local\prompt_registry::get_prompt('schedule_event', ['course_id' => 55]);
-        $this->assertNotNull($pCal);
-        $this->assertStringContainsString('manage_course_calendar', $pCal['messages'][0]['content']['text']);
+        $pcal = \tool_teachermcp\local\prompt_registry::get_prompt('schedule_event', ['course_id' => 55]);
+        $this->assertNotNull($pcal);
+        $this->assertStringContainsString('manage_course_calendar', $pcal['messages'][0]['content']['text']);
 
         // Missing required arg or non-existent
         $this->assertNull(\tool_teachermcp\local\prompt_registry::get_prompt('nonexistent_prompt', []));
@@ -523,7 +522,7 @@ final class tools_extended_test extends \advanced_testcase {
             'mod_quiz/enable_ai'
         );
 
-        $fakeTool = new class implements \tool_teachermcp\local\external_tool {
+        $faketool = new class implements \tool_teachermcp\local\external_tool {
             public function get_description(): string {
                 return 'Fake external tool description';
             }
@@ -540,7 +539,7 @@ final class tools_extended_test extends \advanced_testcase {
 
         $adapter = new \tool_teachermcp\local\external_tool_adapter(
             $declaration,
-            $fakeTool,
+            $faketool,
             'Adapter description',
             ['type' => 'object']
         );
@@ -549,8 +548,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertSame('Adapter description', $adapter->get_description());
         $this->assertSame(['type' => 'object'], $adapter->get_input_schema());
 
-        $execResult = $adapter->execute(['msg' => 'hello']);
-        $this->assertSame('hello', $execResult['echo']);
+        $execresult = $adapter->execute(['msg' => 'hello']);
+        $this->assertSame('hello', $execresult['echo']);
     }
 }
-
