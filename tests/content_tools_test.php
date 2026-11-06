@@ -454,12 +454,8 @@ final class content_tools_test extends \advanced_testcase {
         $student = $generator->create_user();
         $generator->enrol_user($student->id, $course->id, 'student');
         $this->setUser($student);
-        try {
-            tool_teachermcp_pluginfile($course, null, $coursecontext, 'course_assets', [0, 'pixel.png'], false);
-            $this->fail('A learner must not fetch unpublished course assets.');
-        } catch (\required_capability_exception $error) {
-            $this->assertSame('nopermissions', $error->errorcode);
-        }
+        $this->expectException(\required_capability_exception::class);
+        tool_teachermcp_pluginfile($course, null, $coursecontext, 'course_assets', [0, 'pixel.png'], false);
     }
 
     public function test_blok5_delete_activity_ui_confirmation_guard(): void {

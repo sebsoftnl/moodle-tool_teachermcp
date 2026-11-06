@@ -119,7 +119,11 @@ final class privacy_test extends \advanced_testcase {
         $course = $generator->create_course();
         $page = $generator->create_module('page', ['course' => $course->id]);
         $book = $generator->create_module('book', ['course' => $course->id]);
-        $chapterid = $DB->get_field('book_chapters', 'id', ['bookid' => $book->id], MUST_EXIST);
+        $chapterid = $DB->insert_record('book_chapters', [
+            'bookid' => $book->id, 'pagenum' => 1, 'subchapter' => 0,
+            'title' => 'Chapter', 'content' => '<p>Teaching material</p>', 'contentformat' => FORMAT_HTML,
+            'hidden' => 0, 'timecreated' => time(), 'timemodified' => time(),
+        ]);
         $fs = get_file_storage();
         $files = [];
         foreach ([['mod_page', 'content', 0, \context_module::instance($page->cmid)],

@@ -119,10 +119,10 @@ function tool_teachermcp_pluginfile($course, $cm, $context, $filearea, $args, $f
         return false;
     }
 
-    require_course_login($course);
-    // Course assets may be staged before publication; enrolment alone must not expose them.
+    // Staged course assets are private to teachers, including when a learner knows the URL.
     require_capability('moodle/course:manageactivities', $context);
     require_capability('moodle/course:managefiles', $context);
+    require_course_login($course);
 
     $itemid = (int)array_shift($args);
     $filename = array_pop($args);
