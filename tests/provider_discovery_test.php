@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/provider_discovery_test_callbacks.php');
 require_once(__DIR__ . '/provider_discovery_fake_tool.php');
 
+use tool_teachermcp\local\execution_context;
 use tool_teachermcp\local\provider_registry;
 
 /**
