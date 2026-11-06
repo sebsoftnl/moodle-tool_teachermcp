@@ -40,7 +40,7 @@ class manage_question_bank extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Manage Question Bank: list categories; list/get/create/update/delete questions; and attach questions to quizzes (Moodle 4.0+ schema). Category creation is not an exposed action. Updates create a new version and return its new question_id; use that ID for subsequent edits.';
+        return 'Manage Question Bank: list categories; list/get/create/update/delete questions; and attach questions to quizzes (Moodle 4.0+ schema). Deleting requires both write and delete grants and administrator approval. Category creation is not an exposed action. Updates create a new version and return its new question_id; use that ID for subsequent edits.';
     }
 
     public function get_input_schema(): array {
@@ -739,6 +739,11 @@ class manage_question_bank extends base_tool {
      */
     protected function action_delete_question(stdClass $course, context_course $context, array $params): array {
         global $DB, $USER;
+
+        // Question deletion must obey the same site-wide delete switch as activity deletion.
+        if (!\tool_teachermcp\server::is_scope_enabled_by_admin('delete')) {
+            throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', 'manage_question_bank');
+        }
 
         // N3: Check site admin setting allow_delete_questions first.
         if (!get_config('tool_teachermcp', 'allow_delete_questions')) {

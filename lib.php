@@ -120,6 +120,9 @@ function tool_teachermcp_pluginfile($course, $cm, $context, $filearea, $args, $f
     }
 
     require_course_login($course);
+    // Course assets may be staged before publication; enrolment alone must not expose them.
+    require_capability('moodle/course:manageactivities', $context);
+    require_capability('moodle/course:managefiles', $context);
 
     $itemid = (int)array_shift($args);
     $filename = array_pop($args);

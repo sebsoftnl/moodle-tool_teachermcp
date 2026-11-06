@@ -146,6 +146,30 @@ final class server_test extends \advanced_testcase {
         $this->assertNotContains('send_student_message', $namesNoMsg);
     }
 
+    public function test_question_deletion_requires_delete_policy_and_token_grant(): void {
+        $this->resetAfterTest(true);
+        $server = new server();
+        $args = ['course_id' => 1, 'action' => 'delete_question', 'question_id' => 1];
+        $writeonly = (object)['permissions' => json_encode(['write'])];
+        set_config('enable_delete_tool', 0, 'tool_teachermcp');
+        try {
+            $server->execute_tool('manage_question_bank', $args, $writeonly);
+            $this->fail('Deletion must obey the site-wide delete switch.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('error_tool_disabled', $error->errorcode);
+        }
+
+        set_config('enable_delete_tool', 1, 'tool_teachermcp');
+        try {
+            $server->execute_tool('manage_question_bank', $args, $writeonly);
+            $this->fail('A write-only token must not delete questions.');
+        } catch (\moodle_exception $error) {
+            $this->assertSame('error_tool_not_permitted', $error->errorcode);
+        }
+        $this->assertTrue(server::is_tool_allowed_by_token('delete_activity',
+            (object)['permissions' => json_encode(['write', 'delete'])]));
+    }
+
     public function test_mcp_limits_are_bounded_and_configurable(): void {
         $this->resetAfterTest(true);
 

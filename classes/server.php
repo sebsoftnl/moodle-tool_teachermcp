@@ -450,6 +450,16 @@ class server {
             throw new moodle_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
         }
 
+        // A destructive action inside a write-scoped tool needs an additional delete grant.
+        if ($toolname === 'manage_question_bank' && ($arguments['action'] ?? null) === 'delete_question') {
+            if (!self::is_scope_enabled_by_admin('delete')) {
+                throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
+            }
+            if ($token && !self::is_tool_allowed_by_token('delete_activity', $token)) {
+                throw new moodle_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
+            }
+        }
+
         $tool = $this->tools[$toolname];
 
         $schemavalidation = self::prepare_tool_arguments($tool, $arguments);

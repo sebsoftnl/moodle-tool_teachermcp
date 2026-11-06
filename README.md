@@ -22,7 +22,7 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 3. `get_course_contents`: Section tree, activity names, optional descriptions, and completion-tracking flags.
 4. `export_course_learning_material`: Export teacher-accessible course material as Markdown or JSON, identifying hidden courses/sections/activities and configured availability restrictions. This is not an individual student's view.
 5. `read_activity_file`: Inspect attached source documents, get download links, and extract text (PDF, Word DOCX, PPTX, ODT, TXT, CSV).
-6. `upload_course_asset`: Upload PNG, JPEG, GIF or WebP images into course, Page or Book file areas for embedding.
+6. `upload_course_asset`: Upload PNG, JPEG, GIF or WebP images into course, Page or Book file areas for embedding. Course-area images are teacher-only staging assets; copy them into a native activity file area before publishing for students.
 7. `manage_content_activity`: Create or update Page and Book resources with rich HTML formatting and chapters.
 8. `manage_activity`: Inspect basic module settings; update Page names/descriptions/visibility, or publish/unpublish Assignment, Quiz, H5P and Book using visibility-only updates. Other settings remain native Moodle actions.
 9. `duplicate_activity`: Duplicate activities within a course or across courses where teacher has rights.
@@ -31,7 +31,7 @@ See the teacher-facing [agent usage guide](AGENTS.md) for workflows and examples
 12. `create_h5p_activity`: Build interactive H5P activities (e.g. Flashcards, Multiple Choice, Interactive Video) and Content Bank entries using installed content libraries and valid parameters.
 13. `scaffold_assessment_unit`: Scaffold quizzes with multichoice, shortanswer, essay, truefalse or numerical questions and course-section placement. Numerical answers support absolute tolerance and partial credit through Moodle's native grading.
 14. `create_assignment`: Create `mod_assign` activities with due/cutoff dates, submission settings (online text, file uploads, maximum file count), and optional rubric descriptions in the assignment instructions.
-15. `manage_question_bank`: List categories and browse/create/update/delete permitted questions or attach them to quizzes. There is no exposed category-creation action.
+15. `manage_question_bank`: List categories and browse/create/update/delete permitted questions or attach them to quizzes. Question deletion also requires the delete grant and both administrator delete settings. There is no exposed category-creation action.
 16. `analyze_class_understanding`: Examine cohort performance (average, highest and lowest attempt scores), facility index, and question-level learning gaps on quizzes.
 17. `prepare_grading_session`: Batch-retrieve submissions, attachments, rubrics, and feedback contexts.
 18. `grade_submission`: Submit numeric/scale grades, comments and validated feedback files for individuals or groups; return persisted grading outcomes and native feedback-file manifests. Disabled file support or invalid attachments reject the request before saving.

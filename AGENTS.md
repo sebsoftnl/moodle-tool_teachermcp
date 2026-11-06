@@ -33,6 +33,7 @@ Prefer native JSON booleans. Built-in boolean fields also accept integers `0`/`1
   - `action: "get_content"`: Inspects page content or lists all chapters of a Book.
 - **`upload_course_asset`**:
   - Uploads provided base64 PNG, JPEG, GIF or WebP image content into Moodle's file storage. SVG and general document uploads are not supported by this tool. Remote `image_url` fetching is disabled and must not be requested.
+  - Untargeted course assets are teacher-only staging files. Before a student-facing publication, upload the image into the target Page or Book file area and use its returned URL; a course-area staging URL will not load for students.
   - Returns `url`, `html_tag` (`<img src="..." class="img-fluid" />`), and `markdown_tag`. Embed this tag directly in page, book, or question content!
 
 ### B. Interactive H5P Content
@@ -124,9 +125,9 @@ Teacher: "Bouw voor cursus 12 een compleet Moodle Boek over 'Machine Learning Ba
 ```markdown
 Teacher: "Ik heb een schema gegenereerd voor de fotosynthese cyclus. Upload deze base64 afbeelding naar cursus 12 als 'photosynthesis_diagram.png' en plaats hem in een nieuwe Moodle Pagina 'Fotosynthese Uitgelegd' in sectie 1."
 ```
-1. Call `upload_course_asset` with `course_id: 12`, `filename: "photosynthesis_diagram.png"`, `file_content_base64: "..."`, and `alt_text: "Fotosynthese cyclus schema"`.
-2. Take the returned `html_tag`.
-3. Call `manage_content_activity` with `action: "create_page"`, `course_id: 12`, `section_number: 1`, `title: "Fotosynthese Uitgelegd"`, and `content` containing the returned `html_tag`. It starts hidden.
+1. Create the Page first with `manage_content_activity`, leaving it hidden. Call `upload_course_asset` with `course_id: 12`, its returned `cmid` as `target_cmid`, `filename: "photosynthesis_diagram.png"`, `file_content_base64: "..."`, and `alt_text: "Fotosynthese cyclus schema"`.
+2. Take the returned `html_tag` for the Page-owned file (not a course staging URL).
+3. Call `manage_content_activity` with `action: "update_page"`, the returned Page `cmid`, and `content` containing that `html_tag`.
 4. Review the rendered image as the teacher. After approval, call `action: "update_page"` with the returned `cmid` and `visible: true`; verify the returned visibility and the student's view. A remote URL or invalid image is a failure, not an invitation to fetch it by another route.
 
 ### Workflow 3: Building Interactive H5P Content

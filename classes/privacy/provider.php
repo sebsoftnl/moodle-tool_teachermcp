@@ -269,7 +269,10 @@ class provider implements
     }
 
     /**
-     * Delete tracked MCP-owned assets and their tracking records.
+     * Delete plugin-owned course assets and forget references to native activity files.
+     *
+     * Page and Book files belong to their activities once uploaded. Erasing the
+     * uploader's account must not remove published teaching material.
      *
      * @param int $contextid Context ID.
      * @param int|null $userid Optional asset owner.
@@ -284,7 +287,8 @@ class provider implements
         $fs = get_file_storage();
         foreach ($assets as $asset) {
             $file = $fs->get_file_by_id($asset->fileid);
-            if ($file) {
+            if ($file && $file->get_component() === 'tool_teachermcp' &&
+                    $file->get_filearea() === 'course_assets') {
                 $file->delete();
             }
         }

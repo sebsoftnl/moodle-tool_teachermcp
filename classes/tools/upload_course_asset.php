@@ -36,7 +36,7 @@ class upload_course_asset extends base_tool {
     }
 
     public function get_description(): string {
-        return 'Uploads an image asset (PNG, JPEG, GIF, WEBP) into a course or target activity (Page or Book) for embedding. Stores the file in Moodle file storage and returns ready-to-use HTML <img> tags, Markdown tags, and native pluginfile URLs.';
+        return 'Uploads an image asset (PNG, JPEG, GIF, WEBP) into a course or target activity (Page or Book) for embedding. Course assets are teacher-only until copied into a student-visible activity. Returns ready-to-use HTML <img> tags, Markdown tags, and native pluginfile URLs.';
     }
 
     public function get_input_schema(): array {
