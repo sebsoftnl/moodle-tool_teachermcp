@@ -116,7 +116,7 @@ $toolscount = count($server->get_tools());
 
 $templatedata = [
     'client_name' => $client->clientname, // K3-R8: registered name from DB.
-    'redirect_host' => $redirecthost,     // K3-R8: host of redirect URI (B6).
+    'redirect_host' => $redirecthost, // K3-R8: host of redirect URI (B6).
     'user_fullname' => fullname($USER),
     'user_email' => $USER->email,
     'tools_count' => $toolscount,

@@ -8,7 +8,7 @@ GitLab CI runs the bridge suite and the Moodle plugin PHPUnit suite against Mood
 node --test bridge/*.test.mjs
 ```
 
-The Moodle jobs install the plugin in a disposable Moodle checkout with a separate database. The coding-standard check is visible but currently non-blocking because the merged source has pre-existing violations; it must be cleared before claiming Moodle-standard readiness. A passing bridge suite does not replace Moodle integration tests or a browser workflow.
+The Moodle jobs install the plugin in a disposable Moodle checkout with a separate database. The Moodle coding-standard check is mandatory. A passing bridge suite does not replace Moodle integration tests or a browser workflow.
 
 The bridge suite includes `chatgpt-package.test.mjs`: explicit MCP declaration, safe rejection of invalid endpoints and existing output, and launching the generated stdio command from a relocated cache-like directory without substituting path placeholders. The fixture uses a synthetic cached OAuth credential; it does not exercise ChatGPT or fresh browser consent. A separate user-operated check on ChatGPT desktop 26.1021.31345/macOS Apple Silicon and Moodle 5.3/PHP 8.4 verified fresh OAuth, native teacher/course reads, one hidden Page creation/read-back and cached reconnection. Independent browser checks confirmed teacher access and student non-visibility. Follow the [desktop guide's real-app checks](../chatgpt-desktop.md#verify-in-the-real-app) for other installations; this is not all-tool or cross-platform certification.
 

@@ -37,11 +37,10 @@ bridge:
     - /root/ci/bin/moodle-plugin-ci savepoints
     - /root/ci/bin/moodle-plugin-ci phpunit
 
-# Existing Moodle coding-standard violations are surfaced separately while
-# functional tests run. Make this gate blocking after the existing backlog is fixed.
+# Moodle coding standards are a required gate before release review.
 codechecker:
   extends: .moodle-test
-  allow_failure: true
+  allow_failure: false
   script:
     - cd /root/
     - umask u+x
