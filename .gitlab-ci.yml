@@ -23,6 +23,8 @@ bridge:
     MARIADB_ROOT_PASSWORD: "superrootpass"
     TRAVIS_BUILD_DIR: "$CI_PROJECT_DIR"
     MOODLE_DIR: "/var/www/html/moodle"
+    # Keep concurrent Moodle installs below GitHub archive throttling thresholds.
+    COMPOSER_MAX_PARALLEL_HTTP: "2"
     PLUGIN: "tool_teachermcp"
     PATHNAME: "admin/tool/teachermcp"
   script:
