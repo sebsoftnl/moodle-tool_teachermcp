@@ -8,11 +8,11 @@
 //
 // Moodle is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle. If not, see <https://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -81,14 +81,18 @@ final class execution_boundary_test extends \advanced_testcase {
         set_config('enable_write_tools', 0, 'tool_teachermcp');
         $disabled = $this->rpc($server, 'manage_question_bank', $args);
         $this->assertTrue($disabled['result']['isError']);
-        $this->assertSame(get_string('error_tool_disabled', 'tool_teachermcp', 'manage_question_bank'),
-            $disabled['result']['content'][0]['text']);
+        $this->assertSame(
+            get_string('error_tool_disabled', 'tool_teachermcp', 'manage_question_bank'),
+            $disabled['result']['content'][0]['text']
+        );
         set_config('enable_write_tools', 1, 'tool_teachermcp');
         $this->set_token(['read']);
         $denied = $this->rpc($server, 'manage_question_bank', $args);
         $this->assertTrue($denied['result']['isError']);
-        $this->assertSame(get_string('error_tool_not_permitted', 'tool_teachermcp', 'manage_question_bank'),
-            $denied['result']['content'][0]['text']);
+        $this->assertSame(
+            get_string('error_tool_not_permitted', 'tool_teachermcp', 'manage_question_bank'),
+            $denied['result']['content'][0]['text']
+        );
         $this->set_token(['read', 'write']);
         $schema = $this->rpc($server, 'manage_question_bank', ['action' => 'update_question']);
         $this->assertSame(-32602, $schema['error']['code']);
