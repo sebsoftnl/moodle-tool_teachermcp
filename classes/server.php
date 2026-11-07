@@ -25,6 +25,7 @@ use stdClass;
 use context_system;
 use tool_teachermcp\tools\base_tool;
 use tool_teachermcp\local\argument_normalizer;
+use tool_teachermcp\local\tool_dispatch_exception;
 use tool_teachermcp\local\tool_registry;
 
 /**
@@ -429,16 +430,16 @@ class server {
      */
     public function execute_tool(string $toolname, array $arguments, ?stdClass $token = null): mixed {
         if (!isset($this->tools[$toolname])) {
-            throw new moodle_exception('error_tool_not_found', 'tool_teachermcp', '', $toolname);
+            throw new tool_dispatch_exception('error_tool_not_found', 'tool_teachermcp', '', $toolname);
         }
 
         // N6: Verify scope is enabled by admin.
         $scope = self::get_tool_scope($toolname);
         if (self::is_external_tool($toolname) && !self::is_external_tools_enabled_by_admin($toolname)) {
-            throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
+            throw new tool_dispatch_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
         }
         if (!self::is_scope_enabled_by_admin($scope)) {
-            throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
+            throw new tool_dispatch_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
         }
 
         // N6: Verify tool is permitted by token.
@@ -446,16 +447,16 @@ class server {
             $token = auth::get_current_token();
         }
         if ($token && !self::is_tool_allowed_by_token($toolname, $token)) {
-            throw new moodle_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
+            throw new tool_dispatch_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
         }
 
         // A destructive action inside a write-scoped tool needs an additional delete grant.
         if ($toolname === 'manage_question_bank' && ($arguments['action'] ?? null) === 'delete_question') {
             if (!self::is_scope_enabled_by_admin('delete')) {
-                throw new moodle_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
+                throw new tool_dispatch_exception('error_tool_disabled', 'tool_teachermcp', '', $toolname);
             }
             if ($token && !self::is_tool_allowed_by_token('delete_activity', $token)) {
-                throw new moodle_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
+                throw new tool_dispatch_exception('error_tool_not_permitted', 'tool_teachermcp', '', $toolname);
             }
         }
 
@@ -463,7 +464,7 @@ class server {
 
         $schemavalidation = self::prepare_tool_arguments($tool, $arguments);
         if ($schemavalidation !== true) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null, (string)$schemavalidation);
+            throw new tool_dispatch_exception('error_invalid_params', 'tool_teachermcp', '', null, (string)$schemavalidation);
         }
 
         return $tool->execute($arguments);
@@ -689,61 +690,21 @@ class server {
                         return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Arguments must be an object.');
                     }
 
-                    if (!isset($this->tools[$toolname])) {
-                        return $this->build_jsonrpc_success($id, [
-                            'content' => [
-                                [
-                                    'type' => 'text',
-                                    'text' => "Tool '{$toolname}' is not found or not permitted.",
-                                ],
-                            ],
-                            'isError' => true,
-                        ]);
-                    }
-
-                    // N6: Check admin scope toggle.
-                    $scope = self::get_tool_scope($toolname);
-                    if (self::is_external_tool($toolname) && !self::is_external_tools_enabled_by_admin($toolname)) {
-                        return $this->build_jsonrpc_success($id, [
-                            'content' => [['type' => 'text', 'text' => get_string('error_tool_disabled', 'tool_teachermcp', $toolname)]],
-                            'isError' => true,
-                        ]);
-                    }
-                    if (!self::is_scope_enabled_by_admin($scope)) {
-                        return $this->build_jsonrpc_success($id, [
-                            'content' => [
-                                [
-                                    'type' => 'text',
-                                    'text' => get_string('error_tool_disabled', 'tool_teachermcp', $toolname),
-                                ],
-                            ],
-                            'isError' => true,
-                        ]);
-                    }
-
-                    // N6: Check token scopes / permissions.
                     $token = auth::get_current_token();
-                    if ($token && !self::is_tool_allowed_by_token($toolname, $token)) {
+                    try {
+                        $result = $this->execute_tool($toolname, $arguments, $token);
+                    } catch (tool_dispatch_exception $e) {
+                        if ($e->errorcode === 'error_invalid_params') {
+                            return $this->build_jsonrpc_error($id, -32602, 'Invalid params: ' . $e->debuginfo);
+                        }
+                        $message = $e->errorcode === 'error_tool_not_found'
+                            ? "Tool '{$toolname}' is not found or not permitted."
+                            : $e->getMessage();
                         return $this->build_jsonrpc_success($id, [
-                            'content' => [
-                                [
-                                    'type' => 'text',
-                                    'text' => get_string('error_tool_not_permitted', 'tool_teachermcp', $toolname),
-                                ],
-                            ],
+                            'content' => [['type' => 'text', 'text' => $message]],
                             'isError' => true,
                         ]);
                     }
-
-                    $tool = $this->tools[$toolname];
-
-                    $schemavalidation = self::prepare_tool_arguments($tool, $arguments);
-                    if ($schemavalidation !== true) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: ' . $schemavalidation);
-                    }
-
-                    // Execute tool.
-                    $result = $tool->execute($arguments);
 
                     // Record the successful execution without retaining arguments or results.
                     self::log_tool_execution($toolname, $arguments, $token, true);
