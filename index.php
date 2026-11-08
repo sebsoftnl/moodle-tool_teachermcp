@@ -48,11 +48,18 @@ echo $OUTPUT->heading(get_string('pluginname', 'tool_teachermcp'));
 echo html_writer::start_div('tool_teachermcp_admin container-fluid');
 
 echo html_writer::div(
-    html_writer::link(new moodle_url('/admin/settings.php', ['section' => 'tool_teachermcp']),
-        get_string('settings_title', 'tool_teachermcp'), ['class' => 'btn btn-secondary']) .
-    html_writer::link(new moodle_url('/admin/tool/teachermcp/my_agent.php'),
-        get_string('btn_teacher_dashboard', 'tool_teachermcp'), ['class' => 'btn btn-outline-secondary']),
-    'tool_teachermcp_actions d-flex flex-wrap mb-4');
+    html_writer::link(
+        new moodle_url('/admin/settings.php', ['section' => 'tool_teachermcp']),
+        get_string('settings_title', 'tool_teachermcp'),
+        ['class' => 'btn btn-secondary']
+    ) .
+    html_writer::link(
+        new moodle_url('/admin/tool/teachermcp/my_agent.php'),
+        get_string('btn_teacher_dashboard', 'tool_teachermcp'),
+        ['class' => 'btn btn-outline-secondary']
+    ),
+    'tool_teachermcp_actions d-flex flex-wrap mb-4'
+);
 
 $userfields = \core_user\fields::for_name()->get_sql('u', false, '', '', false);
 
@@ -100,8 +107,11 @@ if ($connections['history']) {
     echo html_writer::tag('summary', get_string('connection_history', 'tool_teachermcp') .
         ' (' . count($connections['history']) . ')', ['class' => 'h5']);
     echo html_writer::tag('p', get_string('connection_history_help', 'tool_teachermcp'), ['class' => 'text-muted mt-2']);
-    echo html_writer::link(new moodle_url('/admin/tool/teachermcp/clear_history.php', ['allusers' => 1]),
-        get_string('clear_history', 'tool_teachermcp'), ['class' => 'btn btn-outline-secondary mb-3']);
+    echo html_writer::link(
+        new moodle_url('/admin/tool/teachermcp/clear_history.php', ['allusers' => 1]),
+        get_string('clear_history', 'tool_teachermcp'),
+        ['class' => 'btn btn-outline-secondary mb-3']
+    );
     echo $OUTPUT->render_from_template('tool_teachermcp/connection_table', [
         'tokens' => $connections['history'], 'admin_view' => true,
         'confirm_revoke' => get_string('confirm_revoke', 'tool_teachermcp'),

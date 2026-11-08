@@ -29,15 +29,29 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_group_students extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'get_group_students';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Retrieve students in course groups where the authenticated teacher has grading or viewing permissions.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -55,6 +69,11 @@ class get_group_students extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $USER, $DB;
 
@@ -76,8 +95,13 @@ class get_group_students extends base_tool {
 
         if ($targetgroupid > 0) {
             if (!isset($allowedgroups[$targetgroupid])) {
-                throw new moodle_exception('error_no_group_access', 'tool_teachermcp', '', null,
-                    "Group ID {$targetgroupid} is not accessible or does not exist in this course.");
+                throw new moodle_exception(
+                    'error_no_group_access',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Group ID {$targetgroupid} is not accessible or does not exist in this course."
+                );
             }
             $groupsquery = [$targetgroupid => $allowedgroups[$targetgroupid]];
         } else {

@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -38,8 +46,11 @@ final class prompt_registry_test extends \advanced_testcase {
         $context = (object)['courseid' => '73', 'coursename' => '[course_name]'];
         foreach ($prompts as $name => $key) {
             $prompt = prompt_registry::get_prompt($name, ['course_id' => '73']);
-            $this->assertSame(get_string('prompt_' . $key . '_text', 'tool_teachermcp', $context),
-                $prompt['messages'][0]['content']['text'], $name . ' must use the shared localized template');
+            $this->assertSame(
+                get_string('prompt_' . $key . '_text', 'tool_teachermcp', $context),
+                $prompt['messages'][0]['content']['text'],
+                $name . ' must use the shared localized template'
+            );
             $this->assertSame('user', $prompt['messages'][0]['role']);
             $this->assertSame('text', $prompt['messages'][0]['content']['type']);
         }
@@ -67,15 +78,20 @@ final class prompt_registry_test extends \advanced_testcase {
             $prompt = prompt_registry::get_prompt($definition['name'], ['course_id' => '73'] + $arguments);
             $text = $prompt['messages'][0]['content']['text'];
             $encoded = substr($text, strpos($text, '{'));
-            $this->assertSame($arguments, json_decode($encoded, true),
-                $definition['name'] . ': supplied task details must round-trip as JSON');
+            $this->assertSame(
+                $arguments,
+                json_decode($encoded, true),
+                $definition['name'] . ': supplied task details must round-trip as JSON'
+            );
         }
     }
 
     public function test_unknown_arguments_do_not_change_prompt(): void {
         $expected = prompt_registry::get_prompt('schedule_event', ['course_id' => '73']);
-        $this->assertSame($expected,
-            prompt_registry::get_prompt('schedule_event', ['course_id' => '73', 'unknown' => 'unrelated data']));
+        $this->assertSame(
+            $expected,
+            prompt_registry::get_prompt('schedule_event', ['course_id' => '73', 'unknown' => 'unrelated data'])
+        );
     }
 
     public function test_module_targets_and_unknown_prompt_are_preserved(): void {

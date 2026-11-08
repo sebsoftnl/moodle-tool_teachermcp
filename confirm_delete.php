@@ -28,7 +28,7 @@ require_once($CFG->dirroot . '/course/lib.php');
 
 $cmid = required_param('cmid', PARAM_INT);
 
-list($course, $cm) = get_course_and_cm_from_cmid($cmid);
+[$course, $cm] = get_course_and_cm_from_cmid($cmid);
 $context = context_module::instance($cm->id);
 
 require_login($course, false, $cm);

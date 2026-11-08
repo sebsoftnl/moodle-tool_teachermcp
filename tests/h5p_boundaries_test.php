@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -41,8 +49,12 @@ final class h5p_boundaries_test extends \advanced_testcase {
     public function test_addinstance_denial_precedes_content_bank_and_file_writes(): void {
         [$course, $teacher, $seed] = $this->fixture();
         $this->deny($course, $teacher, 'mod/h5pactivity:addinstance');
-        $this->assert_unchanged_error($course, fn() => (new create_h5p_activity())->execute($this->args($course, $seed)),
-            'nopermissions', get_capability_string('mod/h5pactivity:addinstance'));
+        $this->assert_unchanged_error(
+            $course,
+            fn() => (new create_h5p_activity())->execute($this->args($course, $seed)),
+            'nopermissions',
+            get_capability_string('mod/h5pactivity:addinstance')
+        );
     }
 
     public function test_no_destination_success_explicitly_reports_no_storage_or_deployment(): void {
@@ -86,8 +98,11 @@ final class h5p_boundaries_test extends \advanced_testcase {
         $files = $fs->get_area_files($context->id, 'contentbank', 'public', $result['content_bank_id'], 'id', false);
         $this->assertCount(1, $files);
         $this->assertSame($seed['package']['params'], fixtures::package(reset($files))['params']);
-        $this->assertSame([], $fs->get_area_files($context->id, 'contentbank', 'public', 0, 'id', false),
-            'Content Bank import must not retain its temporary itemid=0 package.');
+        $this->assertSame(
+            [],
+            $fs->get_area_files($context->id, 'contentbank', 'public', 0, 'id', false),
+            'Content Bank import must not retain its temporary itemid=0 package.'
+        );
     }
 
     public function test_unsupported_bank_only_upload_is_an_error_without_writes(): void {
@@ -109,7 +124,8 @@ final class h5p_boundaries_test extends \advanced_testcase {
             $this->deny($course, $teacher, $capability);
             try {
                 $this->assert_unchanged_error($course, fn() => (new create_h5p_activity())->execute(
-                    $this->args($course, $seed) + ['visible' => true]), 'nopermissions', get_capability_string($capability));
+                    $this->args($course, $seed) + ['visible' => true]
+                ), 'nopermissions', get_capability_string($capability));
             } finally {
                 unassign_capability($capability, $role, $context->id);
                 accesslib_clear_all_caches(true);
@@ -122,15 +138,18 @@ final class h5p_boundaries_test extends \advanced_testcase {
         [$course, , $seed] = $this->fixture();
         $other = $this->getDataGenerator()->create_course();
         $this->assert_unchanged_error($course, fn() => (new create_h5p_activity())->execute(
-            array_replace($this->args($course, $seed), ['course_id' => (int)$other->id])), 'nopermissions');
+            array_replace($this->args($course, $seed), ['course_id' => (int)$other->id])
+        ), 'nopermissions');
     }
 
     public function test_scalar_list_and_empty_json_roots_reject_before_creation(): void {
         [$course, , $seed] = $this->fixture();
         $outcomes = [];
-        foreach (['false' => 'false', 'true' => 'true', 'number' => '42', 'string' => '"text"',
+        foreach (
+            ['false' => 'false', 'true' => 'true', 'number' => '42', 'string' => '"text"',
                 'json-list' => '["one","two"]', 'php-list' => ['one', 'two'], 'empty-object' => new \stdClass(),
-                'empty-json-object' => '{}'] as $key => $params) {
+                'empty-json-object' => '{}'] as $key => $params
+        ) {
             $before = fixtures::snapshot((int)$course->id);
             $code = null;
             try {
@@ -141,15 +160,20 @@ final class h5p_boundaries_test extends \advanced_testcase {
             }
             $outcomes[$key] = ['code' => $code, 'unchanged' => $before == fixtures::snapshot((int)$course->id)];
         }
-        $this->assertSame(array_fill_keys(array_keys($outcomes), ['code' => 'error_invalid_params', 'unchanged' => true]),
-            $outcomes, 'H5P content must be a nonempty JSON object, never a scalar or list deployment.');
+        $this->assertSame(
+            array_fill_keys(array_keys($outcomes), ['code' => 'error_invalid_params', 'unchanged' => true]),
+            $outcomes,
+            'H5P content must be a nonempty JSON object, never a scalar or list deployment.'
+        );
     }
 
     public function test_malformed_json_and_unencodable_values_reject_before_creation(): void {
         [$course, , $seed] = $this->fixture();
         $outcomes = [];
-        foreach (['syntax' => '{', 'utf8' => ['text' => "\xb1\x31"], 'infinite' => ['value' => INF],
-                'nan' => ['value' => NAN]] as $key => $params) {
+        foreach (
+            ['syntax' => '{', 'utf8' => ['text' => "\xb1\x31"], 'infinite' => ['value' => INF],
+                'nan' => ['value' => NAN]] as $key => $params
+        ) {
             $before = fixtures::snapshot((int)$course->id);
             $code = null;
             try {
@@ -160,14 +184,18 @@ final class h5p_boundaries_test extends \advanced_testcase {
             }
             $outcomes[$key] = ['code' => $code, 'unchanged' => $before == fixtures::snapshot((int)$course->id)];
         }
-        $this->assertSame(array_fill_keys(array_keys($outcomes), ['code' => 'error_invalid_params', 'unchanged' => true]),
-            $outcomes, 'Encoding failure must be an input error before any destination is written.');
+        $this->assertSame(
+            array_fill_keys(array_keys($outcomes), ['code' => 'error_invalid_params', 'unchanged' => true]),
+            $outcomes,
+            'Encoding failure must be an input error before any destination is written.'
+        );
     }
 
     public function test_invalid_bank_only_content_does_not_leave_a_staging_file(): void {
         [$course, , $seed] = $this->fixture();
         $this->assert_unchanged_error($course, fn() => (new create_h5p_activity())->execute(
-            array_replace($this->args($course, $seed), ['params' => 'false', 'deploy_as_activity' => false])), 'error_invalid_params');
+            array_replace($this->args($course, $seed), ['params' => 'false', 'deploy_as_activity' => false])
+        ), 'error_invalid_params');
     }
 
     public function test_native_false_save_rolls_back_real_destination_writes(): void {
@@ -195,8 +223,11 @@ final class h5p_boundaries_test extends \advanced_testcase {
         foreach (['h5p_exists', 'instance_exists', 'file_exists'] as $key) {
             $this->assertTrue($tool->nativewrite[$key], 'Fault must follow real native destination writes.');
         }
-        $this->assertEquals($before, fixtures::snapshot((int)$course->id),
-            'A failed native save must not leave bank, module, package, grade or cached course state.');
+        $this->assertEquals(
+            $before,
+            fixtures::snapshot((int)$course->id),
+            'A failed native save must not leave bank, module, package, grade or cached course state.'
+        );
         $this->assertSame('error_h5p_save_failed', $code);
     }
 

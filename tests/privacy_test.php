@@ -110,4 +110,46 @@ final class privacy_test extends \advanced_testcase {
         // Course asset file for user must be removed.
         $this->assertFalse($fs->file_exists($coursecontext->id, 'tool_teachermcp', 'course_assets', 0, '/', 'test_asset.png'));
     }
+
+    public function test_privacy_erasure_preserves_page_and_book_content(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $generator = self::getDataGenerator();
+        $user = $generator->create_user();
+        $course = $generator->create_course();
+        $page = $generator->create_module('page', ['course' => $course->id]);
+        $book = $generator->create_module('book', ['course' => $course->id]);
+        $chapterid = $DB->insert_record('book_chapters', [
+            'bookid' => $book->id, 'pagenum' => 1, 'subchapter' => 0,
+            'title' => 'Chapter', 'content' => '<p>Teaching material</p>', 'contentformat' => FORMAT_HTML,
+            'hidden' => 0, 'timecreated' => time(), 'timemodified' => time(),
+        ]);
+        $fs = get_file_storage();
+        $files = [];
+        foreach (
+            [['mod_page', 'content', 0, \context_module::instance($page->cmid)],
+                ['mod_book', 'chapter', (int)$chapterid, \context_module::instance($book->cmid)]] as [$component, $area, $itemid, $context]
+        ) {
+            $file = $fs->create_file_from_string([
+                'contextid' => $context->id, 'component' => $component, 'filearea' => $area,
+                'itemid' => $itemid, 'filepath' => '/', 'filename' => 'diagram.png', 'userid' => $user->id,
+            ], 'retained teaching material');
+            $files[] = $file->get_id();
+            $DB->insert_record('tool_teachermcp_assets', [
+                'userid' => $user->id, 'contextid' => $context->id,
+                'fileid' => $file->get_id(), 'timecreated' => time(),
+            ]);
+        }
+
+        $approved = new \core_privacy\local\request\approved_contextlist(
+            $user,
+            'tool_teachermcp',
+            [\context_module::instance($page->cmid)->id, \context_module::instance($book->cmid)->id]
+        );
+        \tool_teachermcp\privacy\provider::delete_data_for_user($approved);
+        foreach ($files as $fileid) {
+            $this->assertNotFalse($fs->get_file_by_id($fileid), 'Erasure cannot destroy activity-owned material.');
+            $this->assertFalse($DB->record_exists('tool_teachermcp_assets', ['fileid' => $fileid]));
+        }
+    }
 }

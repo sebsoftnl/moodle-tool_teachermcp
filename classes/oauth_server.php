@@ -31,7 +31,6 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class oauth_server {
-
     /** OAuth scopes which this authorization server can enforce. */
     private const SUPPORTED_SCOPES = ['teachermcp', 'read', 'write', 'grade', 'message', 'delete', 'all'];
 
@@ -528,12 +527,11 @@ class oauth_server {
             $host = strtolower($parts['host']);
 
             $isloop = ($scheme === 'http' && ($host === '127.0.0.1' || $host === 'localhost' || $host === '[::1]'));
+            if (!$isloop && $scheme !== 'https') {
+                throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
+            }
             if ($isloop) {
                 $hasloopback = 1;
-            } else if ($scheme === 'https') {
-                // HTTPS allowed for public clients.
-            } else {
-                throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
             }
 
             // B8: Store individual URI metadata with explicit loopback flag.

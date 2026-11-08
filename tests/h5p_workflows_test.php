@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -138,8 +146,11 @@ final class h5p_workflows_test extends \advanced_testcase {
         $params['owned_literal_values'] = ['false' => 'false', 'true' => 'true', 'zero' => '0'];
         $arguments = array_replace($this->args($course, $seed), ['params' => $params,
             'add_to_content_bank' => 'false', 'visible' => 'false']);
-        $result = (new server())->execute_tool('create_h5p_activity', $arguments,
-            (object)['permissions' => json_encode(['all_teacher_tools' => true])]);
+        $result = (new server())->execute_tool(
+            'create_h5p_activity',
+            $arguments,
+            (object)['permissions' => json_encode(['all_teacher_tools' => true])]
+        );
         $this->assertFalse($result['visible']);
         $this->assertNull($result['content_bank_id']);
         $this->assertSame($params, fixtures::activity($result['cmid'])['package']['params']);
@@ -171,8 +182,10 @@ final class h5p_workflows_test extends \advanced_testcase {
             $this->assertNull($result['cmid']);
             $this->assertEquals($before, fixtures::snapshot((int)$course->id));
         }
-        foreach ([[['level' => $depth20], 'error_params_too_deep'],
-                [['text' => $boundary['text'] . 'x'], 'error_invalid_params']] as [$params, $code]) {
+        foreach (
+            [[['level' => $depth20], 'error_params_too_deep'],
+                [['text' => $boundary['text'] . 'x'], 'error_invalid_params']] as [$params, $code]
+        ) {
             $before = fixtures::snapshot((int)$course->id);
             try {
                 $tool->execute(array_replace($base, ['params' => $params]));

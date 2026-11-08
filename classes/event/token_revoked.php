@@ -27,7 +27,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class token_revoked extends \core\event\base {
-
     /**
      * Init method.
      */

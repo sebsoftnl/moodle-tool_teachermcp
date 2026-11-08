@@ -216,8 +216,12 @@ final class assessment_tools_test extends \advanced_testcase {
         $qid = (int)$create1['question_id'];
 
         // Create a question category in course 1 and in course 2.
-        $context1 = \context::instance_by_id($DB->get_field('question_categories', 'contextid',
-            ['id' => $create1['category_id']], MUST_EXIST));
+        $context1 = \context::instance_by_id($DB->get_field(
+            'question_categories',
+            'contextid',
+            ['id' => $create1['category_id']],
+            MUST_EXIST
+        ));
         $this->setAdminUser();
         if (class_exists(\core_question\local\bank\question_bank_helper::class)) {
             $bank2 = $generator->create_module('qbank', ['course' => $course2->id,
@@ -528,16 +532,16 @@ final class assessment_tools_test extends \advanced_testcase {
         ]);
 
         $this->assertNotEmpty($res['submissions']);
-        $firstSub = $res['submissions'][0];
+        $firstsub = $res['submissions'][0];
 
         // Verify the raw student text is isolated inside untrusted_student_content tag.
-        $this->assertStringContainsString('<untrusted_student_content>', $firstSub['online_text']);
-        $this->assertStringContainsString('</untrusted_student_content>', $firstSub['online_text']);
-        $this->assertStringContainsString('WAARSCHUWING VOOR AI', $firstSub['online_text']);
-        $this->assertStringContainsString($adversarialtext, $firstSub['online_text']);
+        $this->assertStringContainsString('<untrusted_student_content>', $firstsub['online_text']);
+        $this->assertStringContainsString('</untrusted_student_content>', $firstsub['online_text']);
+        $this->assertStringContainsString('WAARSCHUWING VOOR AI', $firstsub['online_text']);
+        $this->assertStringContainsString($adversarialtext, $firstsub['online_text']);
 
         // Verify untrusted_student_content metadata wrapper.
-        $this->assertArrayHasKey('untrusted_student_content', $firstSub);
-        $this->assertNotEmpty($firstSub['untrusted_student_content']['warning']);
+        $this->assertArrayHasKey('untrusted_student_content', $firstsub);
+        $this->assertNotEmpty($firstsub['untrusted_student_content']['warning']);
     }
 }

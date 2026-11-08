@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -37,8 +45,11 @@ final class teaching_workflows_test extends \advanced_testcase {
 
         $prepared = (new prepare_grading_session())->execute(['cmid' => (int)$assign->get_course_module()->id]);
 
-        $this->assertSame($expected, $prepared['instructions'],
-            'Grading instructions must preserve paragraph, line-break and list boundaries.');
+        $this->assertSame(
+            $expected,
+            $prepared['instructions'],
+            'Grading instructions must preserve paragraph, line-break and list boundaries.'
+        );
         $this->assertSame($html, $DB->get_field('assign', 'intro', ['id' => $assign->get_instance()->id]));
     }
 
@@ -55,13 +66,18 @@ final class teaching_workflows_test extends \advanced_testcase {
 
         $this->assertSame(1, $prepared['total_in_batch']);
         $actual = $prepared['submissions'][0];
-        $this->assertSame($expected, $actual['untrusted_student_content']['text'],
-            'Student text must preserve paragraph, line-break and list boundaries.');
+        $this->assertSame(
+            $expected,
+            $actual['untrusted_student_content']['text'],
+            'Student text must preserve paragraph, line-break and list boundaries.'
+        );
         $this->assertSame($expected, $actual['untrusted_student_content']['content']);
         $warning = $actual['untrusted_student_content']['warning'];
         $this->assertNotEmpty($warning);
-        $this->assertSame("<untrusted_student_content>\n{$warning}\n\n{$expected}\n</untrusted_student_content>",
-            $actual['online_text']);
+        $this->assertSame(
+            "<untrusted_student_content>\n{$warning}\n\n{$expected}\n</untrusted_student_content>",
+            $actual['online_text']
+        );
         $this->assertFalse($actual['is_already_graded']);
         $this->assertSame($html, $DB->get_field('assignsubmission_onlinetext', 'onlinetext', ['submission' => $submission->id]));
     }
@@ -134,8 +150,14 @@ final class teaching_workflows_test extends \advanced_testcase {
             'student_user_id' => (int)$students['alpha']->id, 'grade' => 73, 'applytoall' => false,
             'feedback_files' => [['filename' => 'feedback.txt', 'content_base64' => base64_encode($bytes)]]]);
         $grade = $assign->get_user_grade($students['alpha']->id, false);
-        $files = get_file_storage()->get_area_files($assign->get_context()->id, 'assignfeedback_file',
-            'feedback_files', $grade->id, 'filename', false);
+        $files = get_file_storage()->get_area_files(
+            $assign->get_context()->id,
+            'assignfeedback_file',
+            'feedback_files',
+            $grade->id,
+            'filename',
+            false
+        );
         $this->assertCount(1, $files);
         $file = reset($files);
         $this->assertSame('feedback.txt', $file->get_filename());
@@ -327,8 +349,10 @@ final class teaching_workflows_test extends \advanced_testcase {
         $message = $DB->get_record('messages', ['id' => $result['message_id']], '*', MUST_EXIST);
         $this->assertSame((int)$teacher->id, (int)$message->useridfrom);
         $this->assertSame('Owned local feedback message', $message->fullmessage);
-        $this->assertTrue($DB->record_exists('message_conversation_members',
-            ['conversationid' => $message->conversationid, 'userid' => $students['alpha']->id]));
+        $this->assertTrue($DB->record_exists(
+            'message_conversation_members',
+            ['conversationid' => $message->conversationid, 'userid' => $students['alpha']->id]
+        ));
     }
 
     public function test_local_message_completes_native_delivery_and_course_event_without_sink(): void {
@@ -379,11 +403,17 @@ final class teaching_workflows_test extends \advanced_testcase {
                 ]);
                 $message = $DB->get_record('messages', ['id' => $result['message_id']], '*', MUST_EXIST);
                 $this->assertSame($text, $message->fullmessage);
-                $this->assertSame($text, $message->smallmessage,
-                    'The field used by native chat must preserve the complete accepted message.');
+                $this->assertSame(
+                    $text,
+                    $message->smallmessage,
+                    'The field used by native chat must preserve the complete accepted message.'
+                );
                 $rendered = \message_format_message_text($message);
-                $this->assertStringContainsString(substr($text, -25), strip_tags($rendered),
-                    'Native chat must render the final sentence, not a shortened preview.');
+                $this->assertStringContainsString(
+                    substr($text, -25),
+                    strip_tags($rendered),
+                    'Native chat must render the final sentence, not a shortened preview.'
+                );
                 if (str_contains($text, '**evaporation**')) {
                     $this->assertStringContainsString('<strong>evaporation</strong>', $rendered);
                 }
@@ -417,9 +447,14 @@ final class teaching_workflows_test extends \advanced_testcase {
         [$course, $teacher, $students] = $this->fixture();
         $generator = $this->getDataGenerator();
         $quiz = fixtures::quiz($generator, $course, $teacher, ['shortanswer', 'shortanswer', 'shortanswer']);
-        $attempt = fixtures::attempt($generator, $quiz, $students['alpha'],
-            [1 => ['answer' => 'full'], 2 => ['answer' => 'half'], 3 => ['answer' => 'unmatched']], true,
-            [1 => ['answer' => 'unmatched']]);
+        $attempt = fixtures::attempt(
+            $generator,
+            $quiz,
+            $students['alpha'],
+            [1 => ['answer' => 'full'], 2 => ['answer' => 'half'], 3 => ['answer' => 'unmatched']],
+            true,
+            [1 => ['answer' => 'unmatched']]
+        );
         $this->assertSame(\mod_quiz\quiz_attempt::FINISHED, $attempt->get_state());
         $this->assertSame(1.5, (float)$attempt->get_attempt()->sumgrades);
         $this->assertSame(1.0, (float)$attempt->get_question_attempt(1)->get_fraction());

@@ -137,12 +137,14 @@ final class provider_registry {
      * @return provider_tool_declaration[]|null Null if invalid.
      */
     private static function validate_provider(string $component, mixed $provider): ?array {
-        if (!is_array($provider)
+        if (
+            !is_array($provider)
             || !self::has_exact_keys($provider, ['api_version', 'provider_id', 'tools'])
             || ($provider['api_version'] ?? null) !== self::API_VERSION
             || ($provider['provider_id'] ?? null) !== $component
             || !is_array($provider['tools'])
-            || $provider['tools'] === []) {
+            || $provider['tools'] === []
+        ) {
             return null;
         }
 
@@ -168,8 +170,10 @@ final class provider_registry {
      * @return provider_tool_declaration|null Null if invalid.
      */
     private static function validate_tool(string $component, mixed $tool): ?provider_tool_declaration {
-        if (!is_array($tool)
-            || !self::has_exact_keys($tool, ['id', 'class', 'scope', 'capability', 'enabled_setting'])) {
+        if (
+            !is_array($tool)
+            || !self::has_exact_keys($tool, ['id', 'class', 'scope', 'capability', 'enabled_setting'])
+        ) {
             return null;
         }
 
@@ -180,16 +184,20 @@ final class provider_registry {
         $enabledsetting = $tool['enabled_setting'];
         $classpathprefix = $component . '\\';
 
-        if (!is_string($id) || strlen($id) > 64 || !preg_match('/^[a-z][a-z0-9_]*$/', $id)
+        if (
+            !is_string($id) || strlen($id) > 64 || !preg_match('/^[a-z][a-z0-9_]*$/', $id)
             || !is_string($classname) || !str_starts_with(ltrim($classname, '\\'), $classpathprefix)
             || !class_exists($classname) || !is_a($classname, external_tool::class, true)
             || !is_string($scope) || !in_array($scope, self::SCOPES, true)
-            || !self::is_owned_capability($component, $capability)) {
+            || !self::is_owned_capability($component, $capability)
+        ) {
             return null;
         }
 
-        if (!is_string($enabledsetting)
-            || !preg_match('/^' . preg_quote($component, '/') . '\/enable_[a-z][a-z0-9_]*$/', $enabledsetting)) {
+        if (
+            !is_string($enabledsetting)
+            || !preg_match('/^' . preg_quote($component, '/') . '\/enable_[a-z][a-z0-9_]*$/', $enabledsetting)
+        ) {
             return null;
         }
 
@@ -204,9 +212,11 @@ final class provider_registry {
      * @return bool
      */
     private static function is_owned_capability(string $component, mixed $capability): bool {
-        if (!is_string($capability)
+        if (
+            !is_string($capability)
             || !preg_match('/^[a-z][a-z0-9_]*\/[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/', $capability)
-            || !str_starts_with($capability, str_replace('_', '/', $component) . ':')) {
+            || !str_starts_with($capability, str_replace('_', '/', $component) . ':')
+        ) {
             return false;
         }
         if (!function_exists('get_capability_info')) {

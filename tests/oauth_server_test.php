@@ -377,16 +377,16 @@ final class oauth_server_test extends \advanced_testcase {
         $tok4 = \tool_teachermcp\auth::generate_token_record($teacher->id, 'Device 4', 90, $clientid);
 
         // Total active count must still be max 3.
-        $activecountAfter = $DB->count_records('tool_teachermcp_tokens', [
+        $activecountafter = $DB->count_records('tool_teachermcp_tokens', [
             'userid' => $teacher->id,
             'clientid' => $clientid,
             'status' => 1,
         ]);
-        $this->assertEquals(3, $activecountAfter);
+        $this->assertEquals(3, $activecountafter);
 
         // The oldest token ($tok1) must now be revoked (status = 0).
-        $tok1Db = $DB->get_record('tool_teachermcp_tokens', ['id' => $tok1['id']]);
-        $this->assertEquals(0, (int)$tok1Db->status);
+        $tok1db = $DB->get_record('tool_teachermcp_tokens', ['id' => $tok1['id']]);
+        $this->assertEquals(0, (int)$tok1db->status);
 
         // Newer tokens ($tok2, $tok3, $tok4) must remain active.
         $this->assertEquals(1, (int)$DB->get_field('tool_teachermcp_tokens', 'status', ['id' => $tok2['id']]));

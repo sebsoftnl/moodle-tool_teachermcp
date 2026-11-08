@@ -32,7 +32,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class base_tool {
-
     /** @var string Tool name property for array_column and catalog compatibility */
     public string $name = '';
 
@@ -123,7 +122,7 @@ abstract class base_tool {
                 throw new moodle_exception('invalidcoursemoduleid', 'error', '', $cm->id);
             }
         } else {
-            list($course, $cm) = get_course_and_cm_from_cmid((int)$cmorid, $modulename);
+            [$course, $cm] = get_course_and_cm_from_cmid((int)$cmorid, $modulename);
         }
         $context = context_module::instance($cm->id);
 

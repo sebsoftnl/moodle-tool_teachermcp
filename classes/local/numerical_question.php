@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp\local;
 
@@ -29,27 +37,47 @@ final class numerical_question {
      */
     public static function validate_options(mixed $options): void {
         if (!is_array($options) || !$options || !array_is_list($options)) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                'Numerical questions require a nonempty list of answer options.');
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                'Numerical questions require a nonempty list of answer options.'
+            );
         }
         $allowedfractions = array_map('floatval', array_keys(\question_bank::fraction_options()));
         $hasfullmark = false;
         foreach ($options as $index => $option) {
-            if (!is_array($option) || !is_string($option['answer'] ?? null)
-                    || !is_numeric(trim($option['answer'])) || !is_finite((float)$option['answer'])) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    "Numerical option {$index} requires a finite numeric answer string without units.");
+            if (
+                !is_array($option) || !is_string($option['answer'] ?? null)
+                    || !is_numeric(trim($option['answer'])) || !is_finite((float)$option['answer'])
+            ) {
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    "Numerical option {$index} requires a finite numeric answer string without units."
+                );
             }
             $tolerance = array_key_exists('tolerance', $option) ? $option['tolerance'] : 0;
             if ((!is_int($tolerance) && !is_float($tolerance)) || !is_finite((float)$tolerance) || $tolerance < 0) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    "Numerical option {$index} requires a finite, nonnegative tolerance.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    "Numerical option {$index} requires a finite, nonnegative tolerance."
+                );
             }
             $fraction = $option['fraction'] ?? null;
-            if ((!is_int($fraction) && !is_float($fraction)) || !is_finite((float)$fraction)
-                    || $fraction < 0 || $fraction > 1) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    "Numerical option {$index} requires a grade fraction from 0 to 1.");
+            if (
+                (!is_int($fraction) && !is_float($fraction)) || !is_finite((float)$fraction)
+                    || $fraction < 0 || $fraction > 1
+            ) {
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    "Numerical option {$index} requires a grade fraction from 0 to 1."
+                );
             }
             $fraction = (float)$fraction;
             $validfraction = false;
@@ -60,18 +88,30 @@ final class numerical_question {
                 }
             }
             if (!$validfraction) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    "Numerical option {$index} uses a grade fraction not supported by Moodle.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    "Numerical option {$index} uses a grade fraction not supported by Moodle."
+                );
             }
             if (array_key_exists('feedback', $option) && !is_string($option['feedback'])) {
-                throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    "Numerical option {$index} requires string feedback.");
+                throw new moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    "Numerical option {$index} requires string feedback."
+                );
             }
             $hasfullmark = $hasfullmark || $fraction === 1.0;
         }
         if (!$hasfullmark) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                'Numerical questions require at least one answer with fraction 1.0.');
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                'Numerical questions require at least one answer with fraction 1.0.'
+            );
         }
     }
 
@@ -120,8 +160,13 @@ final class numerical_question {
                     $form->answer[] = self::form_number($answer->answer);
                     $form->fraction[] = (string)$answer->fraction;
                     $form->tolerance[] = self::form_number((string)$answer->tolerance);
-                    $form->feedback[] = self::editor($answer->feedback, (int)$answer->feedbackformat,
-                        $contextid, 'answerfeedback', (int)$answer->id);
+                    $form->feedback[] = self::editor(
+                        $answer->feedback,
+                        (int)$answer->feedbackformat,
+                        $contextid,
+                        'answerfeedback',
+                        (int)$answer->id
+                    );
                 }
             }
             foreach ($existing->hints as $hint) {
@@ -152,20 +197,45 @@ final class numerical_question {
             'unitgradingtype' => (int)$options->unitgradingtype,
             'unitpenalty' => (float)$options->unitpenalty,
             'unitsleft' => (bool)$options->unitsleft,
-            'units' => array_map(static fn($unit) => ['unit' => $unit->unit, 'multiplier' => (float)$unit->multiplier],
-                array_values($options->units)),
+            'units' => array_map(
+                static fn($unit) => ['unit' => $unit->unit, 'multiplier' => (float)$unit->multiplier],
+                array_values($options->units)
+            ),
         ];
     }
 
+    /**
+     * Convert a dot-decimal string to the current Moodle locale.
+     *
+     * @param string $number number value.
+     * @return string Result of the operation.
+     */
     private static function form_number(string $number): string {
         // MCP uses dot-decimal strings; Moodle's form parser uses the current locale.
         return str_replace('.', get_string('decsep', 'langconfig'), $number);
     }
 
+    /**
+     * Prepare an editor draft for the existing question text.
+     *
+     * @param string $text text value.
+     * @param int $format format value.
+     * @param int $contextid contextid value.
+     * @param string $area area value.
+     * @param int $itemid itemid value.
+     * @return array Result of the operation.
+     */
     private static function editor(string $text, int $format, int $contextid, string $area, int $itemid): array {
         $draftid = 0;
-        $text = file_prepare_draft_area($draftid, $contextid, 'question', $area, $itemid,
-            ['subdirs' => true], $text);
+        $text = file_prepare_draft_area(
+            $draftid,
+            $contextid,
+            'question',
+            $area,
+            $itemid,
+            ['subdirs' => true],
+            $text
+        );
         return ['text' => $text, 'format' => $format, 'itemid' => $draftid];
     }
 }

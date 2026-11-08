@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -80,8 +88,10 @@ final class content_workflows_test extends \advanced_testcase {
     public function test_raster_uploads_collision_and_data_uri_preserve_bytes(): void {
         [$course] = $this->fixture();
         $tool = new upload_course_asset();
-        foreach (['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-                'gif' => 'image/gif', 'webp' => 'image/webp'] as $extension => $mime) {
+        foreach (
+            ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif', 'webp' => 'image/webp'] as $extension => $mime
+        ) {
             $bytes = content_files::image($extension);
             $result = $tool->execute(['course_id' => (int)$course->id, 'filename' => 'asset.' . $extension,
                 'file_content_base64' => base64_encode($bytes), 'alt_text' => 'Diagram "A" <&>']);
@@ -108,10 +118,11 @@ final class content_workflows_test extends \advanced_testcase {
         $book = $content->execute(['action' => 'create_book', 'course_id' => (int)$course->id, 'title' => 'Asset book']);
         $chapter = $content->execute(['action' => 'add_book_chapter', 'cmid' => $book['cmid'], 'chapter_title' => 'Second']);
         $tool = new upload_course_asset();
-        foreach ([[$page['cmid'], [], 'mod_page', 'content', 0],
+        foreach (
+            [[$page['cmid'], [], 'mod_page', 'content', 0],
                 [$book['cmid'], [], 'mod_book', 'chapter', $book['first_chapter_id']],
-                [$book['cmid'], ['chapter_id' => $chapter['chapter_id']], 'mod_book', 'chapter', $chapter['chapter_id']]]
-                as [$cmid, $extra, $component, $area, $itemid]) {
+                [$book['cmid'], ['chapter_id' => $chapter['chapter_id']], 'mod_book', 'chapter', $chapter['chapter_id']]] as [$cmid, $extra, $component, $area, $itemid]
+        ) {
             $result = $tool->execute(['course_id' => (int)$course->id, 'target_cmid' => $cmid,
                 'filename' => 'diagram.png', 'file_content_base64' => base64_encode(content_files::image())] + $extra);
             $file = get_file_storage()->get_file_by_id($result['file_id']);
@@ -181,8 +192,7 @@ final class content_workflows_test extends \advanced_testcase {
         }
         $this->assertEquals($before, [$this->source_state($page['cmid']), $this->source_state($book['cmid']),
             $this->source_state($other['cmid'])]);
-        $this->assertSame($counts, array_map(static fn($table) => $DB->count_records($table),
-            ['course_modules', 'page', 'book', 'book_chapters']));
+        $this->assertSame($counts, array_map(static fn($table) => $DB->count_records($table), ['course_modules', 'page', 'book', 'book_chapters']));
     }
 
     public function test_export_preserves_material_order_and_caller_visibility(): void {
@@ -225,8 +235,7 @@ final class content_workflows_test extends \advanced_testcase {
         global $DB;
         [$course] = $this->fixture();
         $DB->set_field('course', 'summary', '<p>Course first.</p><p>Course second.</p>', ['id' => $course->id]);
-        $DB->set_field('course_sections', 'summary', '<div>Section first.</div><div>Section second.</div>',
-            ['course' => $course->id, 'section' => 1]);
+        $DB->set_field('course_sections', 'summary', '<div>Section first.</div><div>Section second.</div>', ['course' => $course->id, 'section' => 1]);
         $page = (new manage_content_activity())->execute(['action' => 'create_page', 'course_id' => (int)$course->id,
             'section_number' => 1, 'title' => 'Readable page', 'visible' => true,
             'content' => '<p>Evapora<span>tion</span> changes liquid water into vapour.</p>'
@@ -240,12 +249,13 @@ final class content_workflows_test extends \advanced_testcase {
 
         foreach ([$materials[$page['cmid']]['content'], $markdown['content']] as $text) {
             $this->assertMatchesRegularExpression(
-                '/Evaporation changes liquid water into vapour\.\s+QA page revision 2\.\s+Next line\./u', $text,
-                'Export must preserve paragraph and line-break boundaries without splitting inline text.');
+                '/Evaporation changes liquid water into vapour\.\s+QA page revision 2\.\s+Next line\./u',
+                $text,
+                'Export must preserve paragraph and line-break boundaries without splitting inline text.'
+            );
         }
         foreach ([$json['sections'][0]['summary'], $markdown['content']] as $text) {
-            $this->assertMatchesRegularExpression('/Section first\.\s+Section second\./u', $text,
-                'Section summary blocks must remain separate in both output formats.');
+            $this->assertMatchesRegularExpression('/Section first\.\s+Section second\./u', $text, 'Section summary blocks must remain separate in both output formats.');
         }
         $this->assertMatchesRegularExpression('/Course first\.\s+Course second\./u', $markdown['content']);
         $this->assertStringNotContainsString('<span>', $materials[$page['cmid']]['content']);
@@ -262,8 +272,11 @@ final class content_workflows_test extends \advanced_testcase {
         $assignment = $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'section' => 1,
             'intro' => '<p>Brief first.</p><p>Brief second.</p>', 'introformat' => FORMAT_HTML,
             'activityeditor' => ['text' => $instructions, 'format' => FORMAT_HTML]]);
-        $this->assertSame($instructions, $DB->get_field('assign', 'activity', ['id' => $assignment->id], MUST_EXIST),
-            'The native assignment fixture must contain the instructions being exported.');
+        $this->assertSame(
+            $instructions,
+            $DB->get_field('assign', 'activity', ['id' => $assignment->id], MUST_EXIST),
+            'The native assignment fixture must contain the instructions being exported.'
+        );
         $tool = new export_course_learning_material();
         $args = ['course_id' => (int)$course->id, 'section_number' => 1];
         $json = $tool->execute($args + ['format' => 'json']);
@@ -271,14 +284,11 @@ final class content_workflows_test extends \advanced_testcase {
         $materials = array_column($json['sections'][0]['materials'], null, 'cmid');
 
         foreach ([$materials[$book['cmid']]['content'], $markdown['content']] as $text) {
-            $this->assertMatchesRegularExpression('/Book first\.\s+Book second\./u', $text,
-                'Book paragraphs must not be joined during export.');
+            $this->assertMatchesRegularExpression('/Book first\.\s+Book second\./u', $text, 'Book paragraphs must not be joined during export.');
         }
         foreach ([$materials[$assignment->cmid]['content'], $markdown['content']] as $text) {
-            $this->assertMatchesRegularExpression('/Brief first\.\s+Brief second\./u', $text,
-                'Assignment introduction paragraphs must remain separate.');
-            $this->assertMatchesRegularExpression('/Instruction first\.\s+Instruction second\./u', $text,
-                'Assignment instruction paragraphs must remain separate.');
+            $this->assertMatchesRegularExpression('/Brief first\.\s+Brief second\./u', $text, 'Assignment introduction paragraphs must remain separate.');
+            $this->assertMatchesRegularExpression('/Instruction first\.\s+Instruction second\./u', $text, 'Assignment instruction paragraphs must remain separate.');
         }
     }
 
@@ -314,8 +324,7 @@ final class content_workflows_test extends \advanced_testcase {
             $source = $content->execute(['action' => 'create_' . $type, 'course_id' => (int)$course->id,
                 'title' => 'Copy source ' . $type, 'content' => '<p>Copy source body</p>', 'visible' => true]);
             $itemid = $type === 'book' ? $source['first_chapter_id'] : 0;
-            content_files::store(\context_module::instance($source['cmid']), 'copy.png', content_files::image(),
-                'mod_' . $type, $type === 'book' ? 'chapter' : 'content', $itemid);
+            content_files::store(\context_module::instance($source['cmid']), 'copy.png', content_files::image(), 'mod_' . $type, $type === 'book' ? 'chapter' : 'content', $itemid);
             $before = $this->source_state($source['cmid']);
             $this->assertCount(1, $before['files'], 'Source preservation must include a real stored file.');
             $copy = (new duplicate_activity())->execute(['cmid' => $source['cmid']]);
@@ -380,9 +389,12 @@ final class content_workflows_test extends \advanced_testcase {
         $type = $DB->get_field('modules', 'name', ['id' => $cm->module], MUST_EXIST);
         $instance = $DB->get_record($type, ['id' => $cm->instance], '*', MUST_EXIST);
         $chapters = $type === 'book' ? array_values($DB->get_records('book_chapters', ['bookid' => $cm->instance], 'pagenum ASC')) : [];
-        $files = $DB->get_records_select('files', 'contextid = :contextid AND filename <> :directory',
+        $files = $DB->get_records_select(
+            'files',
+            'contextid = :contextid AND filename <> :directory',
             ['contextid' => \context_module::instance($cmid)->id, 'directory' => '.'],
-            'component, filearea, itemid, filepath, filename');
+            'component, filearea, itemid, filepath, filename'
+        );
         return ['cm' => $cm, 'instance' => $instance, 'chapters' => $chapters,
             'files' => array_values(array_map(static fn($file) => ['id' => (int)$file->id,
                 'component' => $file->component, 'area' => $file->filearea, 'itemid' => (int)$file->itemid,

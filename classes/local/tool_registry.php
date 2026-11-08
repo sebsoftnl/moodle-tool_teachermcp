@@ -208,11 +208,13 @@ final class tool_registry {
             return false;
         }
         foreach ($properties as $name => $property) {
-            if (!is_string($name) || !is_array($property)
+            if (
+                !is_string($name) || !is_array($property)
                 || array_diff(array_keys($property), ['type', 'enum'])
                 || !isset($property['type'])
                 || !in_array($property['type'], ['integer', 'number', 'boolean', 'string', 'array'], true)
-                || (isset($property['enum']) && !is_array($property['enum']))) {
+                || (isset($property['enum']) && !is_array($property['enum']))
+            ) {
                 return false;
             }
         }

@@ -31,15 +31,29 @@ use context_course;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manage_grades extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'manage_grades';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Inspect course gradebook items and update numeric, scale, or letter grades with lock checking and range validation.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -82,6 +96,11 @@ class manage_grades extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->libdir . '/gradelib.php');
@@ -214,14 +233,24 @@ class manage_grades extends base_tool {
 
             // H3 & H4: Lock checking.
             if ($gradeitem->is_locked()) {
-                throw new moodle_exception('error_grade_locked', 'tool_teachermcp', '', null,
-                    "Grade item '{$gradeitem->get_name()}' is locked and cannot be modified.");
+                throw new moodle_exception(
+                    'error_grade_locked',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Grade item '{$gradeitem->get_name()}' is locked and cannot be modified."
+                );
             }
 
             $gradegrade = \grade_grade::fetch(['itemid' => $gradeitem->id, 'userid' => $studentid]);
             if ($gradegrade && $gradegrade->is_locked()) {
-                throw new moodle_exception('error_grade_locked', 'tool_teachermcp', '', null,
-                    "Grade for this student on '{$gradeitem->get_name()}' is locked.");
+                throw new moodle_exception(
+                    'error_grade_locked',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    "Grade for this student on '{$gradeitem->get_name()}' is locked."
+                );
             }
 
             $gradeval = null;
@@ -237,8 +266,13 @@ class manage_grades extends base_tool {
                         // Scales are 1-based integers in Moodle gradelib.
                         $gradeval = (float)($pos + 1);
                     } else {
-                        throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                            "Scale item '{$targetitem}' not found in scale '{$scale->name}'. Valid options: " . implode(', ', $scaleitems));
+                        throw new moodle_exception(
+                            'error_invalid_params',
+                            'tool_teachermcp',
+                            '',
+                            null,
+                            "Scale item '{$targetitem}' not found in scale '{$scale->name}'. Valid options: " . implode(', ', $scaleitems)
+                        );
                     }
                 }
             } else if (!empty($params['grade_letter'])) {
@@ -250,8 +284,13 @@ class manage_grades extends base_tool {
                     $percentage = (float)$boundary / 100.0;
                     $gradeval = (float)($gradeitem->grademin + ($percentage * ($gradeitem->grademax - $gradeitem->grademin)));
                 } else {
-                    throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                        "Letter grade '{$targetletter}' is not defined in this course gradebook.");
+                    throw new moodle_exception(
+                        'error_invalid_params',
+                        'tool_teachermcp',
+                        '',
+                        null,
+                        "Letter grade '{$targetletter}' is not defined in this course gradebook."
+                    );
                 }
             } else if (isset($params['final_grade'])) {
                 $gradeval = (float)$params['final_grade'];
@@ -260,8 +299,13 @@ class manage_grades extends base_tool {
             // H3 & H4: Range validation.
             if ($gradeval !== null) {
                 if ($gradeval < $gradeitem->grademin || $gradeval > $gradeitem->grademax) {
-                    throw new moodle_exception('error_grade_out_of_range', 'tool_teachermcp', '', null,
-                        "Grade {$gradeval} is outside allowed range ({$gradeitem->grademin} to {$gradeitem->grademax}).");
+                    throw new moodle_exception(
+                        'error_grade_out_of_range',
+                        'tool_teachermcp',
+                        '',
+                        null,
+                        "Grade {$gradeval} is outside allowed range ({$gradeitem->grademin} to {$gradeitem->grademax})."
+                    );
                 }
             }
 

@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -38,8 +46,11 @@ final class announcements_resource_test extends \advanced_testcase {
         $result = resource_registry::read_resource("moodle://course/{$course->id}/announcements");
 
         $this->assertNotNull($result);
-        $this->assertSame($before, $this->course_state((int)$course->id),
-            'Reading announcements must not create a forum, module or section entry.');
+        $this->assertSame(
+            $before,
+            $this->course_state((int)$course->id),
+            'Reading announcements must not create a forum, module or section entry.'
+        );
         $this->assertStringContainsString('No announcements forum configured', $result['contents'][0]['text']);
     }
 
@@ -54,8 +65,11 @@ final class announcements_resource_test extends \advanced_testcase {
 
         $text = $this->read_text($course);
 
-        $this->assertStringContainsString('**Posted:** ' . userdate($created), $text,
-            'The posting date must come from the first post, not a missing discussion field.');
+        $this->assertStringContainsString(
+            '**Posted:** ' . userdate($created),
+            $text,
+            'The posting date must come from the first post, not a missing discussion field.'
+        );
         $this->assertStringContainsString('Body for Dated announcement', $text);
     }
 
@@ -82,8 +96,11 @@ final class announcements_resource_test extends \advanced_testcase {
 
         $text = $this->read_text($course);
 
-        $this->assertStringNotContainsString('Other teaching group', $text,
-            'Announcements must agree with the native discussion visibility decision.');
+        $this->assertStringNotContainsString(
+            'Other teaching group',
+            $text,
+            'Announcements must agree with the native discussion visibility decision.'
+        );
         foreach (['First teaching group', 'Second teaching group', 'All participants'] as $title) {
             $this->assertStringContainsString('## ' . $title, $text);
         }
@@ -118,23 +135,33 @@ final class announcements_resource_test extends \advanced_testcase {
     public function test_hidden_announcements_activity_is_not_returned(): void {
         [$course, $teacher, $role] = $this->course_fixture();
         $forum = $this->news_forum($course, ['visible' => 0]);
-        assign_capability('moodle/course:viewhiddenactivities', CAP_PROHIBIT, $role,
-            \context_course::instance($course->id)->id);
+        assign_capability(
+            'moodle/course:viewhiddenactivities',
+            CAP_PROHIBIT,
+            $role,
+            \context_course::instance($course->id)->id
+        );
         accesslib_clear_all_caches(true);
         $this->setUser($teacher);
         $cm = get_fast_modinfo($course)->get_cm($forum->cmid);
         $this->assertFalse($cm->uservisible);
 
-        $this->assertNull(resource_registry::read_resource("moodle://course/{$course->id}/announcements"),
-            'A course resource must not expose a forum activity unavailable to its reader.');
+        $this->assertNull(
+            resource_registry::read_resource("moodle://course/{$course->id}/announcements"),
+            'A course resource must not expose a forum activity unavailable to its reader.'
+        );
     }
 
     public function test_announcements_respect_native_timed_visibility(): void {
         [$course, $teacher, $role] = $this->course_fixture();
         $forum = $this->news_forum($course);
         set_config('forum_enabletimedposts', 1);
-        assign_capability('mod/forum:viewhiddentimedposts', CAP_PROHIBIT, $role,
-            \context_module::instance($forum->cmid)->id);
+        assign_capability(
+            'mod/forum:viewhiddentimedposts',
+            CAP_PROHIBIT,
+            $role,
+            \context_module::instance($forum->cmid)->id
+        );
         accesslib_clear_all_caches(true);
         $this->discussion($course, $forum, 'Current announcement', -1, time() - HOURSECS);
         $future = $this->discussion($course, $forum, 'Scheduled announcement', -1, time(), [
@@ -165,8 +192,14 @@ final class announcements_resource_test extends \advanced_testcase {
         ]);
     }
 
-    private function discussion(\stdClass $course, \stdClass $forum, string $name,
-            int $groupid, int $modified, array $settings = []): \stdClass {
+    private function discussion(
+        \stdClass $course,
+        \stdClass $forum,
+        string $name,
+        int $groupid,
+        int $modified,
+        array $settings = []
+    ): \stdClass {
         return $this->getDataGenerator()->get_plugin_generator('mod_forum')->create_discussion($settings + [
             'course' => $course->id, 'forum' => $forum->id, 'userid' => get_admin()->id,
             'groupid' => $groupid, 'name' => $name, 'message' => 'Body for ' . $name,

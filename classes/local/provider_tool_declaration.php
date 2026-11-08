@@ -38,46 +38,80 @@ final class provider_tool_declaration {
      * @param string $enabledsetting Required provider-owned, default-off setting name.
      */
     public function __construct(
+        /** @var string Frankenstyle component. */
         private readonly string $component,
+        /** @var string Tool ID. */
         private readonly string $id,
+        /** @var string Provider class name. */
         private readonly string $classname,
+        /** @var string Tool scope. */
         private readonly string $scope,
+        /** @var string Required capability. */
         private readonly string $capability,
+        /** @var string Provider setting name. */
         private readonly string $enabledsetting,
     ) {
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_name(): string {
         return $this->component . '.' . $this->id;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_component(): string {
         return $this->component;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_id(): string {
         return $this->id;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_classname(): string {
         return $this->classname;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_scope(): string {
         return $this->scope;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_capability(): string {
         return $this->capability;
     }
 
-    /** @return string */
+    /**
+     * Return the validated declaration value.
+     *
+     * @return string
+     */
     public function get_enabled_setting(): string {
         return $this->enabledsetting;
     }

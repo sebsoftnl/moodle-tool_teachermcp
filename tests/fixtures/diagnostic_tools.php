@@ -5,13 +5,38 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Diagnostic provider and tool fixtures for tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 namespace tool_teachermcp\tests\fixtures;
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Constants and provider declarations for diagnostic tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 final class diagnostic_fixtures {
+    /** Private exception detail that must not leak to clients. */
     public const PRIVATE_MARKER = 'QA_DIAGNOSTIC_PRIVATE_DETAIL';
+    /** Expected built-in tool names. */
     public const BUILTINS = [
         'get_my_profile', 'get_teacher_courses', 'export_course_learning_material', 'get_course_contents',
         'scaffold_assessment_unit', 'detect_at_risk_students', 'analyze_class_understanding', 'prepare_grading_session',
@@ -21,6 +46,11 @@ final class diagnostic_fixtures {
         'create_assignment', 'manage_course_calendar',
     ];
 
+    /**
+     * Describe valid and invalid external provider fixtures.
+     *
+     * @return array Provider descriptor with valid and invalid tools.
+     */
     public static function providers(): array {
         $common = ['scope' => 'read', 'capability' => 'tool/teachermcp:manageall',
             'enabled_setting' => 'tool_teachermcp/enable_diagnostic_fixture'];
@@ -31,73 +61,12 @@ final class diagnostic_fixtures {
     }
 }
 
-class diagnostic_builtin extends \tool_teachermcp\tools\base_tool {
-    public function get_name(): string {
-        return 'get_my_profile';
-    }
-
-    public function get_description(): string {
-        return 'Owned diagnostic fixture.';
-    }
-
-    public function get_input_schema(): array {
-        return ['type' => 'object', 'properties' => [], 'required' => []];
-    }
-
-    public function execute(array $params): array {
-        return ['fixture_only' => true];
-    }
-}
-
-final class diagnostic_constructor_failure extends diagnostic_builtin {
-    public function __construct() {
-        throw new \RuntimeException(diagnostic_fixtures::PRIVATE_MARKER);
-    }
-}
-
-final class diagnostic_name_failure extends diagnostic_builtin {
-    public function get_name(): string {
-        throw new \RuntimeException(diagnostic_fixtures::PRIVATE_MARKER);
-    }
-}
-
-final class diagnostic_description_failure extends diagnostic_builtin {
-    public function get_description(): string {
-        throw new \RuntimeException(diagnostic_fixtures::PRIVATE_MARKER);
-    }
-}
-
-final class diagnostic_schema_failure extends diagnostic_builtin {
-    public function get_input_schema(): array {
-        throw new \RuntimeException(diagnostic_fixtures::PRIVATE_MARKER);
-    }
-}
-
-final class diagnostic_wrong_name extends diagnostic_builtin {
-    public function get_name(): string {
-        return 'diagnostic_wrong_name';
-    }
-}
-
-final class diagnostic_invalid_builtin {
-}
-
-class diagnostic_external implements \tool_teachermcp\local\external_tool {
-    public function get_description(): string {
-        return 'Owned external diagnostic fixture.';
-    }
-
-    public function get_input_schema(): array {
-        return ['type' => 'object', 'properties' => []];
-    }
-
-    public function execute(array $arguments, \tool_teachermcp\local\execution_context $context): array {
-        return ['fixture_only' => true];
-    }
-}
-
-final class diagnostic_invalid_external extends diagnostic_external {
-    public function get_input_schema(): array {
-        return ['type' => 'string'];
-    }
-}
+require_once(__DIR__ . '/diagnostic_builtin.php');
+require_once(__DIR__ . '/diagnostic_constructor_failure.php');
+require_once(__DIR__ . '/diagnostic_name_failure.php');
+require_once(__DIR__ . '/diagnostic_description_failure.php');
+require_once(__DIR__ . '/diagnostic_schema_failure.php');
+require_once(__DIR__ . '/diagnostic_wrong_name.php');
+require_once(__DIR__ . '/diagnostic_invalid_builtin.php');
+require_once(__DIR__ . '/diagnostic_external.php');
+require_once(__DIR__ . '/diagnostic_invalid_external.php');

@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp\local;
 
@@ -47,8 +55,12 @@ final class assignment_grading {
     public static function validate_feedback_files(\assign $assign, mixed $files): array {
         global $CFG;
         if (!is_array($files) || !array_is_list($files)) {
-            throw new \moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                get_string('error_feedback_files_invalid', 'tool_teachermcp'));
+            throw new \moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                get_string('error_feedback_files_invalid', 'tool_teachermcp')
+            );
         }
         if (!$files) {
             return [];
@@ -60,21 +72,37 @@ final class assignment_grading {
         $maxbytes = get_max_upload_file_size($CFG->maxbytes, $assign->get_course()->maxbytes);
         $decodedfiles = [];
         foreach ($files as $file) {
-            if (!is_array($file) || !isset($file['filename'], $file['content_base64'])
-                    || !is_string($file['filename']) || !is_string($file['content_base64'])) {
-                throw new \moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    get_string('error_feedback_files_invalid', 'tool_teachermcp'));
+            if (
+                !is_array($file) || !isset($file['filename'], $file['content_base64'])
+                    || !is_string($file['filename']) || !is_string($file['content_base64'])
+            ) {
+                throw new \moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    get_string('error_feedback_files_invalid', 'tool_teachermcp')
+                );
             }
             $filename = clean_param($file['filename'], PARAM_FILE);
             $bytes = base64_decode($file['content_base64'], true);
-            if ($filename === '' || $filename !== $file['filename'] || in_array($filename, ['.', '..'], true)
-                    || array_key_exists($filename, $decodedfiles) || $bytes === false) {
-                throw new \moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    get_string('error_feedback_files_invalid', 'tool_teachermcp'));
+            if (
+                $filename === '' || $filename !== $file['filename'] || in_array($filename, ['.', '..'], true)
+                    || array_key_exists($filename, $decodedfiles) || $bytes === false
+            ) {
+                throw new \moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    get_string('error_feedback_files_invalid', 'tool_teachermcp')
+                );
             }
             if (strlen($bytes) > $maxbytes) {
-                throw new \moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                    get_string('error_feedback_file_too_large', 'tool_teachermcp', $maxbytes));
+                throw new \moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    get_string('error_feedback_file_too_large', 'tool_teachermcp', $maxbytes)
+                );
             }
             $decodedfiles[$filename] = $bytes;
         }
@@ -92,8 +120,14 @@ final class assignment_grading {
         if ($grade === null) {
             return [];
         }
-        $files = get_file_storage()->get_area_files($assign->get_context()->id, 'assignfeedback_file',
-            'feedback_files', $grade->id, 'filepath, filename', false);
+        $files = get_file_storage()->get_area_files(
+            $assign->get_context()->id,
+            'assignfeedback_file',
+            'feedback_files',
+            $grade->id,
+            'filepath, filename',
+            false
+        );
         $manifest = [];
         foreach ($files as $file) {
             $manifest[] = [
@@ -102,8 +136,15 @@ final class assignment_grading {
                 'filepath' => $file->get_filepath(),
                 'filesize' => (int)$file->get_filesize(),
                 'mimetype' => $file->get_mimetype(),
-                'download_url' => \moodle_url::make_pluginfile_url($file->get_contextid(), 'assignfeedback_file',
-                    'feedback_files', $grade->id, $file->get_filepath(), $file->get_filename(), true)->out(false),
+                'download_url' => \moodle_url::make_pluginfile_url(
+                    $file->get_contextid(),
+                    'assignfeedback_file',
+                    'feedback_files',
+                    $grade->id,
+                    $file->get_filepath(),
+                    $file->get_filename(),
+                    true
+                )->out(false),
             ];
         }
         return $manifest;

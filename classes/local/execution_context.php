@@ -38,8 +38,11 @@ final class execution_context {
      * @param int|null $cmid Optional explicitly established course module ID.
      */
     public function __construct(
+        /** @var int Acting user ID. */
         private readonly int $userid,
+        /** @var int|null Established course ID. */
         private readonly ?int $courseid = null,
+        /** @var int|null Established course module ID. */
         private readonly ?int $cmid = null,
     ) {
     }

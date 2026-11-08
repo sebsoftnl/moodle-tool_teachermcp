@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -25,8 +33,11 @@ use tool_teachermcp\tools\grade_submission;
 final class feedback_files_test extends \advanced_testcase {
     public function test_disabled_feedback_files_reject_before_grade_or_comment_changes(): void {
         [$course, , $student] = $this->fixture();
-        $assign = teaching_fixtures::assignment($this->getDataGenerator(), $course,
-            ['groupmode' => NOGROUPS, 'assignfeedback_file_enabled' => 0]);
+        $assign = teaching_fixtures::assignment(
+            $this->getDataGenerator(),
+            $course,
+            ['groupmode' => NOGROUPS, 'assignfeedback_file_enabled' => 0]
+        );
         $before = teaching_fixtures::snapshot();
         try {
             (new grade_submission())->execute($this->grade_args($assign, $student) + [
@@ -44,9 +55,11 @@ final class feedback_files_test extends \advanced_testcase {
         [$course, , $student] = $this->fixture();
         $assign = teaching_fixtures::assignment($this->getDataGenerator(), $course, ['groupmode' => NOGROUPS]);
         $valid = ['filename' => 'feedback.txt', 'content_base64' => base64_encode('Feedback')];
-        foreach ([[$valid, ['filename' => 'bad.txt', 'content_base64' => '%%%']],
+        foreach (
+            [[$valid, ['filename' => 'bad.txt', 'content_base64' => '%%%']],
                 [['filename' => '../bad.txt', 'content_base64' => 'eA==']], [$valid, $valid],
-                [['filename' => '', 'content_base64' => 'eA==']], [['filename' => 'bad.txt']], 'not-a-list'] as $files) {
+                [['filename' => '', 'content_base64' => 'eA==']], [['filename' => 'bad.txt']], 'not-a-list'] as $files
+        ) {
             $before = teaching_fixtures::snapshot();
             try {
                 (new grade_submission())->execute($this->grade_args($assign, $student) + [
@@ -112,8 +125,11 @@ final class feedback_files_test extends \advanced_testcase {
         foreach ([$student, $other] as $member) {
             $generator->create_group_member(['groupid' => $group->id, 'userid' => $member->id]);
         }
-        $assign = teaching_fixtures::assignment($generator, $course,
-            ['groupmode' => NOGROUPS, 'teamsubmission' => 1, 'requireallteammemberssubmit' => 0]);
+        $assign = teaching_fixtures::assignment(
+            $generator,
+            $course,
+            ['groupmode' => NOGROUPS, 'teamsubmission' => 1, 'requireallteammemberssubmit' => 0]
+        );
         teaching_fixtures::submit($assign, $student, 'Team response');
         $result = (new grade_submission())->execute(['cmid' => (int)$assign->get_course_module()->id,
             'action' => 'save_grade', 'student_user_id' => (int)$student->id, 'grade' => 8,

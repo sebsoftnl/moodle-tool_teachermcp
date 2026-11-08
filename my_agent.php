@@ -237,7 +237,8 @@ foreach (\tool_teachermcp\server::get_grantable_external_tool_names() as $extern
 
 $promptlibrary = [];
 if ($selectedcourse !== null) {
-    foreach ([
+    foreach (
+        [
         'context' => ['ingest', 'files'],
         'content' => ['page', 'book', 'image'],
         'assessment' => ['scaffold', 'assignment'],
@@ -246,7 +247,8 @@ if ($selectedcourse !== null) {
         'grading' => ['grading'],
         'calendar' => ['calendar'],
         'maintenance' => ['delete'],
-    ] as $category => $names) {
+        ] as $category => $names
+    ) {
         $items = [];
         foreach ($names as $name) {
             $title = get_string('prompt_' . $name . '_title', 'tool_teachermcp');
@@ -302,8 +304,10 @@ $templatedata = [
     'tokens' => $tokenlist,
     'confirm_revoke' => get_string('confirm_revoke', 'tool_teachermcp'),
     'history' => $historylist ? ['tokens' => $historylist, 'count' => count($historylist)] : null,
-    'clear_history_url' => (new moodle_url('/admin/tool/teachermcp/clear_history.php',
-        $courseid ? ['courseid' => $courseid] : []))->out(false),
+    'clear_history_url' => (new moodle_url(
+        '/admin/tool/teachermcp/clear_history.php',
+        $courseid ? ['courseid' => $courseid] : []
+    ))->out(false),
     'sesskey' => sesskey(),
     'new_token' => $newtoken,
     'config_claude_oauth' => $claudedesktopoauthconfig,

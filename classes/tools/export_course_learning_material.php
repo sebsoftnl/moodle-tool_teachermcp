@@ -29,15 +29,31 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class export_course_learning_material extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'export_course_learning_material';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Export permitted course learning material as teacher-view Markdown or JSON, including visible-to-teacher drafts. Visibility flags and availability restrictions are identified; access is not evaluated for individual students. Unsupported extraction and size limits still apply.';
+        return 'Export permitted course learning material as teacher-view Markdown or JSON, including visible-to-teacher ' .
+            'drafts. Visibility flags and availability restrictions are identified; access is not evaluated for ' .
+            'individual students. Unsupported extraction and size limits still apply.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -48,7 +64,8 @@ class export_course_learning_material extends base_tool {
                 ],
                 'section_number' => [
                     'type' => 'integer',
-                    'description' => 'Optional section number (e.g. 2 for Week 2). If omitted, extracts all sections accessible to the calling teacher, including permitted hidden sections.',
+                    'description' => 'Optional section number (e.g. 2 for Week 2). If omitted, extracts all sections accessible to the calling ' .
+                        'teacher, including permitted hidden sections.',
                 ],
                 'include_glossary' => [
                     'type' => 'boolean',
@@ -66,6 +83,11 @@ class export_course_learning_material extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB;
 
@@ -90,7 +112,8 @@ class export_course_learning_material extends base_tool {
         $markdownlines = [];
 
         $markdownlines[] = "# Course Knowledge Base: {$course->fullname} ({$course->shortname})";
-        $markdownlines[] = '> Teacher view: may include unpublished drafts. Student access has not been evaluated; enrolment, groups, dates and availability restrictions still apply.';
+        $markdownlines[] = '> Teacher view: may include unpublished drafts. Student access has not been evaluated; enrolment, ' .
+            'groups, dates and availability restrictions still apply.';
         $markdownlines[] = $course->visible ? '> Course visibility: shown.' : '> Hidden course.';
         if (!empty($course->summary)) {
             $markdownlines[] = "\n## Course Summary\n" . trim(html_to_text($course->summary, 0, false));

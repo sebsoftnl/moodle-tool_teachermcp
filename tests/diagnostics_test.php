@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -60,8 +68,11 @@ final class diagnostics_test extends \advanced_testcase {
         $this->assertSame(19, $response['id']);
         $this->assertSame('2024-11-05', $response['result']['protocolVersion']);
         $this->assertSame('moodle-teachermcp', $response['result']['serverInfo']['name']);
-        $this->assertSame($installed->release, $response['result']['serverInfo']['version'],
-            'Initialize must report the installed plugin release, not a second hard-coded version.');
+        $this->assertSame(
+            $installed->release,
+            $response['result']['serverInfo']['version'],
+            'Initialize must report the installed plugin release, not a second hard-coded version.'
+        );
     }
 
     public function test_healthy_builtin_diagnostics_are_independent_of_scope_filters(): void {
@@ -69,10 +80,14 @@ final class diagnostics_test extends \advanced_testcase {
             set_config($key, 0, 'tool_teachermcp');
         }
         $this->assertLessThan(24, count(server::get_tools()));
-        $this->assertTrue(method_exists(tool_registry::class, 'get_builtin_diagnostics'),
-            'The registry must expose bounded built-in registration diagnostics.');
-        $this->assertSame(['expected' => 24, 'registered' => 24, 'complete' => true, 'failures' => []],
-            tool_registry::get_builtin_diagnostics());
+        $this->assertTrue(
+            method_exists(tool_registry::class, 'get_builtin_diagnostics'),
+            'The registry must expose bounded built-in registration diagnostics.'
+        );
+        $this->assertSame(
+            ['expected' => 24, 'registered' => 24, 'complete' => true, 'failures' => []],
+            tool_registry::get_builtin_diagnostics()
+        );
         tool_registry::purge_for_testing();
         $this->assertSame([], tool_registry::get_builtin_diagnostics()['failures']);
     }
@@ -86,9 +101,13 @@ final class diagnostics_test extends \advanced_testcase {
         $this->assertArrayHasKey('tool_teachermcp.diagnostic_good', $tools);
         $this->assertArrayNotHasKey('tool_teachermcp.diagnostic_bad', $tools);
         $this->assertTrue(tool_registry::get_tool_metadata('tool_teachermcp.diagnostic_good')['external']);
-        $this->assertTrue(method_exists(tool_registry::class, 'get_builtin_diagnostics'),
-            'External tool counts must not mask the built-in registration status.');
-        $this->assertSame(['expected' => 24, 'registered' => 24, 'complete' => true, 'failures' => []],
-            tool_registry::get_builtin_diagnostics());
+        $this->assertTrue(
+            method_exists(tool_registry::class, 'get_builtin_diagnostics'),
+            'External tool counts must not mask the built-in registration status.'
+        );
+        $this->assertSame(
+            ['expected' => 24, 'registered' => 24, 'complete' => true, 'failures' => []],
+            tool_registry::get_builtin_diagnostics()
+        );
     }
 }

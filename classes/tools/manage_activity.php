@@ -29,15 +29,31 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manage_activity extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'manage_activity';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Get basic activity settings; update Page name, description and visibility; or publish/unpublish Assignment, Quiz, H5P and Book using visibility-only updates. Other module settings must be edited in Moodle.';
+        return 'Get basic activity settings; update Page name, description and visibility; or publish/unpublish ' .
+            'Assignment, Quiz, H5P and Book using visibility-only updates. Other module settings must be edited in ' .
+            'Moodle.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -48,7 +64,8 @@ class manage_activity extends base_tool {
                 ],
                 'action' => [
                     'type' => 'string',
-                    'description' => '"get_settings" reads basic settings. "update_settings" edits Pages; for Assignment, Quiz, H5P and Book, supply only cmid, action and visible.',
+                    'description' => '"get_settings" reads basic settings. "update_settings" edits Pages; for Assignment, Quiz, H5P and Book, ' .
+                        'supply only cmid, action and visible.',
                     'enum' => ['get_settings', 'update_settings'],
                     'default' => 'get_settings',
                 ],
@@ -69,6 +86,11 @@ class manage_activity extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -77,7 +99,7 @@ class manage_activity extends base_tool {
         $cmid = (int)($params['cmid'] ?? 0);
         $action = $params['action'] ?? 'get_settings';
 
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
 
         $instancerecord = $DB->get_record($cm->modname, ['id' => $cm->instance], '*', MUST_EXIST);
 
@@ -96,11 +118,17 @@ class manage_activity extends base_tool {
 
         if ($action === 'update_settings') {
             if ($cm->modname !== 'page') {
-                if (!in_array($cm->modname, ['assign', 'quiz', 'h5pactivity', 'book'], true)
+                if (
+                    !in_array($cm->modname, ['assign', 'quiz', 'h5pactivity', 'book'], true)
                         || !isset($params['visible'])
-                        || array_diff(array_keys($params), ['cmid', 'action', 'visible'])) {
-                    throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '',
-                        get_string('error_activity_settings_restricted', 'tool_teachermcp', $cm->modname));
+                        || array_diff(array_keys($params), ['cmid', 'action', 'visible'])
+                ) {
+                    throw new moodle_exception(
+                        'error_invalid_action',
+                        'tool_teachermcp',
+                        '',
+                        get_string('error_activity_settings_restricted', 'tool_teachermcp', $cm->modname)
+                    );
                 }
                 require_capability('moodle/course:activityvisibility', $context);
                 set_coursemodule_visible($cm->id, (int)$params['visible'], (int)$cm->visibleoncoursepage);
@@ -146,7 +174,11 @@ class manage_activity extends base_tool {
                 'itemid' => 0,
             ];
             $moduleinfo->display = $instancerecord->display;
-            $displayoptions = unserialize($instancerecord->displayoptions, ['allowed_classes' => false]);
+            // Moodle's page module stores only scalar display options in a serialized array.
+            $displayoptions = unserialize_array($instancerecord->displayoptions);
+            if ($displayoptions === false) {
+                $displayoptions = [];
+            }
             $moduleinfo->printintro = $displayoptions['printintro'] ?? 0;
             $moduleinfo->printlastmodified = $displayoptions['printlastmodified'] ?? 0;
             foreach (['popupwidth', 'popupheight'] as $option) {

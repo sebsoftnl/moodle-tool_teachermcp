@@ -36,11 +36,7 @@ use context_user;
  * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements
-    \core_privacy\local\metadata\provider,
-    \core_privacy\local\request\plugin\provider,
-    \core_privacy\local\request\core_userlist_provider {
-
+class provider implements \core_privacy\local\metadata\provider, \core_privacy\local\request\core_userlist_provider, \core_privacy\local\request\plugin\provider {
     /**
      * Return the metadata describing personal data stored by this plugin.
      *
@@ -103,8 +99,10 @@ class provider implements
         global $DB;
         $contextlist = new contextlist();
 
-        if ($DB->record_exists('tool_teachermcp_tokens', ['userid' => $userid]) ||
-            $DB->record_exists('tool_teachermcp_oauth_codes', ['userid' => $userid])) {
+        if (
+            $DB->record_exists('tool_teachermcp_tokens', ['userid' => $userid]) ||
+            $DB->record_exists('tool_teachermcp_oauth_codes', ['userid' => $userid])
+        ) {
             $contextlist->add_user_context($userid);
         }
 
@@ -269,7 +267,10 @@ class provider implements
     }
 
     /**
-     * Delete tracked MCP-owned assets and their tracking records.
+     * Delete plugin-owned course assets and forget references to native activity files.
+     *
+     * Page and Book files belong to their activities once uploaded. Erasing the
+     * uploader's account must not remove published teaching material.
      *
      * @param int $contextid Context ID.
      * @param int|null $userid Optional asset owner.
@@ -284,7 +285,10 @@ class provider implements
         $fs = get_file_storage();
         foreach ($assets as $asset) {
             $file = $fs->get_file_by_id($asset->fileid);
-            if ($file) {
+            if (
+                $file && $file->get_component() === 'tool_teachermcp' &&
+                    $file->get_filearea() === 'course_assets'
+            ) {
                 $file->delete();
             }
         }

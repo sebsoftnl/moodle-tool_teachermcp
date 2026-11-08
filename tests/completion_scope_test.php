@@ -30,8 +30,11 @@ final class completion_scope_test extends \advanced_testcase {
         $this->resetAfterTest(true);
         foreach ([['read'], ['read', 'grade'], ['read', 'write']] as $scopes) {
             $token = (object)['permissions' => json_encode(['scopes' => $scopes])];
-            $this->assertArrayHasKey('manage_course_completion', server::get_tools($token),
-                'A preset containing read must list completion inspection');
+            $this->assertArrayHasKey(
+                'manage_course_completion',
+                server::get_tools($token),
+                'A preset containing read must list completion inspection'
+            );
         }
         $readonly = $this->readonly_token();
         $this->assertSame('read', server::get_tool_scope('manage_course_completion'));
@@ -189,8 +192,14 @@ final class completion_scope_test extends \advanced_testcase {
         $this->assertEquals($before, $DB->get_records('course_modules_completion'));
     }
 
-    private function assert_denied(server $server, \stdClass $token, string $name, array $arguments,
-            string $code, ?string $capability = null): void {
+    private function assert_denied(
+        server $server,
+        \stdClass $token,
+        string $name,
+        array $arguments,
+        string $code,
+        ?string $capability = null
+    ): void {
         try {
             $server->execute_tool($name, $arguments, $token);
             $this->fail('Expected exact completion/scope denial: ' . $code);

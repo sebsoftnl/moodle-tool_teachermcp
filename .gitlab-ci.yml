@@ -1,0 +1,64 @@
+stages:
+  - test
+
+bridge:
+  stage: test
+  image: node:22-alpine
+  script:
+    - node --check bridge/mcp-bridge.mjs
+    - mkdir -p "$CI_PROJECT_DIR/.ci-tmp"
+    - TMPDIR="$CI_PROJECT_DIR/.ci-tmp" node --test bridge/*.test.mjs
+  after_script:
+    - rm -rf "$CI_PROJECT_DIR/.ci-tmp"
+
+.moodle-test:
+  stage: test
+  image: git.sebsoft.nl:5050/sebsoft/open-source/moodle-cidocker:latest
+  services:
+    - name: mariadb:11.4
+      alias: mysql
+  variables:
+    DB: "mariadb"
+    MYSQL_ROOT_PASSWORD: "superrootpass"
+    MARIADB_ROOT_PASSWORD: "superrootpass"
+    TRAVIS_BUILD_DIR: "$CI_PROJECT_DIR"
+    MOODLE_DIR: "/var/www/html/moodle"
+    # Keep concurrent Moodle installs below GitHub archive throttling thresholds.
+    COMPOSER_MAX_PARALLEL_HTTP: "2"
+    PLUGIN: "tool_teachermcp"
+    PATHNAME: "admin/tool/teachermcp"
+  script:
+    - cd /root/
+    - umask u+x
+    - cd "$CI_PROJECT_DIR/.."
+    - source /root/.nvm/nvm.sh
+    - /root/ci/bin/moodle-plugin-ci --version
+    - /root/ci/bin/moodle-plugin-ci install --moodle="$MOODLE_DIR" --db-type="$DB" --db-user=root --db-pass="$MYSQL_ROOT_PASSWORD" --db-host=mysql -vvv
+    - /root/ci/bin/moodle-plugin-ci phplint
+    - /root/ci/bin/moodle-plugin-ci validate
+    - /root/ci/bin/moodle-plugin-ci savepoints
+    - /root/ci/bin/moodle-plugin-ci phpunit
+
+# Moodle coding standards are a required gate before release review.
+codechecker:
+  extends: .moodle-test
+  allow_failure: false
+  script:
+    - cd /root/
+    - umask u+x
+    - cd "$CI_PROJECT_DIR/.."
+    - source /root/.nvm/nvm.sh
+    - /root/ci/bin/moodle-plugin-ci install --moodle="$MOODLE_DIR" --db-type="$DB" --db-user=root --db-pass="$MYSQL_ROOT_PASSWORD" --db-host=mysql -vvv
+    - /root/ci/bin/moodle-plugin-ci codechecker
+  variables:
+    MOODLE_BRANCH: "MOODLE_405_STABLE"
+
+moodle-4.5:
+  extends: .moodle-test
+  variables:
+    MOODLE_BRANCH: "MOODLE_405_STABLE"
+
+moodle-main:
+  extends: .moodle-test
+  variables:
+    MOODLE_BRANCH: "main"

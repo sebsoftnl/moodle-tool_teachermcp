@@ -34,8 +34,10 @@ final class question_actions_test extends \advanced_testcase {
     public function test_multianswer_creation_accepts_weighted_fractions_and_grades_natively(): void {
         [$course, $teacher] = $this->create_fixture();
         $this->setUser($teacher);
-        foreach ([[0.5, 0.5], [0.5, 0.5, 0], [0.5, 0.5, -1], [0.75, 0.25],
-                [0.333333, 0.333333, 0.333333], [1, 0], ['0.5', '0.5']] as $fractions) {
+        foreach (
+            [[0.5, 0.5], [0.5, 0.5, 0], [0.5, 0.5, -1], [0.75, 0.25],
+                [0.333333, 0.333333, 0.333333], [1, 0], ['0.5', '0.5']] as $fractions
+        ) {
             $options = [];
             foreach ($fractions as $index => $fraction) {
                 $options[] = ['answer' => 'Choice ' . $index, 'fraction' => $fraction];
@@ -61,10 +63,12 @@ final class question_actions_test extends \advanced_testcase {
     public function test_multichoice_validation_explains_rejection_without_writes(): void {
         [$course, $teacher] = $this->create_fixture();
         $this->setUser($teacher);
-        foreach ([[false, [1], 'at least 2'], [false, [0.5, 0.25], 'sum to 1.0'],
+        foreach (
+            [[false, [1], 'at least 2'], [false, [0.5, 0.25], 'sum to 1.0'],
                 [false, [1, 0.5], 'sum to 1.0'], [false, [0, -1], 'sum to 1.0'],
                 [false, [50, 50], 'between -1.0 and 1.0'], [false, [1, -1.1], 'between -1.0 and 1.0'],
-                [true, [0.5, 0.5], 'fraction of 1.0'], [true, [0.9999, 0], 'fraction of 1.0']] as [$single, $fractions, $reason]) {
+                [true, [0.5, 0.5], 'fraction of 1.0'], [true, [0.9999, 0], 'fraction of 1.0']] as [$single, $fractions, $reason]
+        ) {
             $options = array_map(static fn($fraction) => ['answer' => 'Choice', 'fraction' => $fraction], $fractions);
             $before = $this->snapshot();
             try {
@@ -125,8 +129,10 @@ final class question_actions_test extends \advanced_testcase {
             $this->assertSame(array_column($before['answers'], $field), array_column($after['answers'], $field));
         }
         $saved = $DB->get_record('qtype_multichoice_options', ['questionid' => $updated['question_id']], '*', MUST_EXIST);
-        foreach (['single', 'shuffleanswers', 'answernumbering', 'correctfeedback', 'correctfeedbackformat',
-                'partiallycorrectfeedback', 'incorrectfeedback', 'shownumcorrect', 'showstandardinstruction'] as $field) {
+        foreach (
+            ['single', 'shuffleanswers', 'answernumbering', 'correctfeedback', 'correctfeedbackformat',
+                'partiallycorrectfeedback', 'incorrectfeedback', 'shownumcorrect', 'showstandardinstruction'] as $field
+        ) {
             $this->assertEquals($options->{$field}, $saved->{$field}, 'Preserve multichoice option ' . $field);
         }
         $this->assertSame($before, $this->call($course, 'get_question', ['question_id' => $id]));
@@ -210,8 +216,12 @@ final class question_actions_test extends \advanced_testcase {
             $id = $created['question_id'];
             $entry = get_question_bank_entry($id);
             $DB->set_field('question_bank_entries', 'idnumber', 'preserved-' . $type, ['id' => $entry->id]);
-            $DB->set_field('question_versions', 'status', question_version_status::QUESTION_STATUS_HIDDEN,
-                ['questionid' => $id]);
+            $DB->set_field(
+                'question_versions',
+                'status',
+                question_version_status::QUESTION_STATUS_HIDDEN,
+                ['questionid' => $id]
+            );
             $areas = [['question', 'questiontext', $id, 'question', 'id']];
             if ($type === 'multichoice') {
                 $answerid = $DB->get_field('question_answers', 'id', ['question' => $id, 'fraction' => 1], MUST_EXIST);
@@ -235,8 +245,10 @@ final class question_actions_test extends \advanced_testcase {
             $newid = $result['question_id'];
             $this->assertEquals($entry->id, get_question_bank_entry($newid)->id);
             $this->assertSame('preserved-' . $type, get_question_bank_entry($newid)->idnumber);
-            $this->assertSame(question_version_status::QUESTION_STATUS_HIDDEN,
-                $DB->get_field('question_versions', 'status', ['questionid' => $newid], MUST_EXIST));
+            $this->assertSame(
+                question_version_status::QUESTION_STATUS_HIDDEN,
+                $DB->get_field('question_versions', 'status', ['questionid' => $newid], MUST_EXIST)
+            );
             foreach ($areas as [$component, $area]) {
                 $itemid = $newid;
                 if (in_array($area, ['answer', 'answerfeedback'])) {
@@ -258,11 +270,13 @@ final class question_actions_test extends \advanced_testcase {
         [$course, $teacher] = $this->create_fixture();
         $this->setUser($teacher);
         $questions = [];
-        foreach (['truefalse' => [], 'essay' => [], 'shortanswer' => [
+        foreach (
+            ['truefalse' => [], 'essay' => [], 'shortanswer' => [
             'options' => [['answer' => 'four', 'fraction' => 1.0]],
-        ], 'multichoice' => [
+            ], 'multichoice' => [
             'options' => [['answer' => 'four', 'fraction' => 1.0], ['answer' => 'five', 'fraction' => 0.0]],
-        ]] as $qtype => $options) {
+            ]] as $qtype => $options
+        ) {
             $created = $this->create_question($course, $options + ['qtype' => $qtype, 'name' => 'Native ' . $qtype]);
             $this->assertTrue($created['success']);
             $this->assertSame(['success', 'question_id', 'category_id', 'name', 'qtype', 'defaultmark'], array_keys($created));
@@ -332,10 +346,12 @@ final class question_actions_test extends \advanced_testcase {
         $this->assertEquals($quiz->id, $direct['added_to_quiz_id']);
         $this->assertSame(2, $DB->count_records('quiz_slots', ['quizid' => $quiz->id]));
         $this->assertEquals(4.0, $DB->get_field('quiz', 'sumgrades', ['id' => $quiz->id], MUST_EXIST));
-        $entryids = $DB->get_fieldset_sql('SELECT qr.questionbankentryid FROM {question_references} qr
+        $entryids = $DB->get_fieldset_sql(
+            'SELECT qr.questionbankentryid FROM {question_references} qr
                 JOIN {quiz_slots} qs ON qs.id = qr.itemid
                WHERE qs.quizid = :quizid AND qr.component = :component AND qr.questionarea = :area',
-            ['quizid' => $quiz->id, 'component' => 'mod_quiz', 'area' => 'slot']);
+            ['quizid' => $quiz->id, 'component' => 'mod_quiz', 'area' => 'slot']
+        );
         foreach ([$moved['question_id'], $direct['question_id']] as $questionid) {
             $entryid = $DB->get_field('question_versions', 'questionbankentryid', ['questionid' => $questionid], MUST_EXIST);
             $this->assertContains($entryid, $entryids);
@@ -446,8 +462,10 @@ final class question_actions_test extends \advanced_testcase {
         $result = $this->call($course, 'delete_question', $params);
         $this->assertTrue($result['success']);
         $this->assertTrue($DB->record_exists('question', ['id' => $created['question_id']]));
-        $this->assertSame(question_version_status::QUESTION_STATUS_HIDDEN,
-            $DB->get_field('question_versions', 'status', ['questionid' => $created['question_id']], MUST_EXIST));
+        $this->assertSame(
+            question_version_status::QUESTION_STATUS_HIDDEN,
+            $DB->get_field('question_versions', 'status', ['questionid' => $created['question_id']], MUST_EXIST)
+        );
         [, $tokenhash] = explode(':', base64_decode($params['confirm_token']), 2);
         $this->assertEquals(1, get_cache_flag('tool_teachermcp_usedtoken', $tokenhash));
         $this->assert_unchanged_denial(fn() => $this->call($course, 'delete_question', $params), 'error_confirmation_token_expired');
@@ -822,8 +840,10 @@ final class question_actions_test extends \advanced_testcase {
         }
         $result = [];
         foreach ($tables as $table) {
-            $result[$table] = array_map(static fn($record) => (array)$record,
-                array_values($DB->get_records($table, [], 'id ASC')));
+            $result[$table] = array_map(
+                static fn($record) => (array)$record,
+                array_values($DB->get_records($table, [], 'id ASC'))
+            );
         }
         return $result;
     }

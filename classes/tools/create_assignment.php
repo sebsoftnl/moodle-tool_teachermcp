@@ -31,15 +31,31 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class create_assignment extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'create_assignment';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Create a Moodle Assignment (mod_assign) with due dates, submission settings, and optional rubric descriptors in its introduction, not a native advanced-grading rubric. At least one submission type must be enabled; offline/oral assignments are not currently supported.';
+        return 'Create a Moodle Assignment (mod_assign) with due dates, submission settings, and optional rubric ' .
+            'descriptors in its introduction, not a native advanced-grading rubric. At least one submission type must ' .
+            'be enabled; offline/oral assignments are not currently supported.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -104,6 +120,11 @@ class create_assignment extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -172,8 +193,12 @@ class create_assignment extends base_tool {
         $allowonlinetext = $params['allow_online_text'] ?? true;
         $allowfile = $params['allow_file_submissions'] ?? true;
         if (!$allowonlinetext && !$allowfile) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '',
-                get_string('error_assignment_submission_required', 'tool_teachermcp'));
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                get_string('error_assignment_submission_required', 'tool_teachermcp')
+            );
         }
         $maxfiles = isset($params['max_files']) ? max(1, min(20, (int)$params['max_files'])) : 2;
         $rawmaxgrade = $params['max_grade'] ?? 100;

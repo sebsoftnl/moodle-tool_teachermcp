@@ -32,15 +32,31 @@ use tool_teachermcp\local\assignment_grading;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class grade_submission extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'grade_submission';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'View assignment submissions and stored feedback-file manifests; save numeric/scale grades, feedback and optional files. File requests require enabled feedback-file support and are validated before saving. Returned download URLs require native Moodle authorization.';
+        return 'View assignment submissions and stored feedback-file manifests; save numeric/scale grades, feedback and ' .
+            'optional files. File requests require enabled feedback-file support and are validated before saving. ' .
+            'Returned download URLs require native Moodle authorization.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -91,7 +107,10 @@ class grade_submission extends base_tool {
                 ],
                 'feedback_files' => [
                     'type' => 'array',
-                    'description' => 'Nonempty list replaces the feedback-file set for each targeted grade using Moodle\'s native file-manager behavior. Omit or pass [] to retain existing files. Requires enabled feedback files, unique safe filenames and valid base64 content within upload limits. Returns verified native file metadata and authenticated download URLs.',
+                    'description' => 'Nonempty list replaces the feedback-file set for each targeted grade using Moodle\'s native file-manager ' .
+                        'behavior. Omit or pass [] to retain existing files. Requires enabled feedback files, unique safe ' .
+                        'filenames and valid base64 content within upload limits. Returns verified native file metadata and ' .
+                        'authenticated download URLs.',
                     'items' => [
                         'type' => 'object',
                         'properties' => [
@@ -106,6 +125,11 @@ class grade_submission extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->dirroot . '/mod/assign/locallib.php');
@@ -116,7 +140,7 @@ class grade_submission extends base_tool {
         $targetgroupid = !empty($params['group_id']) ? (int)$params['group_id'] : 0;
 
         // H7 & M1: Enforce capability via base_tool helper.
-        list($cm, $course, $context) = $this->require_cm_access($cmid, 'mod/assign:grade');
+        [$cm, $course, $context] = $this->require_cm_access($cmid, 'mod/assign:grade');
 
         $assign = new \assign($context, $cm, $course);
         $instance = $assign->get_instance();
@@ -229,8 +253,13 @@ class grade_submission extends base_tool {
                 $gradeval = (float)$params['grade'];
                 if ($instance->grade > 0) {
                     if ($gradeval < 0 || $gradeval > (float)$instance->grade) {
-                        throw new moodle_exception('error_grade_out_of_range', 'tool_teachermcp', '', null,
-                            "Grade {$gradeval} is outside allowed range (0 to {$instance->grade}).");
+                        throw new moodle_exception(
+                            'error_grade_out_of_range',
+                            'tool_teachermcp',
+                            '',
+                            null,
+                            "Grade {$gradeval} is outside allowed range (0 to {$instance->grade})."
+                        );
                     }
                 } else if ($instance->grade < 0) {
                     $scaleid = -$instance->grade;
@@ -239,8 +268,13 @@ class grade_submission extends base_tool {
                         $scaleitems = array_map('trim', explode(',', $scale->scale));
                         $scaleint = (int)$gradeval;
                         if ($scaleint < 1 || $scaleint > count($scaleitems)) {
-                            throw new moodle_exception('error_grade_out_of_range', 'tool_teachermcp', '', null,
-                                "Scale grade {$gradeval} is outside allowed items (1 to " . count($scaleitems) . ").");
+                            throw new moodle_exception(
+                                'error_grade_out_of_range',
+                                'tool_teachermcp',
+                                '',
+                                null,
+                                "Scale grade {$gradeval} is outside allowed items (1 to " . count($scaleitems) . ")."
+                            );
                         }
                     }
                 }
@@ -307,8 +341,14 @@ class grade_submission extends base_tool {
                         throw new moodle_exception('error_grade_not_saved', 'tool_teachermcp');
                     }
                     foreach ($feedbackfiles as $filename => $bytes) {
-                        $stored = get_file_storage()->get_file($context->id, 'assignfeedback_file',
-                            'feedback_files', $saved->id, '/', (string)$filename);
+                        $stored = get_file_storage()->get_file(
+                            $context->id,
+                            'assignfeedback_file',
+                            'feedback_files',
+                            $saved->id,
+                            '/',
+                            (string)$filename
+                        );
                         if (!$stored || $stored->get_contenthash() !== sha1($bytes)) {
                             throw new moodle_exception('error_feedback_files_not_saved', 'tool_teachermcp');
                         }
@@ -346,8 +386,10 @@ class grade_submission extends base_tool {
                     'feedback_files' => $target['feedback_files'],
                 ];
                 foreach ($outcomes as $outcome) {
-                    if ($outcome['gradebook']['overridden'] ||
-                            !grade_floats_equal($outcome['grade_saved'], $outcome['gradebook']['finalgrade'])) {
+                    if (
+                        $outcome['gradebook']['overridden'] ||
+                            !grade_floats_equal($outcome['grade_saved'], $outcome['gradebook']['finalgrade'])
+                    ) {
                         $result['warning'] = get_string('warning_gradebook_differs', 'tool_teachermcp');
                         break;
                     }
@@ -360,7 +402,6 @@ class grade_submission extends base_tool {
             } catch (\Throwable $error) {
                 $transaction->rollback($error);
             }
-
         }
 
         throw new moodle_exception('error_invalid_action', 'tool_teachermcp', '', null, "Unsupported action: {$action}");

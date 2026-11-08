@@ -31,15 +31,29 @@ use tool_teachermcp\auth;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class send_student_message extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'send_student_message';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Send a direct notification/message to an enrolled student through Moodle messaging.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -65,6 +79,11 @@ class send_student_message extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $USER, $DB;
 
@@ -138,7 +157,7 @@ class send_student_message extends base_tool {
         $now = time();
 
         if (is_array($history)) {
-            $history = array_filter($history, function($ts) use ($now) {
+            $history = array_filter($history, function ($ts) use ($now) {
                 return ($now - $ts) < 3600;
             });
         } else {

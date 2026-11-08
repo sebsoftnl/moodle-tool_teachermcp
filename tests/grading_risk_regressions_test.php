@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -47,8 +55,11 @@ final class grading_risk_regressions_test extends \advanced_testcase {
     public function test_rejected_first_grade_does_not_create_submission_or_support_records(): void {
         [$course, , $student] = $this->fixture();
         foreach ([0, 1] as $team) {
-            $assign = fixtures::assignment($this->getDataGenerator(), $course,
-                ['groupmode' => NOGROUPS, 'grade' => 10, 'teamsubmission' => $team]);
+            $assign = fixtures::assignment(
+                $this->getDataGenerator(),
+                $course,
+                ['groupmode' => NOGROUPS, 'grade' => 10, 'teamsubmission' => $team]
+            );
             $before = fixtures::snapshot();
             try {
                 (new grade_submission())->execute(['cmid' => (int)$assign->get_course_module()->id,

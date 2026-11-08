@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -54,11 +62,15 @@ final class export_visibility_test extends \advanced_testcase {
         $generator = $this->getDataGenerator();
         $glossary = $generator->create_module('glossary', ['course' => $course->id, 'visible' => 0,
             'name' => 'Draft terminology']);
-        $generator->get_plugin_generator('mod_glossary')->create_content($glossary,
-            ['concept' => 'Draft term', 'definition' => '<p>Unpublished definition</p>', 'approved' => 1]);
+        $generator->get_plugin_generator('mod_glossary')->create_content(
+            $glossary,
+            ['concept' => 'Draft term', 'definition' => '<p>Unpublished definition</p>', 'approved' => 1]
+        );
         $markdown = (new export_course_learning_material())->execute(['course_id' => (int)$course->id]);
-        $this->assertMatchesRegularExpression('/### Draft terminology\s+> Hidden activity\.\s+- \*\*Draft term\*\*/',
-            $markdown['content']);
+        $this->assertMatchesRegularExpression(
+            '/### Draft terminology\s+> Hidden activity\.\s+- \*\*Draft term\*\*/',
+            $markdown['content']
+        );
         $this->assertStringContainsString('Unpublished definition', $markdown['content']);
     }
 

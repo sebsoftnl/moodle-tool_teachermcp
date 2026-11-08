@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp\tests\fixtures;
 
@@ -18,8 +26,15 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class content_files {
+    /** Encoded one-pixel WebP image fixture. */
     private const WEBP = 'UklGRjAAAABXRUJQVlA4TCMAAAAvH8ADAA9wDatnPCsEEADxd2hU5z+ig0Ag2V86gAUi+h/FCgA=';
 
+    /**
+     * Generate a small valid fixture image.
+     *
+     * @param string $extension Image extension.
+     * @return string Encoded image bytes.
+     */
     public static function image(string $extension = 'png'): string {
         if ($extension === 'webp') {
             return base64_decode(self::WEBP, true);
@@ -45,6 +60,12 @@ final class content_files {
         }
     }
 
+    /**
+     * Pad a generated PNG to the requested byte length.
+     *
+     * @param int $bytes Target byte count.
+     * @return string Encoded PNG bytes.
+     */
     public static function png_at_size(int $bytes): string {
         $png = self::image();
         $length = $bytes - strlen($png) - 12;
@@ -56,6 +77,12 @@ final class content_files {
         return substr($png, 0, -12) . $chunk . substr($png, -12);
     }
 
+    /**
+     * Build or inspect a fixture ZIP package.
+     *
+     * @param array|\stored_file $entries ZIP entries or stored H5P file.
+     * @return array|string Decoded H5P contents or ZIP bytes.
+     */
     public static function package(array $entries): string {
         $path = tempnam(make_request_directory(), 'tmcp-content-');
         try {
@@ -81,6 +108,12 @@ final class content_files {
         }
     }
 
+    /**
+     * Load or construct a valid office document fixture.
+     *
+     * @param string $extension Office document extension.
+     * @return string Encoded document bytes.
+     */
     public static function office(string $extension): string {
         global $CFG;
         return match ($extension) {
@@ -100,6 +133,14 @@ final class content_files {
         };
     }
 
+    /**
+     * Build office XML with optional exact byte length.
+     *
+     * @param string $extension Office document extension.
+     * @param string $text Text to include.
+     * @param int|null $bytes Optional XML length.
+     * @return string Encoded XML.
+     */
     public static function office_xml(string $extension, string $text, ?int $bytes = null): string {
         $text = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
         [$before, $after] = match ($extension) {
@@ -128,10 +169,24 @@ final class content_files {
         return $before . '<!--' . str_repeat('x', $padding) . '-->' . $after;
     }
 
+    /**
+     * Encode a PDF text drawing command.
+     *
+     * @param string $text PDF text content.
+     * @return string PDF text stream.
+     */
     public static function pdf_text(string $text): string {
         return 'BT /F1 12 Tf 40 100 Td (' . strtr($text, ['\\' => '\\\\', '(' => '\\(', ')' => '\\)']) . ') Tj ET';
     }
 
+    /**
+     * Build a minimal PDF with the supplied content streams.
+     *
+     * @param array $streams PDF content streams.
+     * @param bool $compressed Whether to compress streams.
+     * @param bool $image Whether to include an image.
+     * @return string Encoded PDF.
+     */
     public static function pdf(array $streams, bool $compressed = false, bool $image = false): string {
         $contents = implode(' ', array_map(static fn($id) => $id . ' 0 R', range(5, 4 + count($streams))));
         $imageid = 5 + count($streams);
@@ -167,8 +222,25 @@ final class content_files {
         return $pdf . "trailer\n<< /Size {$size} /Root 1 0 R >>\nstartxref\n{$startxref}\n%%EOF\n";
     }
 
-    public static function store(\context $context, string $filename, string $content,
-            string $component = 'mod_resource', string $filearea = 'content', int $itemid = 0): \stored_file {
+    /**
+     * Store fixture bytes in the Moodle file pool.
+     *
+     * @param \context $context File context.
+     * @param string $filename Stored filename.
+     * @param string $content File bytes.
+     * @param string $component File component.
+     * @param string $filearea File area.
+     * @param int $itemid File item ID.
+     * @return \stored_file Stored fixture file.
+     */
+    public static function store(
+        \context $context,
+        string $filename,
+        string $content,
+        string $component = 'mod_resource',
+        string $filearea = 'content',
+        int $itemid = 0
+    ): \stored_file {
         global $USER;
         return get_file_storage()->create_file_from_string([
             'contextid' => $context->id, 'component' => $component, 'filearea' => $filearea,

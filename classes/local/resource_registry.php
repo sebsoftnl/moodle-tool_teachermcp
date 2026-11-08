@@ -33,7 +33,6 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class resource_registry {
-
     /** Maximum number of announcements returned from one resource. */
     private const ANNOUNCEMENT_LIMIT = 5;
 

@@ -14,67 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * External provider discovery tests.
+ *
+ * @package    tool_teachermcp
+ * @copyright  2026 Sebsoft BV
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_teachermcp;
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/provider_discovery_test_callbacks.php');
+require_once(__DIR__ . '/provider_discovery_fake_tool.php');
+
 use tool_teachermcp\local\execution_context;
-use tool_teachermcp\local\external_tool;
 use tool_teachermcp\local\provider_registry;
-
-/**
- * Test callback source for provider discovery.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class provider_discovery_test_callbacks {
-    /** @var array<string, array> */
-    public static array $declarations = [];
-
-    /** @var array<string, bool> */
-    public static array $throwing = [];
-
-    /**
-     * Return declarations for the supplied test component.
-     *
-     * @param string $component Component name.
-     * @return array
-     */
-    public static function get(string $component = 'tool_teachermcp'): array {
-        if (!empty(self::$throwing[$component])) {
-            throw new \RuntimeException('Provider callback failed.');
-        }
-        return self::$declarations[$component] ?? [];
-    }
-}
-
-/**
- * Valid implementation used to prove the public provider contract.
- *
- * @package    tool_teachermcp
- * @copyright  2026 Sebsoft BV
- * @author     Jeremy van Lier <jeremy@sebsoft.nl> and Sebastian Berm <sebastian@sebsoft.nl>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-final class provider_discovery_fake_tool implements external_tool {
-    /** @inheritDoc */
-    public function get_description(): string {
-        return 'A fake provider tool.';
-    }
-
-    /** @inheritDoc */
-    public function get_input_schema(): array {
-        return ['type' => 'object'];
-    }
-
-    /** @inheritDoc */
-    public function execute(array $arguments, execution_context $context): array {
-        return ['userid' => $context->get_userid(), 'arguments' => $arguments];
-    }
-}
 
 /**
  * Tests for the external Teacher MCP provider discovery contract.

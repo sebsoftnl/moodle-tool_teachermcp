@@ -32,15 +32,32 @@ use ZipArchive;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class create_h5p_activity extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'create_h5p_activity';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Package caller-supplied H5P content parameters for an installed, enabled library into a Moodle H5P activity and/or Content Bank entry. The library dependencies and valid content parameters are required. Activities are hidden by default; verify playback before publishing. Packaging success does not certify every interaction or content type.';
+        return 'Package caller-supplied H5P content parameters for an installed, enabled library into a Moodle H5P ' .
+            'activity and/or Content Bank entry. The library dependencies and valid content parameters are required. ' .
+            'Activities are hidden by default; verify playback before publishing. Packaging success does not certify ' .
+            'every interaction or content type.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -55,11 +72,14 @@ class create_h5p_activity extends base_tool {
                 ],
                 'library_name' => [
                     'type' => 'string',
-                    'description' => 'The machine name of the H5P library (e.g. "H5P.MultiChoice", "H5P.Flashcards", "H5P.TrueFalse", "H5P.Accordion"). Check get_h5p_libraries for available types.',
+                    'description' => 'The machine name of the H5P library (e.g. "H5P.MultiChoice", "H5P.Flashcards", "H5P.TrueFalse", ' .
+                        '"H5P.Accordion"). Check get_h5p_libraries for available types.',
                 ],
                 'params' => [
                     'type' => 'object',
-                    'description' => 'Caller-supplied content JSON matching the selected installed H5P library, including its required questions, answers, labels and behaviour. The tool packages these parameters; it does not generate missing content or guarantee correct playback.',
+                    'description' => 'Caller-supplied content JSON matching the selected installed H5P library, including its required ' .
+                        'questions, answers, labels and behaviour. The tool packages these parameters; it does not generate ' .
+                        'missing content or guarantee correct playback.',
                 ],
                 'section_number' => [
                     'type' => 'integer',
@@ -96,6 +116,11 @@ class create_h5p_activity extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -140,8 +165,13 @@ class create_h5p_activity extends base_tool {
 
         $encodedparams = json_encode($contentparams);
         if ($encodedparams === false || $encodedparams === '{}' || !str_starts_with($encodedparams, '{')) {
-            throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                'H5P content parameters must encode a nonempty JSON object.');
+            throw new moodle_exception(
+                'error_invalid_params',
+                'tool_teachermcp',
+                '',
+                null,
+                'H5P content parameters must encode a nonempty JSON object.'
+            );
         }
         if (strlen($encodedparams) > 2621440) {
             throw new moodle_exception('error_invalid_params', 'tool_teachermcp', '', null, 'H5P content parameters exceed maximum allowed size of 2.5 MB.');
@@ -421,9 +451,19 @@ class create_h5p_activity extends base_tool {
         }
     }
 
+    /**
+     * Save the H5P content in the requested Moodle area.
+     *
+     * @param \core_h5p\factory $factory H5P factory.
+     * @param \stored_file $file Stored H5P file.
+     * @return int|false|null Result of the operation.
+     */
     protected function save_activity_content(\core_h5p\factory $factory, \stored_file $file): int|false|null {
-        return \core_h5p\helper::save_h5p($factory, $file,
-            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]);
+        return \core_h5p\helper::save_h5p(
+            $factory,
+            $file,
+            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]
+        );
     }
 
     /**

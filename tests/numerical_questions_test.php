@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_teachermcp;
 
@@ -113,8 +121,12 @@ final class numerical_questions_test extends \advanced_testcase {
         $this->assert_grade($changed['question_id'], '0.05', 1.0);
         $this->assert_grade($changed['question_id'], '10', 0.0);
         $this->assert_grade($created['question_id'], '10.2', 1.0);
-        $entries = $DB->get_fieldset_select('question_versions', 'questionbankentryid', 'questionid IN (?, ?, ?)',
-            [$created['question_id'], $renamed['question_id'], $changed['question_id']]);
+        $entries = $DB->get_fieldset_select(
+            'question_versions',
+            'questionbankentryid',
+            'questionid IN (?, ?, ?)',
+            [$created['question_id'], $renamed['question_id'], $changed['question_id']]
+        );
         $this->assertCount(1, array_unique($entries), 'Updates must remain native versions of the same bank entry.');
     }
 
@@ -138,8 +150,10 @@ final class numerical_questions_test extends \advanced_testcase {
         $DB->set_field('question', 'questiontext', '<p>Question <a href="@@PLUGINFILE@@/question.txt">file</a></p>', ['id' => $question->id]);
         $entry = get_question_bank_entry($question->id);
         $DB->set_field('question_bank_entries', 'idnumber', 'native-number', ['id' => $entry->id]);
-        foreach (['questiontext' => [$question->id, 'question.txt'], 'answerfeedback' => [$answerid, 'feedback.txt'],
-            'hint' => [$hintid, 'hint.txt']] as $area => [$itemid, $filename]) {
+        foreach (
+            ['questiontext' => [$question->id, 'question.txt'], 'answerfeedback' => [$answerid, 'feedback.txt'],
+                'hint' => [$hintid, 'hint.txt']] as $area => [$itemid, $filename]
+        ) {
             get_file_storage()->create_file_from_string(['contextid' => $category->contextid, 'component' => 'question',
                 'filearea' => $area, 'itemid' => $itemid, 'filepath' => '/', 'filename' => $filename], $filename);
         }
@@ -160,8 +174,10 @@ final class numerical_questions_test extends \advanced_testcase {
         $newhint = $afterhints[array_search($hintid, array_column($beforehints, 'id'))];
         $this->assertStringContainsString('Hint', $newhint->hint);
         $newanswerid = (int)$DB->get_field('question_answers', 'id', ['question' => $updated['question_id'], 'fraction' => 1], MUST_EXIST);
-        foreach (['questiontext' => [$updated['question_id'], 'question.txt'], 'answerfeedback' => [$newanswerid, 'feedback.txt'],
-            'hint' => [$newhint->id, 'hint.txt']] as $area => [$itemid, $filename]) {
+        foreach (
+            ['questiontext' => [$updated['question_id'], 'question.txt'], 'answerfeedback' => [$newanswerid, 'feedback.txt'],
+                'hint' => [$newhint->id, 'hint.txt']] as $area => [$itemid, $filename]
+        ) {
             $file = get_file_storage()->get_file($category->contextid, 'question', $area, $itemid, '/', $filename);
             $this->assertNotFalse($file, 'Metadata update must retain native numerical files in ' . $area);
             $this->assertSame($filename, $file->get_content());
@@ -170,11 +186,12 @@ final class numerical_questions_test extends \advanced_testcase {
 
     public function test_invalid_numerical_inputs_do_not_create_assessment_records(): void {
         [$course] = $this->fixture();
-        foreach ([[], [['answer' => 'text', 'fraction' => 1.0]], [['answer' => '1e309', 'fraction' => 1.0]],
-            [['answer' => '0', 'fraction' => 1.0, 'tolerance' => -1]], [['answer' => '0', 'fraction' => 0.5]],
-            [['answer' => '0', 'fraction' => 1.0, 'tolerance' => 'bad']], [['answer' => '0', 'fraction' => 1.1]],
-            [['answer' => [], 'fraction' => 1.0]], [['answer' => '0', 'fraction' => 1.0, 'feedback' => []]]]
-                as $options) {
+        foreach (
+            [[], [['answer' => 'text', 'fraction' => 1.0]], [['answer' => '1e309', 'fraction' => 1.0]],
+                [['answer' => '0', 'fraction' => 1.0, 'tolerance' => -1]], [['answer' => '0', 'fraction' => 0.5]],
+                [['answer' => '0', 'fraction' => 1.0, 'tolerance' => 'bad']], [['answer' => '0', 'fraction' => 1.1]],
+                [['answer' => [], 'fraction' => 1.0]], [['answer' => '0', 'fraction' => 1.0, 'feedback' => []]]] as $options
+        ) {
             $this->assert_unchanged_error(fn() => $this->create($course, $options));
             $this->assert_unchanged_error(fn() => (new scaffold_assessment_unit())->execute([
                 'course_id' => (int)$course->id, 'quiz_title' => 'Invalid numerical', 'questions' => [[
@@ -188,8 +205,7 @@ final class numerical_questions_test extends \advanced_testcase {
         [$course, $teacher] = $this->fixture();
         $source = $this->category($course, 'Source');
         $destination = $this->category($course, 'Destination');
-        $question = $this->getDataGenerator()->get_plugin_generator('core_question')->create_question('numerical', 'pi',
-            ['category' => $source->id]);
+        $question = $this->getDataGenerator()->get_plugin_generator('core_question')->create_question('numerical', 'pi', ['category' => $source->id]);
         $this->setUser($teacher);
         $this->assert_unchanged_error(fn() => $this->call($course, 'update_question', [
             'question_id' => (int)$question->id, 'category_id' => (int)$destination->id,
@@ -213,8 +229,7 @@ final class numerical_questions_test extends \advanced_testcase {
 
     private function category(\stdClass $course, string $name): \stdClass {
         $generator = $this->getDataGenerator();
-        $module = $generator->create_module(class_exists(question_bank_helper::class) ? 'qbank' : 'quiz',
-            ['course' => $course->id, 'name' => $name]);
+        $module = $generator->create_module(class_exists(question_bank_helper::class) ? 'qbank' : 'quiz', ['course' => $course->id, 'name' => $name]);
         return $generator->get_plugin_generator('core_question')->create_question_category([
             'contextid' => \context_module::instance($module->cmid)->id, 'name' => $name,
         ]);
@@ -245,8 +260,7 @@ final class numerical_questions_test extends \advanced_testcase {
         }
         $result = [];
         foreach ($tables as $table) {
-            $result[$table] = array_map(static fn($record) => (array)$record,
-                array_values($DB->get_records($table, [], 'id ASC')));
+            $result[$table] = array_map(static fn($record) => (array)$record, array_values($DB->get_records($table, [], 'id ASC')));
         }
         return $result;
     }

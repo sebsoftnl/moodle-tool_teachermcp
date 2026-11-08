@@ -205,12 +205,16 @@ final class assessment_rollback_test extends \advanced_testcase {
         }
         if ($existingbank) {
             foreach ($this->added($before, $during['snapshot'], 'question_bank_entries') as $entry) {
-                $category = array_values(array_filter($during['snapshot']['entities']['question_categories'],
-                    static fn($row) => (int)$row['id'] === (int)$entry['questioncategoryid']))[0];
+                $category = array_values(array_filter(
+                    $during['snapshot']['entities']['question_categories'],
+                    static fn($row) => (int)$row['id'] === (int)$entry['questioncategoryid']
+                ))[0];
                 $this->assertSame((int)$fixture['category']->contextid, (int)$category['contextid']);
-                $this->assertSame((int)$fixture['category']->id,
+                $this->assertSame(
+                    (int)$fixture['category']->id,
                     (int)$category[$operation === 'scaffold' ? 'parent' : 'id'],
-                    'Existing-bank work must use the preserved fixture bank.');
+                    'Existing-bank work must use the preserved fixture bank.'
+                );
             }
         }
         $this->assertCount(2 * $questioncount, $this->added($before, $during['snapshot'], 'question_answers'));
@@ -238,8 +242,10 @@ final class assessment_rollback_test extends \advanced_testcase {
             $contexts = array_filter($during['snapshot']['entities']['context'], static fn($row) =>
                 (int)$row['contextlevel'] === CONTEXT_MODULE && (int)$row['instanceid'] === (int)$module['id']);
             $this->assertCount(1, $contexts);
-            $section = array_values(array_filter($during['snapshot']['entities']['course_sections'],
-                static fn($row) => (int)$row['id'] === (int)$module['section']))[0];
+            $section = array_values(array_filter(
+                $during['snapshot']['entities']['course_sections'],
+                static fn($row) => (int)$row['id'] === (int)$module['section']
+            ))[0];
             $this->assertContains((int)$module['id'], array_map('intval', explode(',', $section['sequence'])));
         }
         foreach ($newquizzes as $quiz) {
@@ -249,9 +255,11 @@ final class assessment_rollback_test extends \advanced_testcase {
         }
         $this->assertSame($before, $after, 'Rollback must restore every table fingerprint and assessment relationship.');
         $this->assertSame($before, $afterreads, 'Cache observation must not repair or alter persisted rows.');
-        $this->assertSame(['immediate' => $cachebefore, 'fresh' => $cachebefore],
+        $this->assertSame(
+            ['immediate' => $cachebefore, 'fresh' => $cachebefore],
             ['immediate' => $immediate, 'fresh' => $fresh],
-            'Rolled-back modules must not survive immediate or static-reset modinfo lookup.');
+            'Rolled-back modules must not survive immediate or static-reset modinfo lookup.'
+        );
     }
 
     private function cache_observation(int $courseid): array {
@@ -273,8 +281,11 @@ final class assessment_rollback_test extends \advanced_testcase {
         $course = $generator->create_course();
         $sentinelcourse = $generator->create_course();
         $sentinelcategory = $this->create_native_bank($sentinelcourse, 'Unrelated bank');
-        $generator->get_plugin_generator('core_question')->create_question('truefalse', null,
-            ['category' => $sentinelcategory->id, 'name' => 'Unrelated native question']);
+        $generator->get_plugin_generator('core_question')->create_question(
+            'truefalse',
+            null,
+            ['category' => $sentinelcategory->id, 'name' => 'Unrelated native question']
+        );
         $generator->create_module('page', ['course' => $course->id, 'name' => 'Preserved activity']);
         $teacher = $generator->create_user();
         $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
@@ -282,8 +293,11 @@ final class assessment_rollback_test extends \advanced_testcase {
         $existingquestion = null;
         if ($existingbank) {
             $category = $this->create_native_bank($course, 'Existing subject bank');
-            $existingquestion = $generator->get_plugin_generator('core_question')->create_question('truefalse', null,
-                ['category' => $category->id, 'name' => 'Preserved subject question']);
+            $existingquestion = $generator->get_plugin_generator('core_question')->create_question(
+                'truefalse',
+                null,
+                ['category' => $category->id, 'name' => 'Preserved subject question']
+            );
         }
         $quiz = null;
         if ($attachment) {
@@ -329,7 +343,9 @@ final class assessment_rollback_test extends \advanced_testcase {
 
     private function added(array $before, array $after, string $table): array {
         $ids = array_map('intval', array_column($before['entities'][$table], 'id'));
-        return array_values(array_filter($after['entities'][$table],
-            static fn($row) => !in_array((int)$row['id'], $ids, true)));
+        return array_values(array_filter(
+            $after['entities'][$table],
+            static fn($row) => !in_array((int)$row['id'], $ids, true)
+        ));
     }
 }

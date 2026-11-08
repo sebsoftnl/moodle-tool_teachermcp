@@ -100,8 +100,11 @@ final class content_tools_test extends \advanced_testcase {
             } catch (\required_capability_exception $error) {
                 $this->assertStringContainsString(get_capability_string('moodle/course:activityvisibility'), $error->getMessage());
             }
-            $this->assertEquals($before, $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST),
-                'Rejected visibility change must preserve title, content, intro, revision and modification time');
+            $this->assertEquals(
+                $before,
+                $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST),
+                'Rejected visibility change must preserve title, content, intro, revision and modification time'
+            );
             $this->assertSame(0, (int)$DB->get_field('course_modules', 'visible', ['id' => $page->cmid], MUST_EXIST));
         }
     }
@@ -141,8 +144,11 @@ final class content_tools_test extends \advanced_testcase {
         $server = new server();
         foreach ($cases as $name => $arguments) {
             try {
-                $server->execute_tool($name, $arguments + ['course_id' => (int)$course->id, 'visible' => true],
-                    (object)['permissions' => json_encode(['all_teacher_tools' => true])]);
+                $server->execute_tool(
+                    $name,
+                    $arguments + ['course_id' => (int)$course->id, 'visible' => true],
+                    (object)['permissions' => json_encode(['all_teacher_tools' => true])]
+                );
                 $this->fail('Explicit publication must require visibility permission: ' . $name);
             } catch (\required_capability_exception $error) {
                 $this->assertStringContainsString(get_capability_string('moodle/course:activityvisibility'), $error->getMessage());
@@ -157,8 +163,11 @@ final class content_tools_test extends \advanced_testcase {
         $this->setAdminUser();
         $path = $CFG->dirroot . '/h5p/tests/fixtures/filltheblanks.h5p';
         $file = \core_h5p\helper::create_fake_stored_file_from_path($path);
-        $saved = \core_h5p\helper::save_h5p(new \core_h5p\factory(), $file,
-            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]);
+        $saved = \core_h5p\helper::save_h5p(
+            new \core_h5p\factory(),
+            $file,
+            (object)['frame' => 1, 'export' => 1, 'embed' => 1, 'copyright' => 1]
+        );
         $this->assertNotEmpty($saved, 'The shipped local H5P fixture must install without external downloads');
         $zip = new \ZipArchive();
         $this->assertTrue($zip->open($path));
@@ -450,6 +459,12 @@ final class content_tools_test extends \advanced_testcase {
 
         // Non-course_assets filearea returns false.
         $this->assertFalse(tool_teachermcp_pluginfile($course, null, $coursecontext, 'other_area', [0, 'pixel.png'], false));
+
+        $student = $generator->create_user();
+        $generator->enrol_user($student->id, $course->id, 'student');
+        $this->setUser($student);
+        $this->expectException(\required_capability_exception::class);
+        tool_teachermcp_pluginfile($course, null, $coursecontext, 'course_assets', [0, 'pixel.png'], false);
     }
 
     public function test_blok5_delete_activity_ui_confirmation_guard(): void {
@@ -568,8 +583,11 @@ final class content_tools_test extends \advanced_testcase {
             $this->assertStringContainsString('online text or file uploads', $error->getMessage());
             $this->assertStringContainsString('Offline/oral assignments are not currently supported', $error->getMessage());
         }
-        $this->assertEquals($before, array_map(static fn($table) => $DB->get_records($table, [], 'id ASC'), $tables),
-            'Rejected offline creation must not change activities, assignments, grades or events');
+        $this->assertEquals(
+            $before,
+            array_map(static fn($table) => $DB->get_records($table, [], 'id ASC'), $tables),
+            'Rejected offline creation must not change activities, assignments, grades or events'
+        );
     }
 
     public function test_create_assignment_tool(): void {

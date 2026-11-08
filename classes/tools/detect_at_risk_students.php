@@ -30,15 +30,30 @@ use context_course;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class detect_at_risk_students extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'detect_at_risk_students';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
-        return 'Compute an early-warning risk index for students in a course based on days inactive, overdue assignments, failing grades, missing activity completions, and Moodle Analytics predictions.';
+        return 'Compute an early-warning risk index for students in a course based on days inactive, overdue ' .
+            'assignments, failing grades, missing activity completions, and Moodle Analytics predictions.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -58,7 +73,8 @@ class detect_at_risk_students extends base_tool {
                 ],
                 'grade_warning_percent' => [
                     'type' => 'number',
-                    'description' => 'Percentage of each student\'s native course-grade range below which to flag their grade (default: 55.0). Uses Moodle aggregation, including its empty-grade policy; not the maximum of all planned work.',
+                    'description' => 'Percentage of each student\'s native course-grade range below which to flag their grade (default: 55.0). ' .
+                        'Uses Moodle aggregation, including its empty-grade policy; not the maximum of all planned work.',
                     'default' => 55.0,
                 ],
                 'grade_warning_threshold' => [
@@ -75,6 +91,11 @@ class detect_at_risk_students extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $DB, $CFG, $USER;
         require_once($CFG->libdir . '/completionlib.php');
@@ -165,7 +186,7 @@ class detect_at_risk_students extends base_tool {
         }
 
         $studentids = array_keys($students);
-        list($stduidsql, $stduidparams) = $DB->get_in_or_equal($studentids, SQL_PARAMS_NAMED);
+        [$stduidsql, $stduidparams] = $DB->get_in_or_equal($studentids, SQL_PARAMS_NAMED);
 
         // L4: Batch fetch user_lastaccess outside loop.
         $lastaccessparams = array_merge(['cid' => $course->id], $stduidparams);
@@ -179,7 +200,7 @@ class detect_at_risk_students extends base_tool {
 
         if (!empty($assigns)) {
             $assignids = array_keys($assigns);
-            list($aidsql, $aidparams) = $DB->get_in_or_equal($assignids, SQL_PARAMS_NAMED);
+            [$aidsql, $aidparams] = $DB->get_in_or_equal($assignids, SQL_PARAMS_NAMED);
 
             // Submissions.
             $subsql = "SELECT " . $DB->sql_concat('assignment', "'-'", 'userid') . " AS k, id, status
@@ -205,9 +226,11 @@ class detect_at_risk_students extends base_tool {
         // Batch grades for students.
         $gradesmap = [];
         if ($courseitem) {
-            $records = $DB->get_records_select('grade_grades',
+            $records = $DB->get_records_select(
+                'grade_grades',
                 "itemid = :itemid AND userid $stduidsql AND finalgrade IS NOT NULL",
-                array_merge(['itemid' => $courseitem->id], $stduidparams));
+                array_merge(['itemid' => $courseitem->id], $stduidparams)
+            );
             foreach ($records as $record) {
                 $grade = new \grade_grade($record, false);
                 $grade->grade_item = $courseitem;
@@ -227,7 +250,6 @@ class detect_at_risk_students extends base_tool {
         $atrisk = [];
 
         foreach ($students as $student) {
-
             $riskpoints = 0;
             $flags = [];
 
@@ -290,8 +312,11 @@ class detect_at_risk_students extends base_tool {
                     $riskpoints += 30;
                     $flags[] = [
                         'code' => 'low_grade',
-                        'message' => get_string('flag_low_grade_threshold', 'tool_teachermcp',
-                            (object)['grade' => $currentgrade, 'threshold' => $gradethreshold]),
+                        'message' => get_string(
+                            'flag_low_grade_threshold',
+                            'tool_teachermcp',
+                            (object)['grade' => $currentgrade, 'threshold' => $gradethreshold]
+                        ),
                         'grade' => $currentgrade,
                         'grade_assessment' => $gradeassessment,
                     ];
@@ -331,7 +356,7 @@ class detect_at_risk_students extends base_tool {
             }
 
             if ($riskpoints >= 20) {
-                $flagmessages = array_map(function($f) {
+                $flagmessages = array_map(function ($f) {
                     return $f['message'];
                 }, $flags);
 
@@ -351,7 +376,7 @@ class detect_at_risk_students extends base_tool {
         }
 
         // Sort descending by risk score.
-        usort($atrisk, function($a, $b) {
+        usort($atrisk, function ($a, $b) {
             return $b['risk_score'] <=> $a['risk_score'];
         });
 

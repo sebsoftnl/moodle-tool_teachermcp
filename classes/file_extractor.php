@@ -28,7 +28,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class file_extractor {
-
     /** Maximum file size in bytes to attempt textual extraction (15 MB). */
     const MAX_EXTRACT_SIZE = 15728640;
 
@@ -89,10 +88,12 @@ class file_extractor {
         }
 
         $fs = get_file_storage();
-        $areas = $DB->get_records_sql('SELECT MIN(id) AS id, component, filearea
+        $areas = $DB->get_records_sql(
+            'SELECT MIN(id) AS id, component, filearea
                 FROM {files} WHERE contextid = :contextid AND filename <> :directory
             GROUP BY component, filearea ORDER BY component, filearea',
-            ['contextid' => $context->id, 'directory' => '.']);
+            ['contextid' => $context->id, 'directory' => '.']
+        );
 
         $validfiles = [];
         foreach ($areas as $area) {
@@ -100,8 +101,16 @@ class file_extractor {
             if (!self::is_allowed_filearea($area->component, $area->filearea)) {
                 continue;
             }
-            foreach ($fs->get_area_files($context->id, $area->component, $area->filearea, false,
-                    'itemid, filepath, filename', false) as $file) {
+            foreach (
+                $fs->get_area_files(
+                    $context->id,
+                    $area->component,
+                    $area->filearea,
+                    false,
+                    'itemid, filepath, filename',
+                    false
+                ) as $file
+            ) {
                 $validfiles[] = $file;
             }
         }
@@ -345,8 +354,12 @@ class file_extractor {
         // L3: Split streams with bounded count.
         $extracted = [];
         // A length-only dictionary identifies the supported unfiltered stream form.
-        preg_match_all('/(<<\s*\/Length\s+\d+(?:\s+\d+\s+R)?\s*>>\s*)?stream\r?\n(.*?)[\r\n]+endstream/s',
-            $raw, $matches, PREG_SET_ORDER);
+        preg_match_all(
+            '/(<<\s*\/Length\s+\d+(?:\s+\d+\s+R)?\s*>>\s*)?stream\r?\n(.*?)[\r\n]+endstream/s',
+            $raw,
+            $matches,
+            PREG_SET_ORDER
+        );
         if (preg_last_error() !== PREG_NO_ERROR) {
             return ['success' => false, 'content' => '', 'notice' => 'Failed to parse PDF stream syntax.'];
         }
@@ -412,7 +425,7 @@ class file_extractor {
     protected static function decode_pdf_string(string $str): string {
         $str = str_replace(['\\\\', '\(', '\)'], ['\\', '(', ')'], $str);
         // Replace octal escapes like \040 with corresponding characters.
-        $str = preg_replace_callback('/\\\\([0-7]{1,3})/', function($m) {
+        $str = preg_replace_callback('/\\\\([0-7]{1,3})/', function ($m) {
             return chr(octdec($m[1]));
         }, $str);
         return $str;

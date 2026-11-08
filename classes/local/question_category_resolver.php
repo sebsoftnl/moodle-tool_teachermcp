@@ -46,8 +46,13 @@ final class question_category_resolver {
             $context = \context::instance_by_id($category->contextid, IGNORE_MISSING);
             $categorycourse = $context ? $context->get_course_context(false) : null;
             if (!$categorycourse || $categorycourse->id != $coursecontext->id) {
-                throw new \moodle_exception('error_invalid_params', 'tool_teachermcp', '', null,
-                    'Category does not belong to this course.');
+                throw new \moodle_exception(
+                    'error_invalid_params',
+                    'tool_teachermcp',
+                    '',
+                    null,
+                    'Category does not belong to this course.'
+                );
             }
             require_capability('moodle/question:add', $context);
             return $category;
@@ -60,14 +65,18 @@ final class question_category_resolver {
 
         $modname = question_bank_helper::get_default_question_bank_activity_name();
         $banks = question_bank_helper::get_activity_instances_with_shareable_questions(
-            [$course->id], [], ['moodle/question:add']
+            [$course->id],
+            [],
+            ['moodle/question:add']
         );
         $selected = null;
         foreach ($banks as $bank) {
             $cm = $bank->cminfo;
-            if ($cm->modname !== $modname || !$DB->record_exists($modname, [
+            if (
+                $cm->modname !== $modname || !$DB->record_exists($modname, [
                 'id' => $cm->instance, 'type' => question_bank_helper::TYPE_STANDARD,
-            ])) {
+                ])
+            ) {
                 continue;
             }
             if ($selected === null || (int)$cm->id < (int)$selected->id) {

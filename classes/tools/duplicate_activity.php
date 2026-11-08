@@ -32,15 +32,29 @@ use stdClass;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class duplicate_activity extends base_tool {
-
+    /**
+     * Return the registered MCP tool name.
+     *
+     * @return string Result of the operation.
+     */
     public function get_name(): string {
         return 'duplicate_activity';
     }
 
+    /**
+     * Return the MCP tool description.
+     *
+     * @return string Result of the operation.
+     */
     public function get_description(): string {
         return 'Duplicate an existing activity or resource within the same course or into another course where teacher has editing rights.';
     }
 
+    /**
+     * Return the JSON input schema for this tool.
+     *
+     * @return array Result of the operation.
+     */
     public function get_input_schema(): array {
         return [
             'type' => 'object',
@@ -62,6 +76,11 @@ class duplicate_activity extends base_tool {
         ];
     }
 
+    /**
+     * Execute the tool using the validated arguments.
+     *
+     * @param array $params params value.
+     */
     public function execute(array $params) {
         global $CFG, $DB, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -72,7 +91,7 @@ class duplicate_activity extends base_tool {
         $targetcourseid = (int)($params['target_course_id'] ?? 0);
         $sectionnum = isset($params['section_number']) ? (int)$params['section_number'] : null;
 
-        list($cm, $sourcecourse, $sourcecontext) = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
+        [$cm, $sourcecourse, $sourcecontext] = $this->require_cm_access($cmid, 'moodle/course:manageactivities');
 
         if ($targetcourseid > 0 && $targetcourseid !== (int)$sourcecourse->id) {
             $targetcourse = $this->require_course_access($targetcourseid, 'moodle/course:manageactivities');
@@ -86,8 +105,13 @@ class duplicate_activity extends base_tool {
 
         // Check if plugin supports backup.
         if (!plugin_supports('mod', $cm->modname, FEATURE_BACKUP_MOODLE2)) {
-            throw new moodle_exception('duplicatenosupport', 'error', '', null,
-                "Module '{$cm->modname}' does not support duplication.");
+            throw new moodle_exception(
+                'duplicatenosupport',
+                'error',
+                '',
+                null,
+                "Module '{$cm->modname}' does not support duplication."
+            );
         }
 
         if ($sectionnum !== null) {
@@ -114,15 +138,27 @@ class duplicate_activity extends base_tool {
         }
 
         // Cross-course or custom section duplication via backup/restore controller.
-        $bc = new \backup_controller(\backup::TYPE_1ACTIVITY, $cm->id, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_IMPORT, $USER->id);
+        $bc = new \backup_controller(
+            \backup::TYPE_1ACTIVITY,
+            $cm->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_IMPORT,
+            $USER->id
+        );
 
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
         $bc->destroy();
 
-        $rc = new \restore_controller($backupid, $targetcourse->id,
-            \backup::INTERACTIVE_NO, \backup::MODE_IMPORT, $USER->id, \backup::TARGET_CURRENT_ADDING);
+        $rc = new \restore_controller(
+            $backupid,
+            $targetcourse->id,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_IMPORT,
+            $USER->id,
+            \backup::TARGET_CURRENT_ADDING
+        );
 
         $rc->execute_precheck();
         $rc->execute_plan();
