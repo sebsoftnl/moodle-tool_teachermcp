@@ -23,3 +23,16 @@ bridge:
 Check camp listing:
   rules:
     - when: on_success
+
+# Publish the reviewed branch to GitHub after tests, without merging main or tagging a release.
+deploy.github.review:
+  stage: deploy
+  image: moodlehq/moodle-php-apache:8.1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "fix/release-ci-camp-readiness" && $PUSHLOCATION'
+    - when: never
+  script:
+    - |
+      set -eu
+      git remote add github "$PUSHLOCATION"
+      git push --no-tags github "HEAD:refs/heads/${CI_COMMIT_BRANCH}"
