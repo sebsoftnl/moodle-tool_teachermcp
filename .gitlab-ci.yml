@@ -7,8 +7,6 @@ variables:
   PLUGIN: 'tool_teachermcp'
   REPOURL: 'https://github.com/sebsoftnl/moodle-tool_teachermcp'
   PATHNAME: 'admin/tool/teachermcp'
-  # Publication is an explicit release decision, not a side effect of a tag.
-  GITHUB_PUSH_ENABLED: "false"
 
 # The shared Moodle matrix does not exercise the local stdio/OAuth bridge.
 bridge:
@@ -25,8 +23,3 @@ bridge:
 Check camp listing:
   rules:
     - when: on_success
-
-deploy.github:
-  rules:
-    - if: '$CI_COMMIT_TAG && $PUSHLOCATION && $GITHUB_PUSH_ENABLED == "true"'
-    - when: never
