@@ -69,7 +69,7 @@
                         </button>
                         {{#status_active}}
                         <a href="{{revokelink}}" class="btn btn-outline-danger btn-sm" aria-label="{{#str}}revoke, tool_teachermcp{{/str}}: {{name}}"
-                           data-confirm-revoke="{{confirm_revoke}}">
+                           data-confirm-revoke="{{confirm_revoke}}" onclick="return confirm(this.dataset.confirmRevoke);">
                             <i class="fa fa-ban" aria-hidden="true"></i> {{#str}}btn_revoke, tool_teachermcp{{/str}}
                         </a>
                         {{/status_active}}

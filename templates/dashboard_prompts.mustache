@@ -27,7 +27,7 @@
         <label for="promptCourseFilter" class="font-weight-bold">{{#str}}course_filter_label, tool_teachermcp{{/str}}</label>
         <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions">
             <select id="promptCourseFilter" name="courseid" class="custom-select form-control tool_teachermcp_course_select" required>
-                {{^selected_course}}<option value="" selected disabled>{{#str}}course_filter_all, tool_teachermcp{{/str}}</option>{{/selected_course}}
+                <option value="" disabled {{^selected_course}}selected{{/selected_course}} label="{{#str}}course_filter_all, tool_teachermcp{{/str}}"></option>
                 {{#courses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{fullname}}</option>{{/courses}}
             </select>
             <button type="submit" class="btn btn-secondary">{{#str}}use_course, tool_teachermcp{{/str}}</button>

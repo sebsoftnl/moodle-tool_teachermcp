@@ -121,7 +121,7 @@ dashboard.querySelectorAll('button[data-copy-target], button[data-prompt]').forE
     const label = button.innerHTML;
     let restore;
     button.setAttribute('aria-live', 'polite');
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async() => {
         clearTimeout(restore);
         button.innerHTML = label;
         button.disabled = true;

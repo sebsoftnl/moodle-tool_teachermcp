@@ -6,17 +6,10 @@
     {}
 }}
 {{#js}}
-document.querySelectorAll('a[data-confirm-revoke]').forEach(link => {
-    link.addEventListener('click', event => {
-        if (!confirm(link.dataset.confirmRevoke)) {
-            event.preventDefault();
-        }
-    });
-});
 require(['core/modal', 'core/notification'], function(Modal, Notification) {
     document.querySelectorAll('[data-connection-details]').forEach(button => {
         button.disabled = false;
-        button.addEventListener('click', async () => {
+        button.addEventListener('click', async() => {
             button.disabled = true;
             try {
                 const title = document.createElement('span');
