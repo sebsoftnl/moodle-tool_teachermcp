@@ -158,6 +158,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Create a new mod_page activity.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function create_page(array $params): array {
         global $CFG, $DB;
@@ -226,6 +229,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Update an existing mod_page activity.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function update_page(array $params): array {
         global $DB;
@@ -276,6 +282,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Create a new mod_book activity with an optional initial chapter.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function create_book(array $params): array {
         global $CFG, $DB;
@@ -369,6 +378,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Add a new chapter to an existing Book.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function add_book_chapter(array $params): array {
         global $CFG, $DB;
@@ -432,6 +444,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Update an existing chapter in a Book.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function update_book_chapter(array $params): array {
         global $CFG, $DB;
@@ -483,6 +498,9 @@ class manage_content_activity extends base_tool {
 
     /**
      * Get content of a page or book.
+     *
+     * @param array $params Validated action arguments.
+     * @return array Action result.
      */
     protected function get_content(array $params): array {
         global $DB;

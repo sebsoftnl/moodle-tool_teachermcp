@@ -203,6 +203,10 @@ class manage_question_bank extends base_tool {
 
     /**
      * List categories in course context and child module contexts with question counts (Moodle 4.0+ schema).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @return array Question bank action result.
      */
     protected function action_list_categories(stdClass $course, context_course $context): array {
         global $DB;
@@ -252,6 +256,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * List questions in category or course using Moodle 4.0+ schema (K4 scoped).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_list_questions(stdClass $course, context_course $context, array $params): array {
         global $DB;
@@ -326,6 +335,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * Inspect details of a specific question (Moodle 4.0+ schema with K4 context scoping).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_get_question(stdClass $course, context_course $context, array $params): array {
         global $DB;
@@ -404,6 +418,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * Create a question using the Moodle Question API (K4).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_create_question(stdClass $course, context_course $context, array $params): array {
         global $DB, $USER;
@@ -550,6 +569,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * Update an existing question (K4 scoped).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_update_question(stdClass $course, context_course $context, array $params): array {
         global $CFG, $DB, $USER;
@@ -850,6 +874,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * Soft delete a question using Moodle question_delete_question (K4 scoped, N3 server-side confirmation).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_delete_question(stdClass $course, context_course $context, array $params): array {
         global $DB, $USER;
@@ -943,6 +972,11 @@ class manage_question_bank extends base_tool {
 
     /**
      * Add existing question to a quiz (K4 scoped, B4 hardened).
+     *
+     * @param \stdClass $course Target course.
+     * @param \context_course $context Course context.
+     * @param array $params Validated action arguments.
+     * @return array Question bank action result.
      */
     protected function action_add_to_quiz(stdClass $course, context_course $context, array $params): array {
         global $DB;
@@ -1012,6 +1046,10 @@ class manage_question_bank extends base_tool {
 
     /**
      * Validate question options and answer fractions according to Moodle rules.
+     *
+     * @param string $qtype Question type to validate.
+     * @param array $params Question options and answers.
+     * @return void No return value.
      */
     protected function validate_question_options(string $qtype, array $params): void {
         if ($qtype === 'numerical') {

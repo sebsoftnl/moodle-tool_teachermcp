@@ -2,7 +2,7 @@
 
 ## Plugin checks
 
-GitLab CI runs the bridge suite and the Moodle plugin PHPUnit suite against Moodle 4.5 and current Moodle main. To check the bridge locally, use Node.js 22.11 or later:
+GitLab CI runs the bridge suite and the shared Moodle plugin matrix on Moodle 4.5, 5.0, 5.1, 5.2 and current main, with PostgreSQL and MariaDB. The Moodle jobs gate lint, validation, savepoints, Mustache, Grunt, PHPDoc and PHPUnit. They do not currently execute browser scenarios: there are no plugin Behat features. To check the bridge locally, use Node.js 22.11 or later:
 
 ```sh
 node --test bridge/*.test.mjs
@@ -31,7 +31,7 @@ The stabilization matrix uses these exact development checkouts:
 | Moodle 4.5.0 minimum compatibility boundary | `52c0da7c647bd6ba8c5f61882d88959821a1fb41` | 8.1.33 |
 | Moodle 5.3 development snapshot | `42622298fe06f9626d988d60b2bf589bd8f850e8` | 8.4.11 |
 
-Both use MariaDB 11.4.13. The local matrix runs isolated fixtures and native teacher/student browser, HTTP and stdio workflows. Its fixed catalog contains 24 built-ins, 24 advertised actions, 15 prompts, one static resource and three resource templates. Actions require positive and relevant negative assertions. The full PHPUnit suite contains 280 methods, including eight numerical-authoring regressions. The pinned 5.3 runner reports 10 inherited PHPUnit deprecations and one notice. Preserve those diagnostics rather than suppressing them.
+Both use MariaDB 11.4.13. The local matrix runs isolated fixtures and native teacher/student browser, HTTP and stdio workflows. Its fixed catalog contains 24 built-ins, 24 advertised actions, 15 prompts, one static resource and three resource templates. Actions require positive and relevant negative assertions. At the November 2026 CI baseline, the discovered PHPUnit suite runs 350 tests (5,157 assertions on Moodle main); the earlier pinned 5.3 runner reported inherited PHPUnit deprecations and a notice. Preserve those diagnostics rather than suppressing them.
 
 The GitLab pipeline does not contain the maintainer's complete Docker/browser orchestration. A successful pipeline or doctor command alone is not that matrix. Qualification applies only to the tested source and environment; changes require fresh relevant evidence.
 

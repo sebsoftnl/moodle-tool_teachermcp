@@ -49,7 +49,9 @@ final class tool_registry_throwing_description_tool implements external_tool {
     /**
      * Execute the fixture tool.
      *
-     * @return array
+     * @param array $arguments Validated tool arguments.
+     * @param execution_context $context Current tool execution context.
+     * @return array Empty fixture result.
      */
     public function execute(array $arguments, execution_context $context): array {
         return [];

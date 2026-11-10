@@ -80,8 +80,8 @@ final class content_files {
     /**
      * Build or inspect a fixture ZIP package.
      *
-     * @param array|\stored_file $entries ZIP entries or stored H5P file.
-     * @return array|string Decoded H5P contents or ZIP bytes.
+     * @param array $entries ZIP entry names mapped to their contents.
+     * @return string ZIP package bytes.
      */
     public static function package(array $entries): string {
         $path = tempnam(make_request_directory(), 'tmcp-content-');

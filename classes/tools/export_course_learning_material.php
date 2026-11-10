@@ -264,6 +264,9 @@ class export_course_learning_material extends base_tool {
 
     /**
      * Extract substantive content for a specific module type.
+     *
+     * @param \cm_info $cm Course module to extract.
+     * @return array|null Extracted module content, if supported.
      */
     protected function extract_module_content(\cm_info $cm): ?array {
         global $DB;
@@ -505,6 +508,9 @@ class export_course_learning_material extends base_tool {
 
     /**
      * Extract substantive content and questions from core mod_h5pactivity packages.
+     *
+     * @param \cm_info $cm Core H5P course module.
+     * @return array|null Extracted activity content, if available.
      */
     protected function extract_h5p_activity(\cm_info $cm): ?array {
         global $DB;
@@ -566,6 +572,9 @@ class export_course_learning_material extends base_tool {
 
     /**
      * Extract substantive content from legacy/plugin mod_hvp instances.
+     *
+     * @param \cm_info $cm Legacy HVP course module.
+     * @return array|null Extracted activity content, if available.
      */
     protected function extract_hvp_activity(\cm_info $cm): ?array {
         global $DB;
@@ -614,6 +623,10 @@ class export_course_learning_material extends base_tool {
 
     /**
      * Recursively traverse H5P parameter trees to discover didactic text and questions.
+     *
+     * @param mixed $node Current H5P parameter tree node.
+     * @param array $collected Collected text and questions, updated in place.
+     * @return void No return value.
      */
     protected function extract_text_from_h5p_json($node, array &$collected): void {
         if (is_string($node)) {

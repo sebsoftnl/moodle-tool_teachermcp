@@ -153,7 +153,8 @@ class server {
      * The default is deny, so a fresh or unset installation never publishes an
      * independently installed component's MCP tools without administrator action.
      *
-     * @return bool
+     * @param string|null $toolname Optional external tool name to check.
+     * @return bool Whether external tools and the specified provider are enabled.
      */
     public static function is_external_tools_enabled_by_admin(?string $toolname = null): bool {
         if ((int)get_config('tool_teachermcp', 'enable_external_tools') !== 1) {
@@ -860,6 +861,10 @@ class server {
 
     /**
      * Build standard JSON-RPC success response.
+     *
+     * @param mixed $id JSON-RPC request identifier.
+     * @param mixed $result Tool result.
+     * @return array JSON-RPC success response.
      */
     protected function build_jsonrpc_success($id, $result): array {
         return [
@@ -871,6 +876,11 @@ class server {
 
     /**
      * Build standard JSON-RPC error response.
+     *
+     * @param mixed $id JSON-RPC request identifier.
+     * @param int $code JSON-RPC error code.
+     * @param string $message Error message.
+     * @return array JSON-RPC error response.
      */
     protected function build_jsonrpc_error($id, int $code, string $message): array {
         return [

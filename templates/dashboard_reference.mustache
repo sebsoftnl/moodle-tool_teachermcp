@@ -2,6 +2,17 @@
     This file is part of Moodle - http://moodle.org/
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/dashboard_reference
+    Example context (json):
+    {
+        "tools_count_badge": "1 active tool",
+        "mcp_resources": [{"uri": "teachermcp://courses", "name": "Teaching courses", "description": "Course list"}],
+        "mcp_resource_templates": [],
+        "download_skill_url": "/admin/tool/teachermcp/download.php?type=skill",
+        "system_prompt_content": "Example skill instructions",
+        "oauth_auth_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/authorize.php",
+        "oauth_token_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/token.php",
+        "oauth_meta_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/metadata.php"
+    }
 }}
 <details id="technical-reference" class="mb-4 pt-3 border-top">
     <summary class="h5">{{#str}}technical_reference, tool_teachermcp{{/str}}</summary>

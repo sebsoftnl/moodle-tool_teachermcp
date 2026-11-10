@@ -1,6 +1,14 @@
 {{!
     @template tool_teachermcp/connection_details
     Shared display of token expiry and grants; contains no credentials.
+    Example context (json):
+    {
+        "teachername": "Example Teacher", "status_label": "Active", "created": "1 January 2026",
+        "lastaccess": "2 January 2026", "lastchars": "1234",
+        "details": {"validuntil": "1 March 2026", "permissions": [
+            {"name": "read", "description": "Read teaching courses"}
+        ]}
+    }
 }}
 <div class="tool_teachermcp_connection_details">
     {{#teachername}}<p><strong>{{#str}}col_teacher, tool_teachermcp{{/str}}:</strong> {{teachername}}</p>{{/teachername}}

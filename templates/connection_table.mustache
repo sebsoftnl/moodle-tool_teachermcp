@@ -4,6 +4,19 @@
 
     @template tool_teachermcp/connection_table
     Shared teacher connection rows for active access and inactive history.
+    Example context (json):
+    {
+        "admin_view": true, "confirm_revoke": "Revoke this connection?",
+        "tokens": [{
+            "id": 1, "teacherurl": "/user/profile.php?id=1", "teachername": "Example Teacher",
+            "name": "Example Agent", "lastchars": "1234", "created": "1 January 2026",
+            "lastaccess": "2 January 2026", "status_active": true, "status_label": "Active",
+            "revokelink": "/admin/tool/teachermcp/index.php?action=revoke&tokenid=1&sesskey=example",
+            "details": {"validuntil": "1 March 2026", "permissions": [
+                {"name": "read", "description": "Read teaching courses"}
+            ]}
+        }]
+    }
 }}
 <div class="table-responsive" tabindex="0">
     <table class="table table-hover table-striped mb-0 {{^admin_view}}small{{/admin_view}} tool_teachermcp_connections">
@@ -45,7 +58,7 @@
                     <span class="tool_teachermcp_mobile_label">{{#str}}status, tool_teachermcp{{/str}}:</span>
                     <span class="badge {{#status_active}}badge-success{{/status_active}}{{^status_active}}badge-secondary{{/status_active}}">{{status_label}}</span>
                 </td>
-                <td class="align-middle text-right text-end tool_teachermcp_connection_actions">
+                <td class="align-middle tool_teachermcp_connection_actions">
                     <div class="d-flex flex-wrap tool_teachermcp_actions">
                         <button type="button" class="btn btn-outline-secondary btn-sm" disabled
                                 data-connection-details="tool-teachermcp-details-{{id}}"
@@ -56,7 +69,7 @@
                         </button>
                         {{#status_active}}
                         <a href="{{revokelink}}" class="btn btn-outline-danger btn-sm" aria-label="{{#str}}revoke, tool_teachermcp{{/str}}: {{name}}"
-                           data-confirm-revoke="{{confirm_revoke}}" onclick="return confirm(this.dataset.confirmRevoke);">
+                           data-confirm-revoke="{{confirm_revoke}}">
                             <i class="fa fa-ban" aria-hidden="true"></i> {{#str}}btn_revoke, tool_teachermcp{{/str}}
                         </a>
                         {{/status_active}}

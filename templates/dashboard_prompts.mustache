@@ -2,6 +2,21 @@
     This file is part of Moodle - http://moodle.org/
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/dashboard_prompts
+    Example context (json):
+    {
+        "invalid_course": false, "has_courses": true,
+        "course_form_url": "/admin/tool/teachermcp/my_agent.php#teacher-prompts",
+        "selected_client": "claude", "selected_course": {"id": 2, "fullname": "Example course"},
+        "courses": [{"id": 2, "fullname": "Example course", "selected": true}],
+        "prompt_categories": [{
+            "id": "prompts-context", "category": "Context", "count": 1,
+            "items": [{
+                "id": "prompt-ingest", "textid": "prompt-ingest-text", "title": "Summarise course",
+                "description": "Review course content.", "copy_label": "Copy summarise course prompt",
+                "copy_target": false, "prompt": "Summarise this course."
+            }]
+        }]
+    }
 }}
 <section id="teacher-prompts" class="mb-4 pt-3 border-top">
     <h2 class="h4">{{#str}}dashboard_tasks, tool_teachermcp{{/str}}</h2>

@@ -159,6 +159,9 @@ class get_h5p_libraries extends base_tool {
 
     /**
      * Provide ready-to-use parameter templates for standard H5P content types.
+     *
+     * @param string $machinename H5P library machine name.
+     * @return array|null Example parameters, if supported.
      */
     protected function get_example_params_for_library(string $machinename): ?array {
         switch ($machinename) {

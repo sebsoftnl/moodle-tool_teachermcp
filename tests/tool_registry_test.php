@@ -177,7 +177,8 @@ final class tool_registry_test extends \advanced_testcase {
     /**
      * Build a valid test provider declaration.
      *
-     * @return array
+     * @param array $toolreplace Replacement values for the tool declaration.
+     * @return array Valid provider declaration.
      */
     private function valid_provider(array $toolreplace = []): array {
         return [

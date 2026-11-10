@@ -61,7 +61,9 @@ final class oauth_consent_provider_fixture implements external_tool {
     /**
      * Execute the provider fixture.
      *
-     * @return mixed
+     * @param array $arguments Validated tool arguments.
+     * @param execution_context $context Current tool execution context.
+     * @return array Fixture result (this method always throws).
      */
     public function execute(array $arguments, execution_context $context): array {
         throw new \LogicException('The consent-only fixture must not execute.');

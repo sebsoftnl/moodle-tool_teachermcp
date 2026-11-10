@@ -2,6 +2,25 @@
     This file is part of Moodle - http://moodle.org/
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/dashboard_connect
+    Example context (json):
+    {
+        "client_claude": true, "client_chatgpt": false, "registration_disabled": false,
+        "endpoint_url": "https://moodle.example.org/admin/tool/teachermcp/endpoint.php",
+        "connection_check": {
+            "id": "connection-check", "textid": "connectionCheckPrompt", "title": "Connection-check prompt",
+            "description": "Check available courses.", "copy_label": "Copy connection-check prompt",
+            "copy_target": "connectionCheckPrompt", "prompt": "Check the connection."
+        },
+        "manual_open": false, "manual_form_url": "/admin/tool/teachermcp/my_agent.php",
+        "sesskey": "example-sesskey", "selected_client": "claude",
+        "agent_name_placeholder": "Example agent", "validity_options": [
+            {"value": 90, "label": "90 days", "selected": true}
+        ],
+        "has_external_tools": false,
+        "download_bridge_url": "/admin/tool/teachermcp/download.php?type=bridge",
+        "config_claude_oauth": "Example OAuth configuration", "config_claude": "Example manual configuration",
+        "config_codex": "Example HTTP configuration"
+    }
 }}
 <section id="teacher-connect" class="tool_teachermcp_setup mb-4">
     <h2 class="h4">{{#str}}how_to_connect, tool_teachermcp{{/str}}</h2>

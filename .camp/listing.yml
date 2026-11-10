@@ -1,0 +1,18 @@
+# Author-side listing metadata; the registry reads this from a tagged release.
+name: Teacher MCP Agent Integration
+summary: Connect teacher-authorized AI assistants to Moodle through Model Context Protocol (MCP).
+description: |
+  Teacher MCP is a Moodle admin tool that exposes an authenticated MCP endpoint
+  and a self-service dashboard for teachers to connect compatible AI clients.
+  It provides course and content discovery, Page and Book authoring, quiz and
+  assignment workflows, grading support, H5P activity creation using installed
+  libraries, and teacher-facing course analytics.
+
+  Access is governed by Moodle capabilities, course and group permissions, and
+  scoped agent connections. Teachers can use the remote MCP endpoint or the
+  optional local Node.js stdio bridge. AI clients are configured separately;
+  client-side subscriptions or accounts are not required by the plugin itself.
+  Moodle 4.5 or later is required. Consult the repository documentation for
+  installation, configuration, and feature limitations.
+labels:
+  - fully-free

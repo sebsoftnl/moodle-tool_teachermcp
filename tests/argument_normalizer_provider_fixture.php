@@ -72,7 +72,9 @@ final class argument_normalizer_provider_fixture implements external_tool {
     /**
      * Execute the provider fixture.
      *
-     * @return mixed
+     * @param array $arguments Normalized tool arguments.
+     * @param execution_context $context Current tool execution context.
+     * @return array Normalized arguments.
      */
     public function execute(array $arguments, execution_context $context): array {
         require_capability('tool/teachermcp:manageall', \context_system::instance(), $context->get_userid());
