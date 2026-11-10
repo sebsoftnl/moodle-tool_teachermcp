@@ -28,6 +28,10 @@ Check camp listing:
 deploy.github.review:
   stage: deploy
   image: moodlehq/moodle-php-apache:8.1
+  # GitLab's default shallow checkout omits ancestors needed by an empty GitHub mirror.
+  variables:
+    GIT_DEPTH: "0"
+  dependencies: []
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "fix/release-ci-camp-readiness" && $PUSHLOCATION'
     - when: never
