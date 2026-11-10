@@ -2,6 +2,21 @@
     This file is part of Moodle - http://moodle.org/
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/dashboard_prompts
+    Example context (json):
+    {
+        "invalid_course": false, "has_courses": true,
+        "course_form_url": "/admin/tool/teachermcp/my_agent.php#teacher-prompts",
+        "selected_client": "claude", "selected_course": {"id": 2, "fullname": "Example course"},
+        "courses": [{"id": 2, "fullname": "Example course", "selected": true}],
+        "prompt_categories": [{
+            "id": "prompts-context", "category": "Context", "count": 1,
+            "items": [{
+                "id": "prompt-ingest", "textid": "prompt-ingest-text", "title": "Summarise course",
+                "description": "Review course content.", "copy_label": "Copy summarise course prompt",
+                "copy_target": false, "prompt": "Summarise this course."
+            }]
+        }]
+    }
 }}
 <section id="teacher-prompts" class="mb-4 pt-3 border-top">
     <h2 class="h4">{{#str}}dashboard_tasks, tool_teachermcp{{/str}}</h2>
@@ -12,7 +27,7 @@
         <label for="promptCourseFilter" class="font-weight-bold">{{#str}}course_filter_label, tool_teachermcp{{/str}}</label>
         <div class="d-flex flex-wrap align-items-center tool_teachermcp_actions">
             <select id="promptCourseFilter" name="courseid" class="custom-select form-control tool_teachermcp_course_select" required>
-                {{^selected_course}}<option value="" selected disabled>{{#str}}course_filter_all, tool_teachermcp{{/str}}</option>{{/selected_course}}
+                <option value="" disabled {{^selected_course}}selected{{/selected_course}} label="{{#str}}course_filter_all, tool_teachermcp{{/str}}"></option>
                 {{#courses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{fullname}}</option>{{/courses}}
             </select>
             <button type="submit" class="btn btn-secondary">{{#str}}use_course, tool_teachermcp{{/str}}</button>

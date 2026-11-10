@@ -81,6 +81,10 @@
     justify-content: flex-end;
 }
 
+.tool_teachermcp_connection_actions {
+    text-align: right;
+}
+
 .tool_teachermcp_connection_modal .modal-title {
     min-width: 0;
     white-space: normal;
@@ -194,7 +198,7 @@
 
     .tool_teachermcp_connections .tool_teachermcp_connection_actions {
         padding-bottom: 0;
-        text-align: left !important;
+        text-align: left;
     }
 
     .tool_teachermcp_connection_actions .d-flex {

@@ -1,6 +1,12 @@
 {{!
     @template tool_teachermcp/prompt_item
     Shared prompt title, description, copy action and optional code preview.
+    Example context (json):
+    {
+        "id": "prompt-example", "textid": "prompt-example-text", "title": "Example prompt",
+        "description": "A sample teaching task.", "copy_label": "Copy example prompt",
+        "copy_target": "prompt-example-text", "prompt": "Describe the course."
+    }
 }}
 <article id="{{id}}" class="tool_teachermcp_prompt_item py-3" aria-labelledby="{{id}}-title">
     <div class="d-flex align-items-center tool_teachermcp_actions mb-1">

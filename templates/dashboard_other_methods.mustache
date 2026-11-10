@@ -2,6 +2,20 @@
     This file is part of Moodle - http://moodle.org/
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/dashboard_other_methods
+    Example context (json):
+    {
+        "manual_open": false, "manual_form_url": "/admin/tool/teachermcp/my_agent.php",
+        "sesskey": "example-sesskey", "selected_client": "claude",
+        "agent_name_placeholder": "Example agent", "validity_options": [
+            {"value": 90, "label": "90 days", "selected": true}
+        ],
+        "has_external_tools": true, "external_tools": [
+            {"name": "get_teacher_courses", "description": "List teaching courses"}
+        ],
+        "download_bridge_url": "/admin/tool/teachermcp/download.php?type=bridge",
+        "config_claude_oauth": "Example OAuth configuration", "config_claude": "Example manual configuration",
+        "config_codex": "Example HTTP configuration"
+    }
 }}
 <details id="other-methods" class="mb-4 pt-3 border-top" {{#manual_open}}open{{/manual_open}}>
     <summary class="h5">{{#str}}other_connection_methods, tool_teachermcp{{/str}}</summary>

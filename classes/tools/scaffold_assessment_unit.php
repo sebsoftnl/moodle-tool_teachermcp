@@ -368,6 +368,11 @@ class scaffold_assessment_unit extends base_tool {
 
     /**
      * Validate a question definition against Moodle core grading rules (H6).
+     *
+     * @param array $qdef Question definition.
+     * @param int $idx Question index for error reporting.
+     * @param array $allowedfractions Allowed Moodle grading fractions.
+     * @return void No return value.
      */
     protected function validate_question_definition(array $qdef, int $idx, array $allowedfractions): void {
         $qtype = $qdef['qtype'] ?? '';
@@ -457,6 +462,11 @@ class scaffold_assessment_unit extends base_tool {
 
     /**
      * Check that a fraction is in Moodle's allowed fraction options.
+     *
+     * @param float $fraction Fraction to check.
+     * @param array $allowedfractions Allowed Moodle grading fractions.
+     * @param string $qname Question name for error reporting.
+     * @return void No return value.
      */
     protected function assert_valid_fraction(float $fraction, array $allowedfractions, string $qname): void {
         $found = false;
@@ -479,6 +489,10 @@ class scaffold_assessment_unit extends base_tool {
 
     /**
      * Save an individual question into Moodle question bank.
+     *
+     * @param int $categoryid Destination question category ID.
+     * @param array $qdef Validated question definition.
+     * @return \stdClass Saved question record.
      */
     protected function build_and_save_question(int $categoryid, array $qdef): stdClass {
         global $USER;

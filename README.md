@@ -180,7 +180,7 @@ If the client still shows old definitions while fresh `tools/list` is current, r
 
 ## Compatibility and Current Limits
 
-The GitLab CI pipeline runs the bridge tests and the Moodle plugin checks on Moodle 4.5 and current Moodle main. It does not replace the browser and real-client qualification described in [testing and qualification](docs/developer/testing.md).
+The GitLab CI pipeline runs the bridge tests and the Moodle plugin checks across Moodle 4.5–5.3 (including current Moodle main) on PostgreSQL and MariaDB. It does not replace the browser and real-client qualification described in [testing and qualification](docs/developer/testing.md). The matrix requires a passing head pipeline; a skipped Behat check means no browser scenarios were executed.
 
 Local verification covers pinned Moodle 4.5.0/PHP 8.1 and Moodle 5.3/PHP 8.4 checkouts, with teacher/student browser, HTTP, and local stdio workflows. These local results do not yet verify end-to-end operation in each named AI client. See [testing and qualification](docs/developer/testing.md) for the tested configurations and coverage.
 

@@ -49,7 +49,9 @@ final class provider_discovery_fake_tool implements external_tool {
     /**
      * Execute the fixture tool.
      *
-     * @return array
+     * @param array $arguments Validated tool arguments.
+     * @param execution_context $context Current tool execution context.
+     * @return array Fixture execution details.
      */
     public function execute(array $arguments, execution_context $context): array {
         return ['userid' => $context->get_userid(), 'arguments' => $arguments];

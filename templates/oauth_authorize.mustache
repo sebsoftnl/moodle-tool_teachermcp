@@ -17,6 +17,15 @@
 {{!
     @template tool_teachermcp/oauth_authorize
     OAuth 2.0 Consent screen for AI Agent connections.
+    Example context (json):
+    {
+        "site_name": "Example Moodle", "client_name": "Example client", "redirect_host": "client.example.org",
+        "user_fullname": "Example Teacher", "user_email": "teacher@example.org",
+        "permissions": [{"id": "read", "description": "Read teaching courses"}],
+        "sesskey": "example-sesskey", "client_id": "example-client",
+        "redirect_uri": "https://client.example.org/callback", "state": "example-state",
+        "code_challenge": "example-challenge", "code_challenge_method": "S256", "scope": "teachermcp"
+    }
 }}
 <div class="tool_teachermcp_confirmation tool_teachermcp_consent my-3">
     <p class="text-muted">{{site_name}}</p>
@@ -47,7 +56,7 @@
         {{/permissions}}
     </ul>
 
-    <form method="post" action="" class="mb-3">
+    <form method="post" class="mb-3">
         <input type="hidden" name="sesskey" value="{{sesskey}}">
         <input type="hidden" name="client_id" value="{{client_id}}">
         <input type="hidden" name="redirect_uri" value="{{redirect_uri}}">

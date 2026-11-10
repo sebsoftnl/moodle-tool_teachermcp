@@ -208,6 +208,10 @@ class file_extractor {
 
     /**
      * Extract text from Microsoft Word (.docx) package.
+     *
+     * @param \stored_file $file Word document to extract.
+     * @param int $maxchars Maximum characters to return.
+     * @return array Extraction result with content and notice.
      */
     protected static function extract_docx(\stored_file $file, int $maxchars): array {
         if (!class_exists('\ZipArchive')) {
@@ -252,6 +256,10 @@ class file_extractor {
 
     /**
      * Extract text from Microsoft PowerPoint (.pptx) presentation.
+     *
+     * @param \stored_file $file PowerPoint presentation to extract.
+     * @param int $maxchars Maximum characters to return.
+     * @return array Extraction result with content and notice.
      */
     protected static function extract_pptx(\stored_file $file, int $maxchars): array {
         if (!class_exists('\ZipArchive')) {
@@ -301,6 +309,10 @@ class file_extractor {
 
     /**
      * Extract text from OpenDocument Text (.odt) package.
+     *
+     * @param \stored_file $file OpenDocument text file to extract.
+     * @param int $maxchars Maximum characters to return.
+     * @return array Extraction result with content and notice.
      */
     protected static function extract_odt(\stored_file $file, int $maxchars): array {
         if (!class_exists('\ZipArchive')) {
@@ -344,6 +356,10 @@ class file_extractor {
 
     /**
      * Extract text from text-based PDF documents via pure-PHP stream decoding.
+     *
+     * @param \stored_file $file PDF document to extract.
+     * @param int $maxchars Maximum characters to return.
+     * @return array Extraction result with content and notice.
      */
     protected static function extract_pdf(\stored_file $file, int $maxchars): array {
         $raw = $file->get_content();
@@ -421,6 +437,9 @@ class file_extractor {
 
     /**
      * Decode escaped characters in PDF string objects.
+     *
+     * @param string $str Escaped PDF string.
+     * @return string Decoded string.
      */
     protected static function decode_pdf_string(string $str): string {
         $str = str_replace(['\\\\', '\(', '\)'], ['\\', '(', ')'], $str);
@@ -433,6 +452,10 @@ class file_extractor {
 
     /**
      * Clean, normalize, and truncate plain text strings.
+     *
+     * @param string $text Plain text to normalize.
+     * @param int $maxchars Maximum characters to return.
+     * @return string Normalized and truncated text.
      */
     protected static function clean_plain_text(string $text, int $maxchars): string {
         // Normalize newlines and whitespace.

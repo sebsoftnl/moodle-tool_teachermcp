@@ -77,6 +77,9 @@ final class external_tool_adapter extends base_tool {
 
     /**
      * Return the validated tool contract value.
+     *
+     * @param array $params Validated tool arguments.
+     * @return mixed Provider execution result.
      */
     public function execute(array $params): mixed {
         global $USER;

@@ -7,7 +7,14 @@ variables:
   PLUGIN: 'tool_teachermcp'
   REPOURL: 'https://github.com/sebsoftnl/moodle-tool_teachermcp'
   PATHNAME: 'admin/tool/teachermcp'
-  # Opt-in GitHub deployment. Set this to "true" in a tag pipeline or
-  # project CI/CD variable, together with PUSHLOCATION, to mirror releases
-  # to GitHub. The default keeps tag pipelines from pushing to GitHub.
-  GITHUB_PUSH_ENABLED: "true"
+
+# The shared Moodle matrix does not exercise the local stdio/OAuth bridge.
+bridge:
+  stage: precheck
+  image: node:22-alpine
+  script:
+    - node --check bridge/mcp-bridge.mjs
+    - mkdir -p "$CI_PROJECT_DIR/.ci-tmp"
+    - TMPDIR="$CI_PROJECT_DIR/.ci-tmp" node --test bridge/*.test.mjs
+  after_script:
+    - rm -rf "$CI_PROJECT_DIR/.ci-tmp"

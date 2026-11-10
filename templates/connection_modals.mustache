@@ -1,12 +1,15 @@
 {{!
     @template tool_teachermcp/connection_modals
     Initialize the connection dialogs once per teacher or administrator page.
+    This template intentionally has no HTML; it only attaches behaviour to rendered connections.
+    Example context (json):
+    {}
 }}
 {{#js}}
 require(['core/modal', 'core/notification'], function(Modal, Notification) {
     document.querySelectorAll('[data-connection-details]').forEach(button => {
         button.disabled = false;
-        button.addEventListener('click', async () => {
+        button.addEventListener('click', async() => {
             button.disabled = true;
             try {
                 const title = document.createElement('span');

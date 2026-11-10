@@ -3,6 +3,53 @@
     Moodle is distributed under the GNU General Public License, version 3 or later.
     @template tool_teachermcp/my_agent
     Teacher connection setup, course tasks and access management.
+    Example context (json):
+    {
+        "registration_disabled": false, "client_claude": true, "client_chatgpt": false,
+        "selected_client": "claude", "new_token": false,
+        "endpoint_url": "https://moodle.example.org/admin/tool/teachermcp/endpoint.php",
+        "connection_check": {
+            "id": "connection-check", "textid": "connectionCheckPrompt", "title": "Connection-check prompt",
+            "description": "Check available courses.", "copy_label": "Copy connection-check prompt",
+            "copy_target": "connectionCheckPrompt", "prompt": "Check the connection."
+        },
+        "manual_open": false, "manual_form_url": "/admin/tool/teachermcp/my_agent.php",
+        "sesskey": "example-sesskey", "agent_name_placeholder": "Example agent",
+        "validity_options": [{"value": 90, "label": "90 days", "selected": true}],
+        "has_external_tools": false,
+        "download_bridge_url": "/admin/tool/teachermcp/download.php?type=bridge",
+        "config_claude_oauth": "Example OAuth configuration", "config_claude": "Example manual configuration",
+        "config_codex": "Example HTTP configuration",
+        "invalid_course": false, "has_courses": true,
+        "course_form_url": "/admin/tool/teachermcp/my_agent.php#teacher-prompts",
+        "selected_course": {"id": 2, "fullname": "Example course"},
+        "courses": [{"id": 2, "fullname": "Example course", "selected": true}],
+        "prompt_categories": [{
+            "id": "prompts-context", "category": "Context", "count": 1,
+            "items": [{
+                "id": "prompt-ingest", "textid": "prompt-ingest-text", "title": "Summarise course",
+                "description": "Review course content.", "copy_label": "Copy summarise course prompt",
+                "copy_target": false, "prompt": "Summarise this course."
+            }]
+        }],
+        "has_tokens": true, "tokens": [{
+            "id": 1, "name": "Example Agent", "lastchars": "1234", "created": "1 January 2026",
+            "lastaccess": "2 January 2026", "status_active": true, "status_label": "Active",
+            "revokelink": "/admin/tool/teachermcp/my_agent.php?action=revoke&tokenid=1&sesskey=example",
+            "details": {"validuntil": "1 March 2026", "permissions": [
+                {"name": "read", "description": "Read teaching courses"}
+            ]}
+        }], "confirm_revoke": "Revoke this connection?", "history": false,
+        "tools_count_badge": "1 active tool",
+        "mcp_resources": [{"uri": "teachermcp://courses", "name": "Teaching courses", "description": "Course list"}],
+        "mcp_resource_templates": [],
+        "download_skill_url": "/admin/tool/teachermcp/download.php?type=skill",
+        "system_prompt_content": "Example skill instructions",
+        "oauth_auth_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/authorize.php",
+        "oauth_token_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/token.php",
+        "oauth_meta_url": "https://moodle.example.org/admin/tool/teachermcp/oauth/metadata.php",
+        "return_url": "/course/view.php?id=2"
+    }
 }}
 <div class="tool_teachermcp_dashboard"
      data-copy-success="{{#str}}copied, tool_teachermcp{{/str}}"
@@ -74,7 +121,7 @@ dashboard.querySelectorAll('button[data-copy-target], button[data-prompt]').forE
     const label = button.innerHTML;
     let restore;
     button.setAttribute('aria-live', 'polite');
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async() => {
         clearTimeout(restore);
         button.innerHTML = label;
         button.disabled = true;

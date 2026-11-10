@@ -1,0 +1,9 @@
+# Keep developer metadata out of CAMP's git-archive-based distribution.
+# Keep bridge/, AGENTS.md and docs/: the Moodle dashboard serves the bridge
+# and guide, and the bundled bridge/build-chatgpt-plugin.mjs uses bridge files.
+.camp export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+.gitlab-ci.yml export-ignore
+tests export-ignore
+.ci-tmp export-ignore

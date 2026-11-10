@@ -114,6 +114,7 @@ final class h5p_fixtures {
     /**
      * Capture native table state for boundary assertions.
      *
+     * @param int $courseid Course whose module IDs identify the native state.
      * @return array Native state snapshot.
      */
     public static function snapshot(int $courseid): array {
