@@ -16,3 +16,7 @@ description: |
   installation, configuration, and feature limitations.
 labels:
   - fully-free
+  - commercial-support-available
+links:
+  docs: https://github.com/sebsoftnl/moodle-tool_teachermcp/tree/main/docs
+  issues: https://github.com/sebsoftnl/moodle-tool_teachermcp/issues
