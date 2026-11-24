@@ -271,7 +271,7 @@ class create_h5p_activity extends base_tool {
 
         // 4. Create .h5p ZIP archive.
         $tempdir = make_request_directory();
-        $safefilename = clean_param($title, PARAM_FILE);
+        $safefilename = str_replace('?', '', clean_param($title, PARAM_FILE));
         if (empty($safefilename)) {
             $safefilename = 'activity_' . time();
         }
