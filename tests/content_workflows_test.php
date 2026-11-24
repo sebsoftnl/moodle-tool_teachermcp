@@ -311,9 +311,16 @@ final class content_workflows_test extends \advanced_testcase {
         $this->assertSame($before->contentformat, $after->contentformat);
         $this->assertSame((int)$before->revision + 1, (int)$after->revision);
         $this->assertSame($file->get_contenthash(), get_file_storage()->get_file_by_id($file->get_id())->get_contenthash());
+        // Make native timestamp changes observable even when both updates run in the same second.
+        $after->timemodified = time() - 10;
+        $DB->set_field('page', 'timemodified', $after->timemodified, ['id' => $page->id]);
         $hidden = $tool->execute(['action' => 'update_settings', 'cmid' => (int)$page->cmid, 'visible' => false]);
         $this->assertFalse($hidden['visible']);
-        $this->assertEquals($after, $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST));
+        $afterhide = $DB->get_record('page', ['id' => $page->id], '*', MUST_EXIST);
+        $this->assertGreaterThanOrEqual((int)$after->timemodified, (int)$afterhide->timemodified);
+        unset($after->timemodified, $afterhide->timemodified);
+        $this->assertEquals($after, $afterhide, 'Visibility changes must preserve all non-timestamp Page fields.');
+        $this->assertSame($file->get_contenthash(), get_file_storage()->get_file_by_id($file->get_id())->get_contenthash());
     }
 
     public function test_native_same_course_page_and_book_copies_preserve_source(): void {
