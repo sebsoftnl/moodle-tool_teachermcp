@@ -136,7 +136,7 @@ class oauth_server {
         $base = $CFG->wwwroot . '/admin/tool/teachermcp/oauth';
 
         return [
-            'issuer' => $base,
+            'issuer' => $base . '/metadata.php',
             'authorization_endpoint' => $base . '/authorize.php',
             'token_endpoint' => $base . '/token.php',
             'registration_endpoint' => $base . '/register.php',
