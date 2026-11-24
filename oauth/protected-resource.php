@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $metadata = [
     'resource' => $CFG->wwwroot . '/admin/tool/teachermcp/endpoint.php',
     'authorization_servers' => [
-        $CFG->wwwroot . '/admin/tool/teachermcp/oauth',
+        \tool_teachermcp\oauth_server::get_metadata()['issuer'],
     ],
     // Keep discovery aligned with authorization-server metadata so OAuth clients
     // can request the least-privilege scopes that the server actually enforces.
