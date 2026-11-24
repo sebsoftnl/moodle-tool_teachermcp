@@ -7,6 +7,7 @@ variables:
   PLUGIN: 'tool_teachermcp'
   REPOURL: 'https://github.com/sebsoftnl/moodle-tool_teachermcp'
   PATHNAME: 'admin/tool/teachermcp'
+  MOODLE_ORG_PUBLISH: 'true'
 
 # The shared Moodle matrix does not exercise the local stdio/OAuth bridge.
 bridge:
