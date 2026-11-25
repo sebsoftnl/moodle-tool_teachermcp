@@ -10,6 +10,16 @@ node --test bridge/*.test.mjs
 
 The Moodle jobs install the plugin in a disposable Moodle checkout with a separate database. The Moodle coding-standard check is mandatory. A passing bridge suite does not replace Moodle integration tests or a browser workflow.
 
+### GitHub Actions
+
+`.github/workflows/ci.yml` adds checks for GitHub pushes, pull requests (including forks) and manual runs, based on the [official moodle-plugin-ci workflow](https://github.com/moodlehq/moodle-plugin-ci/blob/main/gha.dist.yml). GitLab remains the primary delivery system; adding this file does not run Actions until the commit reaches GitHub. A GitLab pipeline is not evidence that the GitHub workflow passed.
+
+The bounded six-job Moodle matrix covers every release declared in `version.php`: 4.5/PHP 8.1, 5.0–5.2/PHP 8.3 and 5.3/PHP 8.4 on MariaDB 11.4, plus 5.3/PHP 8.4 on PostgreSQL 17. It uses the real `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` and `MOODLE_503_STABLE` refs, not `main` (which can move beyond declared support). This is representative runtime/database coverage, not every PHP/database combination; GitLab retains the broader shared matrix.
+
+Each Moodle job gates PHP lint, PHP mess detection, Moodle coding standards, PHPDoc, plugin validation, upgrade savepoints, Mustache, Grunt and PHPUnit. Warning thresholds follow the GitLab checks rather than imposing the upstream sample's stricter zero-warning policy. Behat is deliberately not presented as browser coverage: this plugin has no Behat features. A separate Node.js 22 job checks bridge syntax and executes `bridge/*.test.mjs` with an owned temporary directory.
+
+The new workflow has only `contents: read`, SHA-pinned actions and credential-free checkouts; it uses no repository secrets, publishing or deployment steps. The existing CAMP release workflow and GitLab release configuration are unchanged. When changing support, update the matrix with `version.php` and the compatibility policy, verify upstream refs and runtime requirements, and run `actionlint .github/workflows/ci.yml`. Local workflow validation does not execute the Moodle install or tests on GitHub.
+
 The bridge suite includes `chatgpt-package.test.mjs`: explicit MCP declaration, safe rejection of invalid endpoints and existing output, and launching the generated stdio command from a relocated cache-like directory without substituting path placeholders. The fixture uses a synthetic cached OAuth credential; it does not exercise ChatGPT or fresh browser consent. A separate user-operated check on ChatGPT desktop 26.1021.31345/macOS Apple Silicon and Moodle 5.3/PHP 8.4 verified fresh OAuth, native teacher/course reads, one hidden Page creation/read-back and cached reconnection. Independent browser checks confirmed teacher access and student non-visibility. Follow the [desktop guide's real-app checks](../chatgpt-desktop.md#verify-in-the-real-app) for other installations; this is not all-tool or cross-platform certification.
 
 Use a disposable, configured Moodle PHPUnit installation with a dedicated test prefix and data directory. From its checkout root, run the entire plugin suite:
