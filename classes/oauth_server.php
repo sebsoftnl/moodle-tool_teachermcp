@@ -168,44 +168,27 @@ class oauth_server {
 
     /**
      * Validate loopback URI per RFC 8252 §7.3.
-     * Port can vary for http://127.0.0.1:<port>/<path> or http://localhost:<port>/<path>.
+     * Only the port may vary; every other character must match the registered URI.
      *
      * @param string $registereduri Registered URI template
      * @param string $provideduri Actual redirect URI provided in request
      * @return bool
      */
     public static function validate_loopback_uri(string $registereduri, string $provideduri): bool {
-        $regparts = parse_url($registereduri);
-        $provparts = parse_url($provideduri);
-
-        if (!$regparts || !$provparts) {
-            return false;
+        foreach ([$registereduri, $provideduri] as $uri) {
+            if (!self::is_loopback_uri($uri) || filter_var($uri, FILTER_VALIDATE_URL) === false) {
+                return false;
+            }
+            $parts = parse_url($uri);
+            if (isset($parts['fragment']) || isset($parts['user']) || isset($parts['pass'])) {
+                return false;
+            }
         }
 
-        // Must be HTTP scheme.
-        if (($provparts['scheme'] ?? '') !== 'http') {
-            return false;
-        }
-
-        // Host must be 127.0.0.1 or localhost.
-        $provhost = strtolower($provparts['host'] ?? '');
-        if ($provhost !== '127.0.0.1' && $provhost !== 'localhost') {
-            return false;
-        }
-
-        // Path must match.
-        $regpath = rtrim($regparts['path'] ?? '', '/');
-        $provpath = rtrim($provparts['path'] ?? '', '/');
-        if ($regpath !== $provpath) {
-            return false;
-        }
-
-        // Reject any fragment in provided URI.
-        if (isset($provparts['fragment'])) {
-            return false;
-        }
-
-        return true;
+        // Remove only the authority's port, preserving exact scheme, host, path and query spelling.
+        // In particular, do not normalize case, escapes, trailing slashes or an empty query.
+        $pattern = '~\A(http://(?:127\.0\.0\.1|localhost|\[::1\]))(?::[0-9]+)?(?=/|\?|\z)~i';
+        return preg_replace($pattern, '$1', $registereduri) === preg_replace($pattern, '$1', $provideduri);
     }
 
     /**
@@ -266,7 +249,7 @@ class oauth_server {
                     break;
                 }
             } else {
-                if (rtrim($reguri, '/') === rtrim($redirecturi, '/')) {
+                if ($reguri === $redirecturi) {
                     $urimatched = true;
                     break;
                 }
@@ -323,7 +306,8 @@ class oauth_server {
         $rec->codehash = $codehash;
         $rec->clientid = clean_param($clientid, PARAM_ALPHANUMEXT);
         $rec->userid = $userid;
-        $rec->redirecturi = clean_param($redirecturi, PARAM_URL);
+        // The authorization endpoint has validated this URI; retain its exact bytes for token binding.
+        $rec->redirecturi = $redirecturi;
         $scopeconfig = self::normalise_scope($scope);
         $rec->scope = $scopeconfig['scope'];
         $rec->codechallenge = $codechallenge;
@@ -393,7 +377,7 @@ class oauth_server {
         }
 
         // K3-R4: Redirect URI must match exactly.
-        if (rtrim($rec->redirecturi, '/') !== rtrim($redirecturi, '/')) {
+        if ($rec->redirecturi !== $redirecturi) {
             throw new moodle_exception('error_invalid_grant', 'tool_teachermcp');
         }
 
@@ -507,7 +491,10 @@ class oauth_server {
         $hasloopback = 0;
 
         foreach ($redirecturis as $uri) {
-            $uri = clean_param(trim($uri), PARAM_URL);
+            // Validate without PARAM_URL rewriting or rejecting IPv6 loopback addresses.
+            if (filter_var($uri, FILTER_VALIDATE_URL) === false) {
+                throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
+            }
             $parts = parse_url($uri);
             if (!$parts || empty($parts['scheme']) || empty($parts['host'])) {
                 throw new moodle_exception('error_invalid_request', 'tool_teachermcp');
