@@ -20,7 +20,7 @@
  * Forwards JSON-RPC stdio calls from Claude Desktop / CLI directly to Moodle endpoint.
  *
  * Usage:
- *   node mcp-bridge.mjs <MOODLE_ENDPOINT_URL> <BEARER_TOKEN>
+ *   node mcp-bridge.mjs <MOODLE_ENDPOINT_URL> --token-file <PROTECTED_TOKEN_FILE>
  * Or with seamless browser OAuth:
  *   node mcp-bridge.mjs <MOODLE_ENDPOINT_URL> --oauth [--lang=en|nl]
  *
@@ -41,7 +41,7 @@ import { pathToFileURL } from 'node:url';
 // Default English fallback strings (managed and localized via standard Moodle AMOS).
 let I18N = /* __MOODLE_I18N_INJECT_START__ */ {
     missing_endpoint: 'Error: Missing endpoint argument.',
-    usage: 'Usage: node mcp-bridge.mjs <endpoint_url> <bearer_token|--oauth> [--lang=en|nl]',
+    usage: 'Usage: node mcp-bridge.mjs <endpoint_url> <--oauth|--token-file path> [--lang=en|nl]',
     auth_failed: 'Authentication failed',
     invalid_code: 'Invalid authorization code or state mismatch.',
     auth_success: 'Authentication successful!',
@@ -61,8 +61,40 @@ const langFlag = args.find(arg => arg.startsWith('--lang='));
 const specifiedLang = langFlag ? langFlag.split('=')[1].toLowerCase() : null;
 
 const isOAuth = args.includes('--oauth');
-const nonFlagArgs = args.filter(arg => !arg.startsWith('--'));
-const tokenArg = nonFlagArgs[1]; // First non-flag is endpoint, second is token.
+const tokenFileIndex = args.indexOf('--token-file');
+const tokenFile = tokenFileIndex === -1 ? null : args[tokenFileIndex + 1];
+
+function validateAuthenticationArgs() {
+    const expected = [endpoint];
+    if (isOAuth) expected.push('--oauth');
+    if (tokenFileIndex !== -1 && tokenFile && !tokenFile.startsWith('--')) expected.push('--token-file', tokenFile);
+    if (langFlag) expected.push(langFlag);
+    const remaining = [...args];
+    for (const value of expected) {
+        const index = remaining.indexOf(value);
+        if (index !== -1) remaining.splice(index, 1);
+    }
+    if (remaining.length || (isOAuth && tokenFileIndex !== -1) || (!isOAuth && tokenFileIndex === -1)) {
+        throw new BridgeStartupError('Select exactly one authentication method: --oauth (recommended) or --token-file <path>. Raw token arguments are not supported.');
+    }
+}
+
+function readManualToken(filename) {
+    let descriptor;
+    try {
+        descriptor = fs.openSync(filename, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+        const stat = fs.fstatSync(descriptor);
+        if (!stat.isFile() || stat.size > 8192 || (process.platform !== 'win32'
+                && ((stat.mode & 0o077) !== 0 || stat.uid !== process.getuid()))) throw new Error();
+        const token = fs.readFileSync(descriptor, 'utf8').trim();
+        if (!token || /\s/.test(token)) throw new Error();
+        return token;
+    } catch {
+        throw new BridgeStartupError('Could not read a protected, non-empty manual token file. Use an owner-only file (chmod 600 on Unix; restrict the ACL on Windows).');
+    } finally {
+        if (descriptor !== undefined) fs.closeSync(descriptor);
+    }
+}
 
 export function getTokenFilePath() {
     if (process.platform === 'win32') {
@@ -529,8 +561,9 @@ export async function startBridge(options = {}) {
         } catch {
             throw new BridgeStartupError('Invalid URL: endpoint must use HTTP or HTTPS.');
         }
-        let activeToken = options.token ?? tokenArg;
-        if (!oauth && !activeToken) throw new BridgeStartupError('Provide a bearer token or explicitly select --oauth.');
+        if (options.token === undefined && options.oauth === undefined) validateAuthenticationArgs();
+        let activeToken = options.token ?? (tokenFile ? readManualToken(tokenFile) : null);
+        if (!oauth && !activeToken) throw new BridgeStartupError('Provide --token-file or explicitly select --oauth.');
         await loadStringsFromMoodle(baseUrl, language, {...options, signal});
         if (signal.aborted) throw new BridgeStartupError('Bridge startup cancelled.');
         if (oauth) activeToken = await performOAuthFlow(endpointUrl, {...options, signal});

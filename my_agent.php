@@ -134,7 +134,7 @@ $tokens = \tool_teachermcp\auth::get_user_tokens($USER->id);
 $tokenlist = [];
 $historylist = [];
 $now = time();
-$sampletoken = $newtoken ?: 'YOUR_BEARER_TOKEN_HERE';
+// Configuration examples never include the newly created credential.
 
 foreach ($tokens as $t) {
     $active = \tool_teachermcp\local\token_history::is_active($t, $now);
@@ -188,7 +188,8 @@ $claudedesktopconfig = json_encode([
             'args' => [
                 $bridgepathsample,
                 $endpointurl,
-                $sampletoken,
+                '--token-file',
+                get_string('bridge_token_path_placeholder', 'tool_teachermcp'),
             ],
         ],
     ],
@@ -199,7 +200,7 @@ $codexcursorconfig = json_encode([
         'moodle' => [
             'url' => $endpointurl,
             'headers' => [
-                'Authorization' => 'Bearer ' . $sampletoken,
+                'Authorization' => 'Bearer YOUR_BEARER_TOKEN_HERE',
             ],
         ],
     ],

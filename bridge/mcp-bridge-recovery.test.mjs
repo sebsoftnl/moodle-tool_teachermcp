@@ -199,7 +199,7 @@ test('missing manual bearer fails before translation or authorization I/O', asyn
         completed(result, 1);
         assert.equal(result.stdout, '');
         assert.equal(result.cacheUnchanged, true);
-        assert.match(result.stderr, /bearer.*--oauth|--oauth.*bearer/i);
+        assert.match(result.stderr, /--token-file.*--oauth|--oauth.*--token-file/i);
         assert.equal(requests, 0);
     } finally {
         server.closeAllConnections();
