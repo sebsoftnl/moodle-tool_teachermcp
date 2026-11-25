@@ -1,0 +1,134 @@
+name: Moodle Plugin CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moodle-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bridge:
+    name: Bridge / Node.js 22
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Check bridge syntax
+        run: node --check bridge/mcp-bridge.mjs
+      - name: Run bridge tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/teachermcp-bridge"
+          TMPDIR="$RUNNER_TEMP/teachermcp-bridge" node --test bridge/*.test.mjs
+
+  moodle:
+    name: Moodle ${{ matrix.branch }} / PHP ${{ matrix.php }} / ${{ matrix.database }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      # Cover every declared Moodle release, plus the second DB on the newest
+      # supported release. Do not use main: it can advance beyond version.php.
+      matrix:
+        include:
+          - branch: MOODLE_405_STABLE
+            php: '8.1'
+            database: mariadb
+          - branch: MOODLE_500_STABLE
+            php: '8.3'
+            database: mariadb
+          - branch: MOODLE_501_STABLE
+            php: '8.3'
+            database: mariadb
+          - branch: MOODLE_502_STABLE
+            php: '8.3'
+            database: mariadb
+          - branch: MOODLE_503_STABLE
+            php: '8.4'
+            database: mariadb
+          - branch: MOODLE_503_STABLE
+            php: '8.4'
+            database: pgsql
+    services:
+      postgres:
+        image: ${{ matrix.database == 'pgsql' && 'postgres:17' || '' }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mariadb:
+        image: ${{ matrix.database == 'mariadb' && 'mariadb:11.4' || '' }}
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          path: plugin
+          persist-credentials: false
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, pgsql, intl, soap, zip, gd, exif, mbstring, sodium
+          ini-values: max_input_vars=5000, opcache.enable_cli=1, opcache.jit=disable
+          coverage: none
+      # Based on moodlehq/moodle-plugin-ci/gha.dist.yml. The plugin lives in a
+      # subdirectory so generated Moodle/CI files are not checked as plugin code.
+      - name: Initialise moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci '^4'
+          printf '%s\n' "$GITHUB_WORKSPACE/ci/bin" "$GITHUB_WORKSPACE/ci/vendor/bin" >> "$GITHUB_PATH"
+          sudo locale-gen en_AU.UTF-8
+          printf 'NVM_DIR=%s/.nvm\n' "$HOME" >> "$GITHUB_ENV"
+      - name: Install Moodle and plugin test harness
+        id: install
+        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
+        env:
+          DB: ${{ matrix.database }}
+          MOODLE_BRANCH: ${{ matrix.branch }}
+          COMPOSER_MAX_PARALLEL_HTTP: '2'
+      # Keep collecting independent failures, but never run checks on a failed
+      # install. Match GitLab's blocking checks and default warning thresholds.
+      - name: PHP lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci phplint
+      - name: PHP mess detector
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci phpmd
+      - name: Moodle coding standard
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci phpcs
+      - name: Moodle PHPDoc checker
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci phpdoc
+      - name: Validate plugin
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci validate
+      - name: Check upgrade savepoints
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci savepoints
+      - name: Mustache lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci mustache
+      - name: Grunt
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci grunt
+      - name: PHPUnit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: moodle-plugin-ci phpunit
