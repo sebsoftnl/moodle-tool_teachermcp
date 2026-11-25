@@ -54,6 +54,9 @@ $string['connection_check_prompt'] = 'Gebruik de Moodle-verbinding om get_my_pro
 $string['resource_uri'] = 'Bron-URI';
 $string['resource_name'] = 'Bron';
 
+$string['cachedef_ratelimit'] = 'Limieten voor MCP-verzoeken';
+$string['cachedef_user_connect_capability'] = 'Controles op het recht om agenten te koppelen';
+
 $string['tokens_header'] = 'Actieve Agent Koppelingen';
 $string['create_token'] = 'Nieuwe Agent Koppeling Genereren';
 $string['agent_name'] = 'Agent Naam / Apparaat';
