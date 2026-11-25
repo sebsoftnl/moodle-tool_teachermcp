@@ -26,8 +26,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_teachermcp';
-$plugin->version   = 2026112500;
+$plugin->version   = 2026112501;
 $plugin->requires  = 2024100700; // Moodle 4.5 LTS (Build: 20241007).
 $plugin->supported = [405, 503]; // Moodle 4.5 through 5.3; align with the tested CI matrix.
 $plugin->maturity  = MATURITY_BETA;
-$plugin->release   = 'v1.0.3';
+$plugin->release   = 'v1.0.3.1';
