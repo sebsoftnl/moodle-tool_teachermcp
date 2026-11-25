@@ -54,6 +54,9 @@ $string['connection_check_prompt'] = 'Use the Moodle connection to call get_my_p
 $string['resource_uri'] = 'Resource URI';
 $string['resource_name'] = 'Resource';
 
+$string['cachedef_ratelimit'] = 'MCP request rate limits';
+$string['cachedef_user_connect_capability'] = 'User agent connection capability checks';
+
 $string['tokens_header'] = 'Active Agent Connections';
 $string['create_token'] = 'Generate New Agent Connection';
 $string['agent_name'] = 'Agent Name / Device';
