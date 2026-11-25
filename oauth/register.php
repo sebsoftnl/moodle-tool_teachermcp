@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     echo json_encode([
         'error' => 'invalid_request',
-        'error_description' => 'Only POST requests are allowed for client registration.',
+        'error_description' => get_string('oauth_registration_post_only', 'tool_teachermcp'),
     ]);
     exit(0);
 }
@@ -83,6 +83,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'error' => 'server_error',
-        'error_description' => 'Internal server error during client registration.',
+        'error_description' => get_string('oauth_registration_server_error', 'tool_teachermcp'),
     ]);
 }
