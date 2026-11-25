@@ -89,7 +89,9 @@ for (const [label, folder] of Object.entries(variants)) {
                 assert.deepEqual(JSON.parse(body), message);
                 response.end(JSON.stringify({jsonrpc: '2.0', id: message.id, result: {ok: true}}));
             }, async endpoint => {
-                const result = await runNode([script, endpoint, 'entrypoint-fixture-token'], home,
+                const tokenFile = path.join(home, 'manual-token.txt');
+                fs.writeFileSync(tokenFile, 'entrypoint-fixture-token', {mode: 0o600});
+                const result = await runNode([script, endpoint, '--token-file', tokenFile], home,
                     JSON.stringify(message) + '\n');
                 assert.equal(result.code, 0, result.stderr);
                 assert.equal(received, 1, 'A launched CLI must reach its endpoint exactly once');
@@ -105,7 +107,7 @@ for (const [label, folder] of Object.entries(variants)) {
             assert.match(missing.stderr, /Missing endpoint argument/);
             assert.equal(missing.stdout, '');
             for (const endpoint of ['not-a-url', 'file:///tmp/endpoint.php']) {
-                const invalid = await runNode([script, endpoint, 'entrypoint-fixture-token'], home);
+                const invalid = await runNode([script, endpoint, '--token-file', '/unused'], home);
                 assert.equal(invalid.code, 1);
                 assert.match(invalid.stderr, /Invalid URL|HTTP or HTTPS/);
                 assert.equal(invalid.stdout, '');

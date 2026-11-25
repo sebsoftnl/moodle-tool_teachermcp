@@ -182,15 +182,17 @@ async function runBridgeInHome({endpoint, messages, script = defaultScript, toke
                 });
             });
         }
+        const manualTokenFile = path.join(home, 'manual-token.txt');
+        if (!oauth) fs.writeFileSync(manualTokenFile, token, {mode: 0o600});
         const wrapper = startupOptions === null
-            ? 'import {pathToFileURL} from "node:url"; process.argv=["node",process.env.QA_BRIDGE_SCRIPT,process.env.QA_BRIDGE_ENDPOINT,process.env.QA_BRIDGE_OAUTH==="1"?"--oauth":process.env.QA_BRIDGE_TOKEN]; await import(pathToFileURL(process.argv[1]).href);'
+            ? 'import {pathToFileURL} from "node:url"; process.argv=["node",process.env.QA_BRIDGE_SCRIPT,process.env.QA_BRIDGE_ENDPOINT,... (process.env.QA_BRIDGE_OAUTH==="1"?["--oauth"]:["--token-file",process.env.QA_BRIDGE_TOKEN_FILE])]; await import(pathToFileURL(process.argv[1]).href);'
             : 'import {pathToFileURL} from "node:url"; process.argv=["node","qa-importer"]; const bridge=await import(pathToFileURL(process.env.QA_BRIDGE_SCRIPT).href); await bridge.startBridge({...JSON.parse(process.env.QA_BRIDGE_OPTIONS),endpoint:process.env.QA_BRIDGE_ENDPOINT,token:process.env.QA_BRIDGE_TOKEN,oauth:process.env.QA_BRIDGE_OAUTH==="1"});';
         child = spawn(process.execPath, ['--input-type=module', '-e', wrapper], {
             env: {...process.env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: path.join(home, '.config'),
                 LOCALAPPDATA: path.join(home, 'AppData/Local'),
                 PATH: oauth && launcherSource === null ? bin : `${bin}${path.delimiter}${process.env.PATH}`,
                 HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: '', NO_PROXY: '*',
-                QA_BRIDGE_SCRIPT: script, QA_BRIDGE_ENDPOINT: endpoint, QA_BRIDGE_TOKEN: token,
+                QA_BRIDGE_SCRIPT: script, QA_BRIDGE_ENDPOINT: endpoint, QA_BRIDGE_TOKEN: token, QA_BRIDGE_TOKEN_FILE: manualTokenFile,
                 QA_BRIDGE_OAUTH: oauth ? '1' : '0', QA_AUTHORIZATION_FILE: capture,
                 QA_BRIDGE_OPTIONS: JSON.stringify(startupOptions), QA_UNEXPECTED_LAUNCHER_FILE: unexpected},
             stdio: ['pipe', 'pipe', 'pipe'],

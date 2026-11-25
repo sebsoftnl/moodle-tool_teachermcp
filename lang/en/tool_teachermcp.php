@@ -46,7 +46,8 @@ $string['bridge_invalid_code'] = 'Invalid authorization code or state mismatch.'
 $string['bridge_missing_endpoint'] = 'Error: Missing endpoint argument.';
 $string['bridge_path_placeholder'] = '/ABSOLUTE/PATH/TO/mcp-bridge.mjs';
 $string['bridge_token_fetch_error'] = 'Error retrieving token';
-$string['bridge_usage'] = 'Usage: node mcp-bridge.mjs <endpoint_url> <bearer_token|--oauth> [--lang=en|nl]';
+$string['bridge_token_path_placeholder'] = '/ABSOLUTE/PATH/TO/protected-token.txt';
+$string['bridge_usage'] = 'Usage: node mcp-bridge.mjs <endpoint_url> <--oauth|--token-file path> [--lang=en|nl]';
 $string['btn_revoke'] = 'Revoke';
 $string['btn_teacher_dashboard'] = 'Go to Teacher Dashboard';
 $string['cachedef_ratelimit'] = 'MCP request rate limits';
@@ -69,9 +70,9 @@ $string['claude_app_step5'] = 'Start a new chat and select your Moodle connectio
 $string['claude_app_title'] = 'Connect the Claude app';
 $string['claude_app_workspace'] = 'Team owners, and authorised Enterprise owners or custom roles, add the server through Organization settings > Connectors > Add > Custom > Web. Enter the name and URL, continue through authentication review, and choose Sign in now with Register automatically. Members then open Customize > Connectors and select Connect for their own Moodle account.';
 $string['claude_cli_docs'] = 'Claude Code CLI setup';
-$string['claude_desktop_desc'] = 'Create a token with the required permission preset, then use this configuration. Replace YOUR_BEARER_TOKEN_HERE if no new token is shown. Keep the token private; this mode does not use OAuth.';
+$string['claude_desktop_desc'] = 'Prefer OAuth above. For manual mode, create a token with the required permissions and save it in a separate owner-only file (chmod 600 on Unix; restrict the file ACL on Windows). Never put the secret in client configuration, command arguments, shell history or logs.';
 $string['claude_desktop_title'] = 'Local bridge: manual bearer token';
-$string['claude_manual_bridge_desc'] = 'Add this configuration to claude_desktop_config.json with your manual token, not the --oauth flag:';
+$string['claude_manual_bridge_desc'] = 'Replace the token-file path below with the absolute path to your protected file. The file contains only the token and an optional trailing newline; keep its directory private. Raw token arguments are no longer supported. Revoke and replace tokens previously exposed in arguments or configuration.';
 $string['claude_oauth_bridge_desc'] = 'Add this configuration to your claude_desktop_config.json with the --oauth flag:';
 $string['clear_history'] = 'Clear inactive history';
 $string['clear_history_confirm_all'] = 'Remove {$a} expired or revoked connections from history across this site? Active connections and Moodle audit logs will not be changed.';
