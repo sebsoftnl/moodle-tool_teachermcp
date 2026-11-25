@@ -1,3 +1,6 @@
+Version 1.0.3.1 (build 2026112501)
+* CI: skip the 10 MiB upload boundary test when Moodle's effective upload limit is 10 MiB or lower. Plugin upload behavior and CI configuration are unchanged.
+
 Version 1.0.3 (build 2026112500)
 * Security: enforce exact OAuth redirect URI matching and authorization-code token binding; allow only the port to vary for registered HTTP loopback callbacks, including IPv6 [::1].
 * Security / migration: manual stdio bridge connections now require --token-file with a protected token file instead of a raw positional token. Update existing client configurations and revoke/replace tokens previously exposed in process arguments or client JSON. OAuth connections are unchanged.
