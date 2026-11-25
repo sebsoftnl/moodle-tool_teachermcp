@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tools;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * MCP tool to retrieve teacher's own profile and system information.
  *

@@ -24,8 +24,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Built-in tool that fails when reading its name.
  *

@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use tool_teachermcp\tools\manage_activity;
 
 /**
@@ -26,6 +24,7 @@ use tool_teachermcp\tools\manage_activity;
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\manage_activity
  */
 final class activity_publication_test extends \advanced_testcase {
     public function test_supported_modules_publish_and_unpublish_without_editing_settings(): void {
@@ -109,6 +108,9 @@ final class activity_publication_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);

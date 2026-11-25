@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use stdClass;
 use moodle_url;
 use moodle_exception;

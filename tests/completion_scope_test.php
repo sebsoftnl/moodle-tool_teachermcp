@@ -16,14 +16,15 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Completion read-scope and contextual access regression tests.
  *
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\auth
+ * @covers \tool_teachermcp\server
+ * @covers \tool_teachermcp\tools\manage_course_completion
  */
 final class completion_scope_test extends \advanced_testcase {
     public function test_read_presets_list_completion_without_granting_unrelated_mutations(): void {
@@ -97,10 +98,16 @@ final class completion_scope_test extends \advanced_testcase {
         $this->assert_access_guards($this->readonly_token());
     }
 
+    /**
+     * Create a token containing only the read scope.
+     */
     private function readonly_token(): \stdClass {
         return (object)['id' => 1, 'permissions' => json_encode(['scopes' => ['read']])];
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG, $DB;
         $this->resetAfterTest(true);
@@ -148,6 +155,12 @@ final class completion_scope_test extends \advanced_testcase {
         return $users + compact('course', 'context', 'roleid', 'done', 'pending', 'completed');
     }
 
+    /**
+     * Assert that reported progress matches the native completion fixture.
+     *
+     * @param array $result Result returned by the tool.
+     * @param array $fixture Native records and metadata comprising the test fixture.
+     */
     private function assert_progress(array $result, array $fixture): void {
         $this->assertSame((int)$fixture['student']->id, $result['student_user_id']);
         $states = array_column($result['activities_progress'], null, 'cmid');
@@ -164,6 +177,11 @@ final class completion_scope_test extends \advanced_testcase {
         $this->assertNull($pending['timecompleted_iso']);
     }
 
+    /**
+     * Exercise course, group and enrolment guards with the supplied token.
+     *
+     * @param \stdClass $token Authentication token used for the request.
+     */
     private function assert_access_guards(\stdClass $token): void {
         global $DB;
         $fixture = $this->fixture();
@@ -192,6 +210,16 @@ final class completion_scope_test extends \advanced_testcase {
         $this->assertEquals($before, $DB->get_records('course_modules_completion'));
     }
 
+    /**
+     * Assert that the requested dispatch path rejects unauthorized access.
+     *
+     * @param server $server Server used to dispatch the request.
+     * @param \stdClass $token Authentication token used for the request.
+     * @param string $name Tool name to dispatch.
+     * @param array $arguments Arguments dispatched to the tool.
+     * @param string $code Expected Moodle exception error code.
+     * @param string|null $capability Capability name to assign or check.
+     */
     private function assert_denied(
         server $server,
         \stdClass $token,
@@ -211,6 +239,15 @@ final class completion_scope_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Dispatch a JSON-RPC request with the supplied token.
+     *
+     * @param server $server Server used to dispatch the request.
+     * @param \stdClass $token Authentication token used for the request.
+     * @param string $method JSON-RPC method name.
+     * @param array $params Arguments supplied to the tool.
+     * @return array JSON-RPC response payload.
+     */
     private function rpc(server $server, \stdClass $token, string $method, array $params): array {
         $original = auth::get_current_token();
         $property = new \ReflectionProperty(auth::class, 'currenttoken');

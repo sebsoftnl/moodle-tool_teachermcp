@@ -32,6 +32,11 @@ use tool_teachermcp\tools\prepare_grading_session;
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\assignment_grading
+ * @covers \tool_teachermcp\tools\detect_at_risk_students
+ * @covers \tool_teachermcp\tools\grade_submission
+ * @covers \tool_teachermcp\tools\manage_grades
+ * @covers \tool_teachermcp\tools\prepare_grading_session
  */
 final class grading_risk_regressions_test extends \advanced_testcase {
     public function test_listing_submissions_is_read_only_even_without_an_attempt(): void {
@@ -215,6 +220,9 @@ final class grading_risk_regressions_test extends \advanced_testcase {
         $this->assertNotContains('low_grade', array_column($row['risk_flags'], 'code'));
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG, $DB;
         $this->resetAfterTest(true);
@@ -232,6 +240,14 @@ final class grading_risk_regressions_test extends \advanced_testcase {
         return [$course, $teacher, $student];
     }
 
+    /**
+     * Create graded and ungraded items with the requested aggregation policy.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param \stdClass $student Student whose work is graded.
+     * @param int $aggregation Native grade aggregation constant.
+     * @param bool $onlygraded Whether aggregation excludes ungraded items.
+     */
     private function risk_items(\stdClass $course, \stdClass $student, int $aggregation, bool $onlygraded): void {
         $category = \grade_category::fetch_course_category($course->id);
         $category->aggregation = $aggregation;

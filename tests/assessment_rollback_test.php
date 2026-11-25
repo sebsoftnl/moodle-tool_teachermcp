@@ -32,6 +32,8 @@ use tool_teachermcp\tools\manage_question_bank;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\manage_question_bank
+ * @covers \tool_teachermcp\tools\scaffold_assessment_unit
  */
 final class assessment_rollback_test extends \advanced_testcase {
     public function test_scaffold_forwarding_preserves_native_work(): void {
@@ -163,6 +165,13 @@ final class assessment_rollback_test extends \advanced_testcase {
         $this->assert_rollback('create', 'slot', true);
     }
 
+    /**
+     * Assert that a post-write failure restores native assessment and cache state.
+     *
+     * @param string $operation Assessment operation: create or scaffold.
+     * @param string $phase Native write phase at which failure is injected.
+     * @param bool $existingbank Whether to reuse an existing native question bank.
+     */
     private function assert_rollback(string $operation, string $phase, bool $existingbank): void {
         global $DB;
         $fixture = $this->create_fixture($existingbank, $operation === 'create');
@@ -262,6 +271,12 @@ final class assessment_rollback_test extends \advanced_testcase {
         );
     }
 
+    /**
+     * Read cached module state without making an unavailable cache observation fatal.
+     *
+     * @param int $courseid Course ID whose state is inspected.
+     * @return array Cached modinfo state or captured error details.
+     */
     private function cache_observation(int $courseid): array {
         try {
             return assessment_faults::modinfo($courseid);
@@ -270,6 +285,13 @@ final class assessment_rollback_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create the native assessment fixture.
+     *
+     * @param bool $existingbank Whether to reuse an existing native question bank.
+     * @param bool $attachment Whether to create an existing quiz for question attachment.
+     * @return array Course, teacher, optional quiz and optional question category.
+     */
     private function create_fixture(bool $existingbank, bool $attachment): array {
         global $CFG;
         $this->resetAfterTest(true);
@@ -312,6 +334,13 @@ final class assessment_rollback_test extends \advanced_testcase {
         return ['course' => $course, 'teacher' => $teacher, 'quiz' => $quiz, 'category' => $category];
     }
 
+    /**
+     * Create a native question-bank category using the installed Moodle layout.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $name Name for the generated fixture.
+     * @return \stdClass Native question-bank category.
+     */
     private function create_native_bank(\stdClass $course, string $name): \stdClass {
         if (class_exists(question_bank_helper::class)) {
             $bank = $this->getDataGenerator()->create_module('qbank', [
@@ -322,6 +351,12 @@ final class assessment_rollback_test extends \advanced_testcase {
         return question_make_default_categories([\context_course::instance($course->id)]);
     }
 
+    /**
+     * Build valid assessment scaffolding arguments for the fixture course.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @return array Assessment-scaffolding arguments.
+     */
     private function scaffold_params(\stdClass $course): array {
         return ['course_id' => (int)$course->id, 'quiz_title' => 'Rollback assessment', 'questions' => [
             ['name' => 'Rollback question one', 'text' => 'Two plus two equals five.',
@@ -331,6 +366,12 @@ final class assessment_rollback_test extends \advanced_testcase {
         ]];
     }
 
+    /**
+     * Build question-creation arguments targeting the fixture quiz and category.
+     *
+     * @param array $fixture Native records and metadata comprising the test fixture.
+     * @return array Question-creation and attachment arguments.
+     */
     private function create_params(array $fixture): array {
         $params = ['course_id' => (int)$fixture['course']->id, 'action' => 'create_question',
             'quiz_id' => (int)$fixture['quiz']->id, 'qtype' => 'truefalse', 'name' => 'Rollback attachment question',
@@ -341,6 +382,14 @@ final class assessment_rollback_test extends \advanced_testcase {
         return $params;
     }
 
+    /**
+     * Find table records introduced since the initial assessment snapshot.
+     *
+     * @param array $before Assessment snapshot taken before the operation.
+     * @param array $after Assessment snapshot taken after the operation.
+     * @param string $table Native table whose added records are selected.
+     * @return array Records present only in the later snapshot.
+     */
     private function added(array $before, array $after, string $table): array {
         $ids = array_map('intval', array_column($before['entities'][$table], 'id'));
         return array_values(array_filter(

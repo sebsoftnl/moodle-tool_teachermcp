@@ -18,14 +18,14 @@ namespace tool_teachermcp;
 
 use tool_teachermcp\local\token_history;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Inactive connection cleanup must preserve authentication and ownership boundaries.
  *
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\auth
+ * @covers \tool_teachermcp\local\token_history
  */
 final class token_history_test extends \advanced_testcase {
     public function test_teacher_clears_only_own_inactive_history(): void {
@@ -123,6 +123,9 @@ final class token_history_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create two teachers for ownership checks.
+     */
     private function teachers(): array {
         $this->resetAfterTest(true);
         $generator = $this->getDataGenerator();
@@ -134,6 +137,14 @@ final class token_history_test extends \advanced_testcase {
         return $users;
     }
 
+    /**
+     * Build a token fixture with the requested permissions.
+     *
+     * @param \stdClass $user User owning the token.
+     * @param int $status Native token status constant.
+     * @param int $expiry Token expiry timestamp.
+     * @return int Created token ID.
+     */
     private function token(\stdClass $user, int $status, int $expiry): int {
         global $DB;
         $token = auth::generate_token_record($user->id, 'History fixture', 1);

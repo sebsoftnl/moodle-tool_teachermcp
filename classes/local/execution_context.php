@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Immutable, data-minimised context passed to external Teacher MCP tools.
  *

@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for Teacher MCP privacy metadata, export contexts, and deletion behavior.
  *

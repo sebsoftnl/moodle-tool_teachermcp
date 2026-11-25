@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tools;
 
-defined('MOODLE_INTERNAL') || die();
-
 use moodle_exception;
 use moodle_url;
 use stdClass;
@@ -113,7 +111,7 @@ class manage_course_forum extends base_tool {
         } else {
             $forum = forum_get_course_forum($course->id, 'news');
             if (!$forum) {
-                // Fallback to first forum in course
+                // Fallback to first forum in course.
                 $forums = $DB->get_records('forum', ['course' => $course->id], 'id ASC', '*', 0, 1);
                 $forum = reset($forums);
             }

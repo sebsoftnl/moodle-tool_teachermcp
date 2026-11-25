@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\event;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Event triggered when an MCP tool is executed by an agent.
  *

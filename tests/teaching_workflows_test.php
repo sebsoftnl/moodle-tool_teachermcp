@@ -31,6 +31,16 @@ use tool_teachermcp\tools\prepare_grading_session;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\resource_registry
+ * @covers \tool_teachermcp\tools\create_assignment
+ * @covers \tool_teachermcp\tools\detect_at_risk_students
+ * @covers \tool_teachermcp\tools\get_group_students
+ * @covers \tool_teachermcp\tools\grade_submission
+ * @covers \tool_teachermcp\tools\manage_course_calendar
+ * @covers \tool_teachermcp\tools\manage_course_completion
+ * @covers \tool_teachermcp\tools\manage_grades
+ * @covers \tool_teachermcp\tools\prepare_grading_session
+ * @covers \tool_teachermcp\tools\send_student_message
  */
 final class teaching_workflows_test extends \advanced_testcase {
     public function test_grading_preparation_preserves_instruction_text_boundaries(): void {
@@ -467,6 +477,9 @@ final class teaching_workflows_test extends \advanced_testcase {
         $this->assertNull($pending->get_attempt()->sumgrades);
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         require_once($CFG->libdir . '/gradelib.php');
@@ -488,6 +501,12 @@ final class teaching_workflows_test extends \advanced_testcase {
         return [$course, $teacher, $students, $groups];
     }
 
+    /**
+     * Read and decode the assignment rubric resource.
+     *
+     * @param \assign $assign Native assignment fixture.
+     * @return array Decoded assignment rubric resource.
+     */
     private function rubric_resource(\assign $assign): array {
         $uri = 'moodle://activity/' . $assign->get_course_module()->id . '/rubric';
         $result = \tool_teachermcp\local\resource_registry::read_resource($uri);
@@ -495,6 +514,11 @@ final class teaching_workflows_test extends \advanced_testcase {
         return json_decode($result['contents'][0]['text'], true, 512, JSON_THROW_ON_ERROR);
     }
 
+    /**
+     * Assert that team grading respects the explicit or default apply-to-all flag.
+     *
+     * @param bool $defaultall Whether to omit applytoall and exercise its default.
+     */
     private function assert_team_grading(bool $defaultall): void {
         global $DB;
         [$course, , $students] = $this->fixture();

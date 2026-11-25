@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use tool_teachermcp\local\resource_registry;
 
 /**
@@ -26,6 +24,7 @@ use tool_teachermcp\local\resource_registry;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\resource_registry
  */
 final class announcements_resource_test extends \advanced_testcase {
     protected function setUp(): void {
@@ -176,6 +175,12 @@ final class announcements_resource_test extends \advanced_testcase {
         $this->assertStringNotContainsString('Scheduled announcement', $text);
     }
 
+    /**
+     * Create an enrolled teacher and course for announcement visibility checks.
+     *
+     * @param array $settings Native generator settings overriding fixture defaults.
+     * @return array Course, enrolled teacher and editing-teacher role ID.
+     */
     private function course_fixture(array $settings = []): array {
         global $DB;
         $generator = $this->getDataGenerator();
@@ -186,12 +191,30 @@ final class announcements_resource_test extends \advanced_testcase {
         return [$course, $teacher, $role];
     }
 
+    /**
+     * Create the native course announcements forum with the requested settings.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $settings Native generator settings overriding fixture defaults.
+     * @return \stdClass Created announcements forum.
+     */
     private function news_forum(\stdClass $course, array $settings = []): \stdClass {
         return $this->getDataGenerator()->create_module('forum', $settings + [
             'course' => $course->id, 'type' => 'news', 'name' => 'Announcements',
         ]);
     }
 
+    /**
+     * Create a native forum discussion and its first post.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param \stdClass $forum Forum containing the discussion.
+     * @param string $name Name for the generated fixture.
+     * @param int $groupid Group owning the discussion, or the native all-groups value.
+     * @param int $modified Discussion modification timestamp.
+     * @param array $settings Native generator settings overriding fixture defaults.
+     * @return \stdClass Created discussion and first-post metadata.
+     */
     private function discussion(
         \stdClass $course,
         \stdClass $forum,
@@ -207,12 +230,24 @@ final class announcements_resource_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Read the course announcements resource as text.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @return string Announcements resource text.
+     */
     private function read_text(\stdClass $course): string {
         $result = resource_registry::read_resource("moodle://course/{$course->id}/announcements");
         $this->assertNotNull($result);
         return $result['contents'][0]['text'];
     }
 
+    /**
+     * Capture course, forum and discussion state for read-only assertions.
+     *
+     * @param int $courseid Course ID whose state is inspected.
+     * @return array Native forum, module and section state.
+     */
     private function course_state(int $courseid): array {
         global $DB;
         return [

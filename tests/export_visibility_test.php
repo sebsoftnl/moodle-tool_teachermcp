@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use tool_teachermcp\tools\export_course_learning_material;
 
 /**
@@ -26,6 +24,7 @@ use tool_teachermcp\tools\export_course_learning_material;
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\export_course_learning_material
  */
 final class export_visibility_test extends \advanced_testcase {
     public function test_exports_label_hidden_sections_materials_and_restrictions_without_dropping_content(): void {
@@ -74,6 +73,9 @@ final class export_visibility_test extends \advanced_testcase {
         $this->assertStringContainsString('Unpublished definition', $markdown['content']);
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);

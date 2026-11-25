@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 use Throwable;
 use tool_teachermcp\tools\base_tool;
 

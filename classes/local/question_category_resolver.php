@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_question\local\bank\question_bank_helper;
 use stdClass;
 

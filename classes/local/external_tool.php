@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Public contract for an externally provided Teacher MCP tool.
  *

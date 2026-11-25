@@ -24,8 +24,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Observes real bank/child work before saving, or real question work after the native save.
  *

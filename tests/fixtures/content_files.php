@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Local binary fixtures shared by PHPUnit and the owned CLI harness.
  *

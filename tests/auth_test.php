@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for MCP token authentication and connection capability caching.
  *

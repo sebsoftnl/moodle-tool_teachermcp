@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * A rejection before execution, distinct from an exception raised inside a tool.
  *

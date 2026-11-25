@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tools;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * MCP tool to list courses where the teacher is enrolled or has teaching roles.
  *

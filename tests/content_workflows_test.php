@@ -34,6 +34,13 @@ use tool_teachermcp\tools\upload_course_asset;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\server
+ * @covers \tool_teachermcp\tools\duplicate_activity
+ * @covers \tool_teachermcp\tools\export_course_learning_material
+ * @covers \tool_teachermcp\tools\manage_activity
+ * @covers \tool_teachermcp\tools\manage_content_activity
+ * @covers \tool_teachermcp\tools\read_activity_file
+ * @covers \tool_teachermcp\tools\upload_course_asset
  */
 final class content_workflows_test extends \advanced_testcase {
     public function test_page_and_book_six_action_workflow(): void {
@@ -379,6 +386,9 @@ final class content_workflows_test extends \advanced_testcase {
         $this->assertSame($small, json_decode(server::format_tool_result_for_response($small), true, 512, JSON_THROW_ON_ERROR));
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -390,6 +400,12 @@ final class content_workflows_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Capture source module records and file hashes for preservation checks.
+     *
+     * @param int $cmid Course-module ID.
+     * @return array Source module, instance, chapters and file metadata.
+     */
     private function source_state(int $cmid): array {
         global $DB;
         $cm = $DB->get_record('course_modules', ['id' => $cmid], '*', MUST_EXIST);

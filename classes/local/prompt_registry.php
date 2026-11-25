@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Registry of pedagogical prompts exposed via MCP prompts/list and prompts/get.
  *

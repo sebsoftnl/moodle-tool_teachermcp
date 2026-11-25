@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tools;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_courseformat\formatactions;
 use core_courseformat\local\cmactions;
 use moodle_exception;

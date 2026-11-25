@@ -24,8 +24,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * External provider tool fixture.
  *

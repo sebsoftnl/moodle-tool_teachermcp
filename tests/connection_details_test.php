@@ -18,14 +18,13 @@ namespace tool_teachermcp;
 
 use tool_teachermcp\local\connection_details;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Connection descriptions must match the existing permission predicate.
  *
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\connection_details
  */
 final class connection_details_test extends \advanced_testcase {
     public function test_scope_grants_are_summarised_without_expanding_access(): void {
@@ -86,6 +85,12 @@ final class connection_details_test extends \advanced_testcase {
         ));
     }
 
+    /**
+     * Build a token fixture with the requested permissions.
+     *
+     * @param array|null $permissions Token permissions, or null for unrestricted access.
+     * @return \stdClass Token fixture with encoded permissions.
+     */
     private function token(?array $permissions): \stdClass {
         return (object)['permissions' => $permissions === null ? null : json_encode($permissions), 'timeexpires' => 0];
     }

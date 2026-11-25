@@ -18,14 +18,13 @@ namespace tool_teachermcp;
 
 use tool_teachermcp\local\prompt_registry;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Prompt rendering and discovery contracts.
  *
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\prompt_registry
  */
 final class prompt_registry_test extends \advanced_testcase {
     public function test_course_prompts_use_dashboard_language_templates(): void {

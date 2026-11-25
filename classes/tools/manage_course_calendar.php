@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\tools;
 
-defined('MOODLE_INTERNAL') || die();
-
 use moodle_exception;
 use stdClass;
 
@@ -104,7 +102,7 @@ class manage_course_calendar extends base_tool {
 
         switch ($action) {
             case 'list_events':
-                $now = time() - 86400; // Past 24h to future
+                $now = time() - 86400; // Past 24h to future.
                 $events = $DB->get_records_select(
                     'event',
                     'courseid = :cid AND timestart >= :start',

@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Native administrator input whose saved values match the supported integer range.
  *

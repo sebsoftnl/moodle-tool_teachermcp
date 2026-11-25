@@ -34,6 +34,13 @@ use tool_teachermcp\tools\upload_course_asset;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\file_extractor
+ * @covers \tool_teachermcp\tools\duplicate_activity
+ * @covers \tool_teachermcp\tools\export_course_learning_material
+ * @covers \tool_teachermcp\tools\manage_activity
+ * @covers \tool_teachermcp\tools\manage_content_activity
+ * @covers \tool_teachermcp\tools\read_activity_file
+ * @covers \tool_teachermcp\tools\upload_course_asset
  */
 final class content_boundaries_test extends \advanced_testcase {
     public function test_explicit_invalid_file_ids_never_select_another_file(): void {
@@ -338,6 +345,9 @@ final class content_boundaries_test extends \advanced_testcase {
         $this->assertSame($expected, $actual, 'Every extraction limitation must survive the export consumer.');
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -349,6 +359,13 @@ final class content_boundaries_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Read the selected activity file through the public tool.
+     *
+     * @param int $cmid Course-module ID.
+     * @param array $selector File selection arguments.
+     * @return string Selected file marker or Moodle error code.
+     */
     private function selection(int $cmid, array $selector): string {
         try {
             $result = (new read_activity_file())->execute(['cmid' => $cmid] + $selector);
@@ -358,6 +375,14 @@ final class content_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Upload fixture bytes through the public course-asset tool.
+     *
+     * @param int $courseid Course ID whose state is inspected.
+     * @param string $filename Filename supplied to the upload tool.
+     * @param string $bytes Raw file bytes to upload.
+     * @return string Upload status or Moodle error code.
+     */
     private function upload_result(int $courseid, string $filename, string $bytes): string {
         try {
             $result = (new upload_course_asset())->execute(['course_id' => $courseid, 'filename' => $filename,
@@ -370,6 +395,12 @@ final class content_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Capture page settings and attached file state before an update.
+     *
+     * @param \stdClass $page Native page module fixture.
+     * @return array Native page, module, course, file and modinfo state.
+     */
     private function settings_state(\stdClass $page): array {
         global $DB;
         get_fast_modinfo($page->course, 0, true);
@@ -381,6 +412,12 @@ final class content_boundaries_test extends \advanced_testcase {
             'modinfo' => ['name' => $cm->name, 'visible' => (int)$cm->visible, 'section' => (int)$cm->sectionnum]];
     }
 
+    /**
+     * Assert that a native activity copy reaches the selected course section.
+     *
+     * @param string $type Native activity type to copy.
+     * @param bool $crosscourse Whether to copy into a different enrolled course.
+     */
     private function assert_copy_placement(string $type, bool $crosscourse): void {
         global $DB;
         [$course, $teacher] = $this->fixture();

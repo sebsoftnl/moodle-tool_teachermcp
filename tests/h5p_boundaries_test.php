@@ -30,6 +30,7 @@ use tool_teachermcp\tools\create_h5p_activity;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\create_h5p_activity
  */
 final class h5p_boundaries_test extends \advanced_testcase {
     public function test_bank_only_does_not_require_activity_visibility_or_addinstance(): void {
@@ -206,6 +207,11 @@ final class h5p_boundaries_test extends \advanced_testcase {
         $this->assert_failed_native_save(true);
     }
 
+    /**
+     * Assert that a false or null native H5P save rolls back destination writes.
+     *
+     * @param bool $returnnull Whether the injected native save returns null instead of false.
+     */
     private function assert_failed_native_save(bool $returnnull): void {
         $this->preventResetByRollback();
         [$course, , $seed] = $this->fixture();
@@ -231,6 +237,14 @@ final class h5p_boundaries_test extends \advanced_testcase {
         $this->assertSame('error_h5p_save_failed', $code);
     }
 
+    /**
+     * Assert that the rejected operation leaves native persistence unchanged.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param callable $operation Operation expected to be rejected.
+     * @param string $code Expected Moodle exception error code.
+     * @param string|null $message Expected exception message fragment, or null to skip that check.
+     */
     private function assert_unchanged_error(\stdClass $course, callable $operation, string $code, ?string $message = null): void {
         $before = fixtures::snapshot((int)$course->id);
         $caught = null;
@@ -247,6 +261,9 @@ final class h5p_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -262,11 +279,25 @@ final class h5p_boundaries_test extends \advanced_testcase {
         return [$course, $teacher, $seed];
     }
 
+    /**
+     * Build valid H5P creation arguments for the fixture.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $seed Installed H5P library and package fixture.
+     * @return array H5P activity-creation arguments.
+     */
     private function args(\stdClass $course, array $seed): array {
         return ['course_id' => (int)$course->id, 'title' => 'Owned H5P boundary',
             'library_name' => 'H5P.Blanks', 'params' => $seed['package']['params']];
     }
 
+    /**
+     * Deny the requested capability in the teacher course context.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param \stdClass $teacher Teacher executing the operation.
+     * @param string $capability Capability name to assign or check.
+     */
     private function deny(\stdClass $course, \stdClass $teacher, string $capability): void {
         global $DB;
         $context = \context_course::instance($course->id);

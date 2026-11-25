@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_question\local\bank\question_bank_helper;
 use core_question\local\bank\question_version_status;
 use tool_teachermcp\tools\manage_question_bank;
@@ -29,6 +27,8 @@ use tool_teachermcp\tools\scaffold_assessment_unit;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\manage_question_bank
+ * @covers \tool_teachermcp\tools\scaffold_assessment_unit
  */
 final class question_actions_test extends \advanced_testcase {
     public function test_multianswer_creation_accepts_weighted_fractions_and_grades_natively(): void {
@@ -745,6 +745,9 @@ final class question_actions_test extends \advanced_testcase {
         $this->assert_unchanged_denial(fn() => (new scaffold_assessment_unit())->execute($this->scaffold_params($course)), 'nopermissions');
     }
 
+    /**
+     * Create the native assessment fixture.
+     */
     private function create_fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);
@@ -758,6 +761,13 @@ final class question_actions_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Create a question-bank category in the installed native context.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $name Name for the generated fixture.
+     * @return \stdClass Created native question category.
+     */
     private function create_bank_category(\stdClass $course, string $name): \stdClass {
         $generator = $this->getDataGenerator();
         $modname = class_exists(question_bank_helper::class) ? 'qbank' : 'quiz';
@@ -767,6 +777,9 @@ final class question_actions_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Create native bank and quiz fixtures for read authorization checks.
+     */
     private function create_read_fixture(): array {
         [$course, $teacher] = $this->create_fixture();
         $allowed = $this->create_bank_category($course, 'Allowed bank');
@@ -781,6 +794,9 @@ final class question_actions_test extends \advanced_testcase {
         return [$course, $allowed, $denied, $allowedquestion, $deniedquestion];
     }
 
+    /**
+     * Create question and quiz fixtures for attachment permission checks.
+     */
     private function create_attachment_fixture(): array {
         [$course, $teacher] = $this->create_fixture();
         $category = $this->create_bank_category($course, 'Attachment bank');
@@ -790,6 +806,12 @@ final class question_actions_test extends \advanced_testcase {
         return [$course, $teacher, $category, $quiz, $question];
     }
 
+    /**
+     * Create source and destination categories with a question to move.
+     *
+     * @param string $qtype Native question type to create.
+     * @return array Course, source category, destination category and question result.
+     */
     private function create_move_fixture(string $qtype = 'truefalse'): array {
         [$course, $teacher] = $this->create_fixture();
         $source = $this->create_bank_category($course, 'Move source');
@@ -800,15 +822,36 @@ final class question_actions_test extends \advanced_testcase {
         return [$course, $source, $destination, $question];
     }
 
+    /**
+     * Execute a question-bank action in the fixture course.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $action Question-bank action to execute.
+     * @param array $params Arguments supplied to the tool.
+     * @return array Question-bank tool result.
+     */
     private function call(\stdClass $course, string $action, array $params = []): array {
         return (new manage_question_bank())->execute($params + ['course_id' => (int)$course->id, 'action' => $action]);
     }
 
+    /**
+     * Create a question through the public question-bank tool.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $params Arguments supplied to the tool.
+     * @return array Question-creation tool result.
+     */
     private function create_question(\stdClass $course, array $params = []): array {
         return $this->call($course, 'create_question', $params + ['qtype' => 'truefalse', 'name' => 'Actions false question',
             'questiontext' => '<p>Two plus two equals five.</p>', 'correct_truefalse' => false]);
     }
 
+    /**
+     * Build valid assessment scaffolding arguments for the fixture course.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @return array Assessment-scaffolding arguments.
+     */
     private function scaffold_params(\stdClass $course): array {
         return ['course_id' => (int)$course->id, 'quiz_title' => 'Actions scaffold quiz', 'questions' => [[
             'name' => 'Actions scaffold false', 'text' => 'Two plus two equals five.',
@@ -816,6 +859,13 @@ final class question_actions_test extends \advanced_testcase {
         ]]];
     }
 
+    /**
+     * Set a role capability in the specified context.
+     *
+     * @param string $capability Capability name to assign or check.
+     * @param int $contextid Context in which the permission applies.
+     * @param int $permission Native capability permission constant.
+     */
     private function set_permission(string $capability, int $contextid, int $permission): void {
         global $DB;
         $roleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher'], MUST_EXIST);
@@ -823,6 +873,11 @@ final class question_actions_test extends \advanced_testcase {
         accesslib_clear_all_caches(true);
     }
 
+    /**
+     * Assert that native true-false grading preserves false as the correct answer.
+     *
+     * @param int $questionid Native question ID.
+     */
     private function assert_false_is_correct(int $questionid): void {
         $question = \question_bank::load_question($questionid);
         [$correct] = $question->grade_response(['answer' => 0]);
@@ -831,6 +886,9 @@ final class question_actions_test extends \advanced_testcase {
         $this->assertEquals(0.0, $incorrect, 'True must receive no credit.');
     }
 
+    /**
+     * Capture persisted assessment state for preservation assertions.
+     */
     private function snapshot(): array {
         global $DB;
         $tables = ['course_modules', 'question_categories', 'question', 'question_answers', 'question_bank_entries',
@@ -848,6 +906,12 @@ final class question_actions_test extends \advanced_testcase {
         return $result;
     }
 
+    /**
+     * Assert that an operation raises the expected Moodle error code.
+     *
+     * @param callable $action Operation expected to raise the error.
+     * @param string $errorcode Expected Moodle exception error code.
+     */
     private function assert_error(callable $action, string $errorcode): void {
         try {
             $action();
@@ -857,6 +921,12 @@ final class question_actions_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Assert that a denied operation preserves the assessment snapshot.
+     *
+     * @param callable $action Operation expected to raise the error.
+     * @param string $errorcode Expected Moodle exception error code.
+     */
     private function assert_unchanged_denial(callable $action, string $errorcode): void {
         $before = $this->snapshot();
         $this->assert_error($action, $errorcode);

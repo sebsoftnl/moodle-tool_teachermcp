@@ -29,6 +29,8 @@ use tool_teachermcp\tests\fixtures\diagnostic_fixtures;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\tool_registry
+ * @covers \tool_teachermcp\server
  */
 final class diagnostics_test extends \advanced_testcase {
     protected function setUp(): void {

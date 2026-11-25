@@ -119,6 +119,6 @@ if ($connections['history']) {
     echo html_writer::end_tag('details');
 }
 
-echo html_writer::end_div(); // tool_teachermcp_admin.
+echo html_writer::end_div(); // Tool_teachermcp_admin.
 echo $OUTPUT->render_from_template('tool_teachermcp/connection_modals', []);
 echo $OUTPUT->footer();

@@ -37,6 +37,10 @@ use tool_teachermcp\tools\base_tool;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\argument_normalizer
+ * @covers \tool_teachermcp\local\tool_registry
+ * @covers \tool_teachermcp\server
+ * @covers \tool_teachermcp\tools\base_tool
  */
 final class argument_normalizer_test extends \advanced_testcase {
     /** @var array Explicit boolean positions in the approved built-in contract. */
@@ -232,6 +236,11 @@ final class argument_normalizer_test extends \advanced_testcase {
         $this->assertFalse($schema['properties']['visible']['default']);
     }
 
+    /**
+     * Assert normalization at every declared built-in boolean argument position.
+     *
+     * @param string $transport Dispatch transport: direct or JSON-RPC.
+     */
     private function assert_boolean_positions(string $transport): void {
         $tools = server::get_all_tools();
         foreach (self::POSITIONS as $name => $fields) {
@@ -255,6 +264,12 @@ final class argument_normalizer_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Build minimally valid values for required schema arguments.
+     *
+     * @param array $schema Tool input JSON schema.
+     * @return array Minimally valid required arguments.
+     */
     private function required_arguments(array $schema): array {
         $arguments = [];
         foreach ($schema['required'] ?? [] as $name) {
@@ -269,6 +284,13 @@ final class argument_normalizer_test extends \advanced_testcase {
         return $arguments;
     }
 
+    /**
+     * Create a server with a capturing probe tool and the supplied schema.
+     *
+     * @param string $name Tool name to dispatch.
+     * @param array $schema Tool input JSON schema.
+     * @return array Server and its capturing probe tool.
+     */
     private function server_with_probe(string $name, array $schema): array {
         $probe = new class ($name, $schema) extends base_tool {
             /** @var int Number of calls reaching the probe. */
@@ -280,24 +302,45 @@ final class argument_normalizer_test extends \advanced_testcase {
             /** @var array Tool schema. */
             private array $schema;
 
+            /**
+             * Initialize the probe name and schema.
+             *
+             * @param string $toolname Name exposed by the probe tool.
+             * @param array $schema Tool input JSON schema.
+             */
             public function __construct(string $toolname, array $schema) {
                 $this->toolname = $toolname;
                 $this->schema = $schema;
                 parent::__construct();
             }
 
+            /**
+             * Return the probe tool name.
+             */
             public function get_name(): string {
                 return $this->toolname;
             }
 
+            /**
+             * Describe the probe tool.
+             */
             public function get_description(): string {
                 return 'Captures arguments delivered by the server.';
             }
 
+            /**
+             * Declare the probe input schema.
+             */
             public function get_input_schema(): array {
                 return $this->schema;
             }
 
+            /**
+             * Capture the arguments supplied to the probe.
+             *
+             * @param array $params Arguments supplied to the tool.
+             * @return array Arguments captured by the probe.
+             */
             public function execute(array $params): array {
                 $this->calls++;
                 return $params;
@@ -310,6 +353,15 @@ final class argument_normalizer_test extends \advanced_testcase {
         return [$server, $probe];
     }
 
+    /**
+     * Dispatch a tool call directly or through JSON-RPC.
+     *
+     * @param server $server Server used to dispatch the request.
+     * @param string $transport Dispatch transport: direct or JSON-RPC.
+     * @param string $name Tool name to dispatch.
+     * @param array $arguments Arguments dispatched to the tool.
+     * @return array Decoded tool result.
+     */
     private function dispatch(server $server, string $transport, string $name, array $arguments): array {
         if ($transport === 'direct') {
             return $server->execute_tool($name, $arguments);
@@ -333,6 +385,14 @@ final class argument_normalizer_test extends \advanced_testcase {
             'params' => ['name' => $name, 'arguments' => $arguments]], JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION));
     }
 
+    /**
+     * Assert that invalid arguments are rejected before tool execution.
+     *
+     * @param server $server Server used to dispatch the request.
+     * @param string $transport Dispatch transport: direct or JSON-RPC.
+     * @param string $name Tool name to dispatch.
+     * @param array $arguments Arguments dispatched to the tool.
+     */
     private function assert_rejected(server $server, string $transport, string $name, array $arguments): void {
         if ($transport === 'direct') {
             try {
@@ -348,6 +408,11 @@ final class argument_normalizer_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Set the cached authentication token for the dispatch fixture.
+     *
+     * @param \stdClass|null $token Authentication token, or null to clear the cached token.
+     */
     private function set_token(?\stdClass $token): void {
         $property = new \ReflectionProperty(auth::class, 'currenttoken');
         $property->setAccessible(true);

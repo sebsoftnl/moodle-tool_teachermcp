@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\event;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Records history cleanup without removing the original connection audit events.
  *
