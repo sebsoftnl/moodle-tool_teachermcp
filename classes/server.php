@@ -306,7 +306,7 @@ class server {
             ? $result
             : json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($text === false) {
-            $text = 'Unable to encode the tool response.';
+            $text = get_string('mcp_encode_error', 'tool_teachermcp');
         }
 
         $limit = self::get_mcp_limit('max_mcp_response_bytes', 262144, 1024, 5242880);
@@ -314,7 +314,7 @@ class server {
             return $text;
         }
 
-        $suffix = "\n[Output truncated at {$limit} bytes. Narrow the request or request a smaller result set.]";
+        $suffix = "\n" . get_string('mcp_output_truncated', 'tool_teachermcp', $limit);
         $available = max(0, $limit - strlen($suffix));
         return \core_text::str_max_bytes($text, $available) . $suffix;
     }
@@ -499,16 +499,16 @@ class server {
         $data = json_decode($rawpayload, true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-            return $this->build_jsonrpc_error(null, -32700, 'Parse error: Invalid JSON received.');
+            return $this->build_jsonrpc_error(null, -32700, get_string('mcp_parse_error', 'tool_teachermcp'));
         }
 
         // Empty batch or object is invalid JSON-RPC 2.0.
         if (empty($data)) {
-            return $this->build_jsonrpc_error(null, -32600, 'Invalid Request: Empty batch or object.');
+            return $this->build_jsonrpc_error(null, -32600, get_string('mcp_empty_request', 'tool_teachermcp'));
         }
 
         if (array_is_list($data) && count($data) > self::get_mcp_limit('max_mcp_batch_size', 10, 1, 50)) {
-            return $this->build_jsonrpc_error(null, -32600, 'Invalid Request: Batch size exceeds the configured limit.');
+            return $this->build_jsonrpc_error(null, -32600, get_string('mcp_batch_limit', 'tool_teachermcp'));
         }
 
         // Support batch requests.
@@ -516,7 +516,7 @@ class server {
             $responses = [];
             foreach ($data as $request) {
                 if (!is_array($request)) {
-                    $responses[] = $this->build_jsonrpc_error(null, -32600, 'Invalid Request: Batch element must be an object.');
+                    $responses[] = $this->build_jsonrpc_error(null, -32600, get_string('mcp_batch_element', 'tool_teachermcp'));
                     continue;
                 }
                 $res = $this->process_single_request($request);
@@ -542,11 +542,19 @@ class server {
         $method = $req['method'] ?? '';
 
         if (empty($method) || !is_string($method)) {
-            return $isnotification ? null : $this->build_jsonrpc_error($id, -32600, 'Invalid Request: Missing or invalid method.');
+            return $isnotification ? null : $this->build_jsonrpc_error(
+                $id,
+                -32600,
+                get_string('mcp_invalid_method', 'tool_teachermcp')
+            );
         }
 
         if (isset($req['params']) && !is_array($req['params'])) {
-            return $isnotification ? null : $this->build_jsonrpc_error($id, -32602, 'Invalid params: Parameters must be an object or array.');
+            return $isnotification ? null : $this->build_jsonrpc_error(
+                $id,
+                -32602,
+                get_string('mcp_invalid_params', 'tool_teachermcp')
+            );
         }
 
         $params = $req['params'] ?? [];
@@ -618,16 +626,20 @@ class server {
                     $promptargs = $params['arguments'] ?? [];
 
                     if (!is_string($promptname) || empty($promptname)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing prompt name.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_missing_prompt', 'tool_teachermcp'));
                     }
 
                     if (!is_array($promptargs)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Arguments must be an object.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_invalid_arguments', 'tool_teachermcp'));
                     }
 
                     $prompt = \tool_teachermcp\local\prompt_registry::get_prompt($promptname, $promptargs);
                     if ($prompt === null) {
-                        return $this->build_jsonrpc_error($id, -32602, "Prompt '{$promptname}' not found.");
+                        return $this->build_jsonrpc_error(
+                            $id,
+                            -32602,
+                            get_string('mcp_prompt_not_found', 'tool_teachermcp', $promptname)
+                        );
                     }
                     return $this->build_jsonrpc_success($id, $prompt);
 
@@ -637,7 +649,7 @@ class server {
                     }
                     $token = auth::get_current_token();
                     if (!self::is_resource_allowed_by_token($token)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_resource_unavailable', 'tool_teachermcp'));
                     }
                     return $this->build_jsonrpc_success($id, [
                         'resources' => \tool_teachermcp\local\resource_registry::get_resources(),
@@ -649,7 +661,7 @@ class server {
                     }
                     $token = auth::get_current_token();
                     if (!self::is_resource_allowed_by_token($token)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_resource_unavailable', 'tool_teachermcp'));
                     }
                     return $this->build_jsonrpc_success($id, [
                         'resourceTemplates' => \tool_teachermcp\local\resource_registry::get_templates(),
@@ -661,15 +673,15 @@ class server {
                     }
                     $uri = $params['uri'] ?? '';
                     if (!is_string($uri) || empty($uri)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing or invalid uri.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_invalid_uri', 'tool_teachermcp'));
                     }
                     $token = auth::get_current_token();
                     if (!self::is_resource_allowed_by_token($token)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_resource_unavailable', 'tool_teachermcp'));
                     }
                     $res = \tool_teachermcp\local\resource_registry::read_resource($uri);
                     if ($res === null) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Resource not found or inaccessible.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_resource_unavailable', 'tool_teachermcp'));
                     }
                     return $this->build_jsonrpc_success(
                         $id,
@@ -684,11 +696,11 @@ class server {
                     $arguments = $params['arguments'] ?? [];
 
                     if (!is_string($toolname) || empty($toolname)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Missing or invalid tool name.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_invalid_tool', 'tool_teachermcp'));
                     }
 
                     if (!is_array($arguments)) {
-                        return $this->build_jsonrpc_error($id, -32602, 'Invalid params: Arguments must be an object.');
+                        return $this->build_jsonrpc_error($id, -32602, get_string('mcp_invalid_arguments', 'tool_teachermcp'));
                     }
 
                     $token = auth::get_current_token();
@@ -696,10 +708,14 @@ class server {
                         $result = $this->execute_tool($toolname, $arguments, $token);
                     } catch (tool_dispatch_exception $e) {
                         if ($e->errorcode === 'error_invalid_params') {
-                            return $this->build_jsonrpc_error($id, -32602, 'Invalid params: ' . $e->debuginfo);
+                            return $this->build_jsonrpc_error(
+                                $id,
+                                -32602,
+                                get_string('mcp_params_detail', 'tool_teachermcp', $e->debuginfo)
+                            );
                         }
                         $message = $e->errorcode === 'error_tool_not_found'
-                            ? "Tool '{$toolname}' is not found or not permitted."
+                            ? get_string('mcp_tool_not_found', 'tool_teachermcp', $toolname)
                             : $e->getMessage();
                         return $this->build_jsonrpc_success($id, [
                             'content' => [['type' => 'text', 'text' => $message]],
@@ -723,7 +739,11 @@ class server {
                     ]);
 
                 default:
-                    return $isnotification ? null : $this->build_jsonrpc_error($id, -32601, "Method '{$method}' not found.");
+                    return $isnotification ? null : $this->build_jsonrpc_error(
+                        $id,
+                        -32601,
+                        get_string('mcp_method_not_found', 'tool_teachermcp', $method)
+                    );
             }
         } catch (Throwable $e) {
             // For tool execution errors, MCP guidelines prefer returning isError: true in the result block.
@@ -741,15 +761,19 @@ class server {
                         [
                             'type' => 'text',
                             'text' => $e instanceof \moodle_exception
-                                ? 'Moodle error: ' . $e->getMessage()
-                                : 'Internal tool execution error.',
+                                ? get_string('mcp_moodle_error', 'tool_teachermcp', $e->getMessage())
+                                : get_string('mcp_tool_error', 'tool_teachermcp'),
                         ],
                     ],
                     'isError' => true,
                 ]);
             }
 
-            return $isnotification ? null : $this->build_jsonrpc_error($id, -32603, 'Internal server error.');
+            return $isnotification ? null : $this->build_jsonrpc_error(
+                $id,
+                -32603,
+                get_string('mcp_internal_error', 'tool_teachermcp')
+            );
         }
     }
 
@@ -807,14 +831,14 @@ class server {
 
         foreach ($required as $field) {
             if (!array_key_exists($field, $args)) {
-                return ['valid' => false, 'error' => "Missing required parameter '{$field}'."];
+                return ['valid' => false, 'error' => get_string('mcp_missing_parameter', 'tool_teachermcp', $field)];
             }
         }
 
         foreach ($args as $name => $val) {
             if (!isset($properties[$name])) {
                 if (($schema['additionalProperties'] ?? true) === false) {
-                    return ['valid' => false, 'error' => "Unexpected parameter '{$name}'."];
+                    return ['valid' => false, 'error' => get_string('mcp_unexpected_parameter', 'tool_teachermcp', $name)];
                 }
                 continue;
             }
@@ -823,34 +847,35 @@ class server {
 
             if (isset($prop['enum']) && is_array($prop['enum'])) {
                 if (!in_array($val, $prop['enum'], true)) {
-                    return ['valid' => false, 'error' => "Parameter '{$name}' must be one of: " . implode(', ', $prop['enum'])];
+                    $details = (object)['name' => $name, 'values' => implode(', ', $prop['enum'])];
+                    return ['valid' => false, 'error' => get_string('mcp_parameter_enum', 'tool_teachermcp', $details)];
                 }
             }
 
             switch ($expectedtype) {
                 case 'integer':
                     if (!is_int($val) && !ctype_digit((string)$val)) {
-                        return ['valid' => false, 'error' => "Parameter '{$name}' must be an integer."];
+                        return ['valid' => false, 'error' => get_string('mcp_parameter_integer', 'tool_teachermcp', $name)];
                     }
                     break;
                 case 'number':
                     if (!is_numeric($val)) {
-                        return ['valid' => false, 'error' => "Parameter '{$name}' must be a number."];
+                        return ['valid' => false, 'error' => get_string('mcp_parameter_number', 'tool_teachermcp', $name)];
                     }
                     break;
                 case 'boolean':
                     if (!is_bool($val) && $val !== 0 && $val !== 1 && $val !== '0' && $val !== '1' && $val !== 'true' && $val !== 'false') {
-                        return ['valid' => false, 'error' => "Parameter '{$name}' must be a boolean."];
+                        return ['valid' => false, 'error' => get_string('mcp_parameter_boolean', 'tool_teachermcp', $name)];
                     }
                     break;
                 case 'string':
                     if (!is_string($val)) {
-                        return ['valid' => false, 'error' => "Parameter '{$name}' must be a string."];
+                        return ['valid' => false, 'error' => get_string('mcp_parameter_string', 'tool_teachermcp', $name)];
                     }
                     break;
                 case 'array':
                     if (!is_array($val)) {
-                        return ['valid' => false, 'error' => "Parameter '{$name}' must be an array."];
+                        return ['valid' => false, 'error' => get_string('mcp_parameter_array', 'tool_teachermcp', $name)];
                     }
                     break;
             }

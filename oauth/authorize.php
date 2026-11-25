@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && confirm_sesskey()) {
     } else {
         $params = [
             'error' => 'access_denied',
-            'error_description' => 'User cancelled authorization request.',
+            'error_description' => get_string('oauth_authorization_cancelled', 'tool_teachermcp'),
         ];
         if (!empty($state)) {
             $params['state'] = $state;

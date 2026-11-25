@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     echo json_encode([
         'status' => 'online',
-        'server' => 'Moodle Teacher MCP Agent Endpoint',
+        'server' => get_string('mcp_endpoint_name', 'tool_teachermcp'),
         'protocol' => 'MCP (JSON-RPC 2.0)',
         'capabilities' => [
             'tools' => [
@@ -102,7 +102,7 @@ try {
         http_response_code(413);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.',
+            'error' => ['code' => -32600, 'message' => get_string('mcp_request_size', 'tool_teachermcp'),
                 'data' => ['reason' => 'request_too_large']],
             'id' => null,
         ]);
@@ -119,7 +119,7 @@ try {
         http_response_code(413);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Request body exceeds the configured size limit.',
+            'error' => ['code' => -32600, 'message' => get_string('mcp_request_size', 'tool_teachermcp'),
                 'data' => ['reason' => 'request_too_large']],
             'id' => null,
         ]);
@@ -129,7 +129,7 @@ try {
         http_response_code(400);
         echo json_encode([
             'jsonrpc' => '2.0',
-            'error' => ['code' => -32600, 'message' => 'Empty request body.',
+            'error' => ['code' => -32600, 'message' => get_string('mcp_empty_body', 'tool_teachermcp'),
                 'data' => ['reason' => 'invalid_request']],
             'id' => null,
         ]);
@@ -175,8 +175,11 @@ try {
     } else if ($status === 429) {
         header('Retry-After: ' . (int)$e->a);
     }
-    $message = $reason === 'internal_error' ? 'Internal server error occurred.'
-        : ($status === 401 ? 'Authentication failed: ' : '') . get_string($e->errorcode, 'tool_teachermcp');
+    $message = $reason === 'internal_error' ? get_string('mcp_endpoint_error', 'tool_teachermcp')
+        : get_string($e->errorcode, 'tool_teachermcp', $e->a);
+    if ($status === 401) {
+        $message = get_string('mcp_authentication_failed', 'tool_teachermcp', $message);
+    }
     echo json_encode([
         'jsonrpc' => '2.0',
         'error' => [
