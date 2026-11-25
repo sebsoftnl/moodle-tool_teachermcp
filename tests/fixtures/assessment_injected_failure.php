@@ -24,8 +24,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Distinguishes an intended post-write failure from any native failure.
  *

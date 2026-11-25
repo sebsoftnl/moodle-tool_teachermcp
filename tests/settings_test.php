@@ -16,14 +16,13 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Administrator settings boundaries and placement.
  *
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\bounded_integer
  */
 final class settings_test extends \advanced_testcase {
     public function test_limits_reject_invalid_values_without_saving(): void {
@@ -92,6 +91,9 @@ final class settings_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Load the plugin administrator settings for validation.
+     */
     private function settings(): array {
         global $CFG;
         $this->resetAfterTest(true);

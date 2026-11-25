@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Robust file text extraction and inspection helper for course learning materials.
  * Supports PDF, DOCX, PPTX, ODT, CSV, JSON, XML, HTML, and plain text.

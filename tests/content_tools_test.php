@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for MCP course-content, file, activity, H5P, and deletion tools.
  *
@@ -187,6 +185,9 @@ final class content_tools_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create a page and teacher fixture for publication permission checks.
+     */
     private function publication_fixture(): array {
         $this->resetAfterTest(true);
         $course = $this->getDataGenerator()->create_course();
@@ -196,6 +197,12 @@ final class content_tools_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Deny the teacher native activity-publication capability.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param \stdClass $teacher Teacher executing the operation.
+     */
     private function deny_publication(\stdClass $course, \stdClass $teacher): void {
         global $DB;
         $context = \context_course::instance($course->id);
@@ -206,6 +213,12 @@ final class content_tools_test extends \advanced_testcase {
         $this->assertFalse(has_capability('moodle/course:activityvisibility', $context));
     }
 
+    /**
+     * Assert that returned visibility metadata matches the stored activity state.
+     *
+     * @param array $result Result returned by the tool.
+     * @param bool $expected Expected persisted activity visibility.
+     */
     private function assert_reported_visibility(array $result, bool $expected): void {
         global $DB;
         $stored = (bool)$DB->get_field('course_modules', 'visible', ['id' => $result['cmid']], MUST_EXIST);
@@ -668,7 +681,6 @@ final class content_tools_test extends \advanced_testcase {
             }
         }
     }
-
 
     public function test_manage_course_calendar_tool(): void {
         global $DB;

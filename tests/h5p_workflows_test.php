@@ -30,6 +30,8 @@ use tool_teachermcp\tools\get_h5p_libraries;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\create_h5p_activity
+ * @covers \tool_teachermcp\tools\get_h5p_libraries
  */
 final class h5p_workflows_test extends \advanced_testcase {
     public function test_h5p_filter_miss_is_not_reported_as_an_empty_inventory(): void {
@@ -225,6 +227,12 @@ final class h5p_workflows_test extends \advanced_testcase {
         $this->assertEquals($before, fixtures::snapshot((int)$course->id));
     }
 
+    /**
+     * Create the course, teacher and optional installed H5P fixture.
+     *
+     * @param bool $seed Whether to install the H5P library and package fixture.
+     * @return array Course, teacher and optional installed H5P seed.
+     */
     private function fixture(bool $seed = true): array {
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -240,6 +248,13 @@ final class h5p_workflows_test extends \advanced_testcase {
         return [$course, $teacher, $installed];
     }
 
+    /**
+     * Build valid H5P creation arguments for the fixture.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $seed Installed H5P library and package fixture.
+     * @return array H5P activity-creation arguments.
+     */
     private function args(\stdClass $course, array $seed): array {
         return ['course_id' => (int)$course->id, 'title' => 'Owned local Blanks',
             'library_name' => 'H5P.Blanks', 'params' => $seed['package']['params']];

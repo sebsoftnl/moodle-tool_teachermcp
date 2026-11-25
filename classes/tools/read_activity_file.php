@@ -18,8 +18,6 @@ namespace tool_teachermcp\tools;
 
 use tool_teachermcp\file_extractor;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tool to inspect, extract text, and download source files attached to course activities.
  *

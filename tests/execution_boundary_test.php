@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Shared tool execution and MCP response contracts.
  *
@@ -178,14 +176,23 @@ final class execution_boundary_test extends \advanced_testcase {
             /** @var \Throwable|null Tool failure to expose to the dispatcher. */
             public ?\Throwable $failure = null;
 
+            /**
+             * Return the probe tool name.
+             */
             public function get_name(): string {
                 return 'manage_question_bank';
             }
 
+            /**
+             * Describe the probe tool.
+             */
             public function get_description(): string {
                 return 'Execution boundary fixture.';
             }
 
+            /**
+             * Declare the probe input schema.
+             */
             public function get_input_schema(): array {
                 return ['type' => 'object', 'properties' => [
                     'course_id' => ['type' => 'integer'],
@@ -194,6 +201,12 @@ final class execution_boundary_test extends \advanced_testcase {
                 ], 'required' => ['course_id', 'action']];
             }
 
+            /**
+             * Capture the arguments supplied to the probe.
+             *
+             * @param array $params Arguments supplied to the tool.
+             * @return array Arguments captured by the probe.
+             */
             public function execute(array $params): array {
                 $this->calls++;
                 if ($this->failure !== null) {

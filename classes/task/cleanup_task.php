@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp\task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Scheduled cleanup task for Teacher MCP.
  *

@@ -18,8 +18,6 @@ namespace tool_teachermcp\local;
 
 use tool_teachermcp\server;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Shared teacher and administrator presentation of existing token grants.
  *

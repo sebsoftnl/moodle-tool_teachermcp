@@ -37,6 +37,15 @@ use tool_teachermcp\tools\send_student_message;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\tools\analyze_class_understanding
+ * @covers \tool_teachermcp\tools\detect_at_risk_students
+ * @covers \tool_teachermcp\tools\get_group_students
+ * @covers \tool_teachermcp\tools\grade_submission
+ * @covers \tool_teachermcp\tools\manage_course_calendar
+ * @covers \tool_teachermcp\tools\manage_course_completion
+ * @covers \tool_teachermcp\tools\manage_grades
+ * @covers \tool_teachermcp\tools\prepare_grading_session
+ * @covers \tool_teachermcp\tools\send_student_message
  */
 final class teaching_boundaries_test extends \advanced_testcase {
     public function test_letter_grades_use_native_percentage_boundaries_including_zero(): void {
@@ -353,6 +362,9 @@ final class teaching_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         require_once($CFG->libdir . '/gradelib.php');
@@ -373,6 +385,12 @@ final class teaching_boundaries_test extends \advanced_testcase {
         return [$course, $teacher, $students, $groups];
     }
 
+    /**
+     * Create a manually graded course item for gradebook checks.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @return \grade_item Created manual grade item.
+     */
     private function manual_item(\stdClass $course): \grade_item {
         $item = new \grade_item((object)['courseid' => $course->id, 'itemtype' => 'manual', 'itemname' => 'Owned boundary item',
             'gradetype' => GRADE_TYPE_VALUE, 'grademin' => 20, 'grademax' => 80], false);
@@ -380,11 +398,24 @@ final class teaching_boundaries_test extends \advanced_testcase {
         return $item;
     }
 
+    /**
+     * Resolve the native grade item for the assignment fixture.
+     *
+     * @param \assign $assign Native assignment fixture.
+     * @return \grade_item Native assignment grade item.
+     */
     private function assignment_item(\assign $assign): \grade_item {
         return \grade_item::fetch(['courseid' => $assign->get_course()->id, 'itemtype' => 'mod', 'itemmodule' => 'assign',
             'iteminstance' => $assign->get_instance()->id, 'itemnumber' => 0]);
     }
 
+    /**
+     * Assert that a rejected operation preserves persisted teaching state.
+     *
+     * @param callable $operation Operation expected to be rejected.
+     * @param string $code Expected Moodle exception error code.
+     * @param string|null $message Expected exception message fragment, or null to skip that check.
+     */
     private function assert_unchanged(callable $operation, string $code, ?string $message = null): void {
         $before = fixtures::snapshot();
         $caught = null;
@@ -401,6 +432,11 @@ final class teaching_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Assert that the selected native assignment lock prevents partial writes.
+     *
+     * @param string $kind Assignment lock scenario: team, item or student grade.
+     */
     private function assert_assignment_lock(string $kind): void {
         global $DB;
         [$course, , $students] = $this->fixture();
@@ -444,6 +480,11 @@ final class teaching_boundaries_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Assert that an item or student gradebook lock preserves existing grades.
+     *
+     * @param bool $wholeitem Whether to lock the whole item instead of one student grade.
+     */
     private function assert_gradebook_lock(bool $wholeitem): void {
         [$course, , $students] = $this->fixture();
         $item = $this->manual_item($course);
@@ -462,6 +503,12 @@ final class teaching_boundaries_test extends \advanced_testcase {
             'final_grade' => 73, 'feedback' => 'Denied feedback']), 'error_grade_locked');
     }
 
+    /**
+     * Build native quiz responses from the supplied answer values.
+     *
+     * @param array $answers Answer values ordered by quiz slot.
+     * @return array Native quiz responses indexed by slot.
+     */
     private function responses(array $answers): array {
         return array_combine(range(1, count($answers)), array_map(static fn($answer) => ['answer' => $answer], $answers));
     }

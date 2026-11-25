@@ -142,10 +142,10 @@ echo html_writer::tag(
 
 echo html_writer::end_tag('form');
 
-echo html_writer::end_div(); // card-body.
-echo html_writer::end_div(); // card.
-echo html_writer::end_div(); // col-12.
-echo html_writer::end_div(); // row.
-echo html_writer::end_div(); // container-fluid.
+echo html_writer::end_div(); // Card-body.
+echo html_writer::end_div(); // Card.
+echo html_writer::end_div(); // Col-12.
+echo html_writer::end_div(); // Row.
+echo html_writer::end_div(); // Container-fluid.
 
 echo $OUTPUT->footer();

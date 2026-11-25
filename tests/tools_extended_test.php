@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Extended test suite covering remaining built-in tools, dynamic MCP resources, and events.
  *
@@ -137,7 +135,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertSame('Updated Page Name', $updated['name']);
         $this->assertFalse($updated['visible']);
 
-        // Verify in database
+        // Verify in database.
         $cmrec = $DB->get_record('course_modules', ['id' => $page->cmid]);
         $this->assertSame(0, (int)$cmrec->visible);
         $pagerec = $DB->get_record('page', ['id' => $page->id]);
@@ -284,7 +282,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertTrue($saved['success']);
         $this->assertEquals(92.0, (float)$saved['grade_saved']);
 
-        // Verify assignment object reflects grade
+        // Verify assignment object reflects grade.
         $context = \context_module::instance($assign->cmid);
         $cm = get_coursemodule_from_id('assign', $assign->cmid);
         $assignobj = new \assign($context, $cm, $course);
@@ -361,7 +359,7 @@ final class tools_extended_test extends \advanced_testcase {
 
         $tool = new \tool_teachermcp\tools\duplicate_activity();
 
-        // Duplicate within same course
+        // Duplicate within same course.
         $res = $tool->execute([
             'cmid' => (int)$page->cmid,
         ]);
@@ -371,7 +369,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertGreaterThan(0, $res['new_cmid']);
         $this->assertNotSame((int)$page->cmid, $res['new_cmid']);
 
-        // Verify duplicated module exists in database
+        // Verify duplicated module exists in database.
         $this->assertTrue($DB->record_exists('course_modules', ['id' => $res['new_cmid']]));
     }
 
@@ -492,7 +490,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertNotNull($prompt);
         $this->assertStringContainsString('99', $prompt['messages'][0]['content']['text']);
 
-        // Test newly added prompts
+        // Test newly added prompts.
         $passign = \tool_teachermcp\local\prompt_registry::get_prompt('scaffold_assignment', ['course_id' => 55]);
         $this->assertNotNull($passign);
         $this->assertStringContainsString('create_assignment', $passign['messages'][0]['content']['text']);
@@ -502,7 +500,7 @@ final class tools_extended_test extends \advanced_testcase {
         $this->assertNotNull($pcal);
         $this->assertStringContainsString('manage_course_calendar', $pcal['messages'][0]['content']['text']);
 
-        // Missing required arg or non-existent
+        // Missing required arg or non-existent.
         $this->assertNull(\tool_teachermcp\local\prompt_registry::get_prompt('nonexistent_prompt', []));
     }
 
@@ -523,12 +521,25 @@ final class tools_extended_test extends \advanced_testcase {
         );
 
         $faketool = new class implements \tool_teachermcp\local\external_tool {
+            /**
+             * Describe the probe tool.
+             */
             public function get_description(): string {
                 return 'Fake external tool description';
             }
+            /**
+             * Declare the probe input schema.
+             */
             public function get_input_schema(): array {
                 return ['type' => 'object'];
             }
+            /**
+             * Capture the arguments supplied to the probe.
+             *
+             * @param array $arguments Arguments dispatched to the tool.
+             * @param \tool_teachermcp\local\execution_context $context Context owning the stored file.
+             * @return array User ID and echoed probe message.
+             */
             public function execute(array $arguments, \tool_teachermcp\local\execution_context $context): array {
                 return [
                     'userid' => $context->get_userid(),

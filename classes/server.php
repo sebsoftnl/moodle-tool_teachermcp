@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use Exception;
 use moodle_exception;
 use Throwable;
@@ -226,19 +224,19 @@ class server {
                     return true;
                 }
 
-                // Check scopes sub-array: e.g. ['scopes' => ['read', 'write']]
+                // Check scopes sub-array: e.g. ['scopes' => ['read', 'write']].
                 if (isset($allowed['scopes']) && is_array($allowed['scopes'])) {
                     if (in_array($toolscope, $allowed['scopes'], true) || in_array('all', $allowed['scopes'], true)) {
                         return true;
                     }
                 }
 
-                // Check associative keys: e.g. ['read' => true, 'get_my_profile' => true]
+                // Check associative keys: e.g. ['read' => true, 'get_my_profile' => true].
                 if (!empty($allowed[$toolscope]) || !empty($allowed[$toolname])) {
                     return true;
                 }
 
-                // Check flat values list: e.g. ['read', 'write'] or ['get_my_profile', 'export_course_learning_material']
+                // Check flat values list: e.g. ['read', 'write'] or ['get_my_profile', 'export_course_learning_material'].
                 if (in_array($toolscope, $allowed, true) || in_array($toolname, $allowed, true) || in_array('all', $allowed, true)) {
                     return true;
                 }

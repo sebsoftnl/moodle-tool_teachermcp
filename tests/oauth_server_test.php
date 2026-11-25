@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for OAuth client registration, PKCE authorization-code exchange, and scope grants.
  *

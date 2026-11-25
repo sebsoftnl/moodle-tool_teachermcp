@@ -24,8 +24,6 @@
 
 namespace tool_teachermcp\tests\fixtures;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Invalid built-in tool fixture.
  *

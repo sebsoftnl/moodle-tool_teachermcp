@@ -28,6 +28,7 @@ use tool_teachermcp\tests\fixtures\content_files;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\file_extractor
  */
 final class file_extractor_test extends \advanced_testcase {
     public function test_text_formats_preserve_unicode_and_html_distinction(): void {
@@ -372,6 +373,9 @@ final class file_extractor_test extends \advanced_testcase {
         $this->assertSame($expected, $actual, 'A PDF with no usable normalized text must fail, including partial extraction.');
     }
 
+    /**
+     * Create a module context for stored-file fixtures.
+     */
     private function fixture_context(): \context_module {
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -380,6 +384,14 @@ final class file_extractor_test extends \advanced_testcase {
         return \context_module::instance($folder->cmid);
     }
 
+    /**
+     * Store fixture bytes in the module file area.
+     *
+     * @param \context $context Context owning the stored file.
+     * @param string $name Fixture filename.
+     * @param string $content Fixture file contents.
+     * @return \stored_file Stored fixture file.
+     */
     private function file(\context $context, string $name, string $content): \stored_file {
         return content_files::store($context, $name, $content, 'mod_folder');
     }

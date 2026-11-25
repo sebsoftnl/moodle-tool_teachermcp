@@ -29,6 +29,8 @@ use tool_teachermcp\tools\grade_submission;
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\assignment_grading
+ * @covers \tool_teachermcp\tools\grade_submission
  */
 final class feedback_files_test extends \advanced_testcase {
     public function test_disabled_feedback_files_reject_before_grade_or_comment_changes(): void {
@@ -163,6 +165,9 @@ final class feedback_files_test extends \advanced_testcase {
         $this->assertEquals($before, teaching_fixtures::snapshot());
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);
@@ -178,6 +183,13 @@ final class feedback_files_test extends \advanced_testcase {
         return [$course, $teacher, $student];
     }
 
+    /**
+     * Build grading arguments for the assignment and student fixture.
+     *
+     * @param \assign $assign Native assignment fixture.
+     * @param \stdClass $student Student whose work is graded.
+     * @return array Assignment grading arguments.
+     */
     private function grade_args(\assign $assign, \stdClass $student): array {
         return ['cmid' => (int)$assign->get_course_module()->id, 'action' => 'save_grade',
             'student_user_id' => (int)$student->id, 'applytoall' => false];

@@ -18,14 +18,13 @@ namespace tool_teachermcp;
 
 use tool_teachermcp\local\dashboard_courses;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Course context must match the teacher's permitted catalog and visible selection.
  *
  * @package tool_teachermcp
  * @copyright 2026 Sebsoft BV
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\dashboard_courses
  */
 final class dashboard_courses_test extends \advanced_testcase {
     public function test_selected_course_keeps_its_real_id_and_name(): void {
@@ -74,6 +73,9 @@ final class dashboard_courses_test extends \advanced_testcase {
         $this->assertNull($context['selected']);
     }
 
+    /**
+     * Create enrolled course fixtures for dashboard selection.
+     */
     private function courses(): array {
         $this->resetAfterTest(true);
         $generator = $this->getDataGenerator();

@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_question\local\bank\question_bank_helper;
 use tool_teachermcp\tools\manage_question_bank;
 use tool_teachermcp\tools\scaffold_assessment_unit;
@@ -28,6 +26,9 @@ use tool_teachermcp\tools\scaffold_assessment_unit;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\question_category_resolver
+ * @covers \tool_teachermcp\tools\manage_question_bank
+ * @covers \tool_teachermcp\tools\scaffold_assessment_unit
  */
 final class question_category_resolver_test extends \advanced_testcase {
     public function test_default_creation_uses_native_context_and_reuses_category(): void {
@@ -280,6 +281,9 @@ final class question_category_resolver_test extends \advanced_testcase {
         }
     }
 
+    /**
+     * Create the native assessment fixture.
+     */
     private function create_fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);
@@ -292,10 +296,20 @@ final class question_category_resolver_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Check whether core uses module-context question banks.
+     */
     private function is_modern(): bool {
         return class_exists(question_bank_helper::class);
     }
 
+    /**
+     * Create the installed core default question-bank category fixture.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $name Name for the generated fixture.
+     * @return \stdClass Native default question category.
+     */
     private function create_default_fixture(\stdClass $course, string $name = 'Existing native bank'): \stdClass {
         if ($this->is_modern()) {
             $bank = $this->getDataGenerator()->create_module('qbank', ['course' => $course->id, 'name' => $name]);
@@ -304,6 +318,12 @@ final class question_category_resolver_test extends \advanced_testcase {
         return question_make_default_categories([\context_course::instance($course->id)]);
     }
 
+    /**
+     * Create an explicitly selected question category in its native context.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @return \stdClass Created explicit question category.
+     */
     private function create_explicit_category(\stdClass $course): \stdClass {
         $quiz = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id]);
         return $this->getDataGenerator()->get_plugin_generator('core_question')->create_question_category([
@@ -312,10 +332,23 @@ final class question_category_resolver_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Set the question-add capability in the selected context.
+     *
+     * @param int $contextid Context in which the permission applies.
+     * @param int $permission Native capability permission constant.
+     */
     private function set_question_permission(int $contextid, int $permission): void {
         $this->set_permission('moodle/question:add', $contextid, $permission);
     }
 
+    /**
+     * Set a role capability in the specified context.
+     *
+     * @param string $capability Capability name to assign or check.
+     * @param int $contextid Context in which the permission applies.
+     * @param int $permission Native capability permission constant.
+     */
     private function set_permission(string $capability, int $contextid, int $permission): void {
         global $DB;
         $roleid = $DB->get_field('role', 'id', ['shortname' => 'editingteacher'], MUST_EXIST);
@@ -323,6 +356,13 @@ final class question_category_resolver_test extends \advanced_testcase {
         accesslib_clear_all_caches(true);
     }
 
+    /**
+     * Create a question through the public question-bank tool.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $overrides Question arguments overriding the fixture defaults.
+     * @return array Question-creation tool result.
+     */
     private function create_question(\stdClass $course, array $overrides = []): array {
         return (new manage_question_bank())->execute($overrides + [
             'course_id' => (int)$course->id,
@@ -334,6 +374,13 @@ final class question_category_resolver_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Build valid assessment scaffolding arguments for the fixture course.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $questionname Name of the scaffolded question.
+     * @return array Assessment-scaffolding arguments.
+     */
     private function scaffold_params(\stdClass $course, string $questionname): array {
         return [
             'course_id' => (int)$course->id,
@@ -345,6 +392,12 @@ final class question_category_resolver_test extends \advanced_testcase {
         ];
     }
 
+    /**
+     * Resolve the native category belonging to the created question.
+     *
+     * @param int $questionid Native question ID.
+     * @return \stdClass Category owning the question.
+     */
     private function question_category(int $questionid): \stdClass {
         global $DB;
         return $DB->get_record_sql('SELECT qc.*
@@ -354,6 +407,9 @@ final class question_category_resolver_test extends \advanced_testcase {
                WHERE qv.questionid = :questionid', ['questionid' => $questionid], MUST_EXIST);
     }
 
+    /**
+     * Capture assessment entity identifiers before an operation.
+     */
     private function entity_ids(): array {
         global $DB;
         $result = [];
@@ -363,6 +419,13 @@ final class question_category_resolver_test extends \advanced_testcase {
         return $result;
     }
 
+    /**
+     * Assert that a denied question operation creates no assessment entities.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $params Arguments supplied to the tool.
+     * @param string $errorcode Expected Moodle exception error code.
+     */
     private function assert_denied_without_writes(\stdClass $course, array $params, string $errorcode): void {
         $before = $this->entity_ids();
         try {

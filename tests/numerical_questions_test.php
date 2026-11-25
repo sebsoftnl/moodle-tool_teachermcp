@@ -16,8 +16,6 @@
 
 namespace tool_teachermcp;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core_question\local\bank\question_bank_helper;
 use tool_teachermcp\tools\manage_question_bank;
 use tool_teachermcp\tools\scaffold_assessment_unit;
@@ -28,6 +26,9 @@ use tool_teachermcp\tools\scaffold_assessment_unit;
  * @package    tool_teachermcp
  * @copyright  2026 Sebsoft BV
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \tool_teachermcp\local\numerical_question
+ * @covers \tool_teachermcp\tools\manage_question_bank
+ * @covers \tool_teachermcp\tools\scaffold_assessment_unit
  */
 final class numerical_questions_test extends \advanced_testcase {
     public function test_numerical_schema_and_dispatch_contract(): void {
@@ -213,6 +214,9 @@ final class numerical_questions_test extends \advanced_testcase {
         ]));
     }
 
+    /**
+     * Create the course, teacher and student fixture.
+     */
     private function fixture(): array {
         global $CFG;
         $this->resetAfterTest(true);
@@ -227,6 +231,13 @@ final class numerical_questions_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
+    /**
+     * Create a native question category for numerical authoring.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $name Name for the generated fixture.
+     * @return \stdClass Created native question category.
+     */
     private function category(\stdClass $course, string $name): \stdClass {
         $generator = $this->getDataGenerator();
         $module = $generator->create_module(class_exists(question_bank_helper::class) ? 'qbank' : 'quiz', ['course' => $course->id, 'name' => $name]);
@@ -235,21 +246,47 @@ final class numerical_questions_test extends \advanced_testcase {
         ]);
     }
 
+    /**
+     * Execute a question-bank action in the fixture course.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param string $action Question-bank action to execute.
+     * @param array $params Arguments supplied to the tool.
+     * @return array Question-bank tool result.
+     */
     private function call(\stdClass $course, string $action, array $params): array {
         return (new manage_question_bank())->execute($params + ['course_id' => (int)$course->id, 'action' => $action]);
     }
 
+    /**
+     * Create a numerical question with the supplied options and extra arguments.
+     *
+     * @param \stdClass $course Course containing the fixture.
+     * @param array $options Native numerical answer options.
+     * @param array $extra Additional question-creation arguments.
+     * @return array Numerical question-creation result.
+     */
     private function create(\stdClass $course, array $options, array $extra = []): array {
         return $this->call($course, 'create_question', $extra + ['qtype' => 'numerical', 'name' => 'Numerical question',
             'questiontext' => '<p>Enter the requested number.</p>', 'options' => $options]);
     }
 
+    /**
+     * Assert the native numerical question grade for the supplied answer.
+     *
+     * @param int $questionid Native question ID.
+     * @param string $answer Response submitted to the numerical question.
+     * @param float $expected Expected native grading fraction.
+     */
     private function assert_grade(int $questionid, string $answer, float $expected): void {
         $question = \question_bank::load_question($questionid);
         [$fraction] = $question->grade_response(['answer' => $answer]);
         $this->assertEquals($expected, $fraction, 'Native numerical grading for response ' . $answer);
     }
 
+    /**
+     * Capture persisted assessment state for preservation assertions.
+     */
     private function snapshot(): array {
         global $DB;
         $tables = ['course_modules', 'question_categories', 'question', 'question_answers', 'question_bank_entries',
@@ -265,6 +302,11 @@ final class numerical_questions_test extends \advanced_testcase {
         return $result;
     }
 
+    /**
+     * Assert that the rejected operation leaves native persistence unchanged.
+     *
+     * @param callable $operation Operation expected to be rejected.
+     */
     private function assert_unchanged_error(callable $operation): void {
         $before = $this->snapshot();
         try {
